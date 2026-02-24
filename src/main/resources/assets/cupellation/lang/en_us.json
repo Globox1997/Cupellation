@@ -1,5 +1,9 @@
 {
   "item.cupellation.item_group": "Cupellation",
 
-  "block.cupellation.smelter": "Smelter"
+  "block.cupellation.smelter": "Smelter",
+
+  "text.autoconfig.cupellation.title": "Cupellation Config",
+  "text.autoconfig.cupellation.option.smelterMaxWidth": "Smelter Max Width",
+  "text.autoconfig.cupellation.option.smelterMaxHeight": "Smelter Max Height"
 }

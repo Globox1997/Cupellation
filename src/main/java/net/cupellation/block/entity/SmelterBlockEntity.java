@@ -2,6 +2,7 @@ package net.cupellation.block.entity;
 
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.ConfigInit;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -39,6 +40,10 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     private int validateCooldown = 0;
     private static final int VALIDATE_INTERVAL = 40;
+
+    private int structureWidth = 3;
+    private int structureDepth = 3;
+    private int structureHeight = 2;
 
     private static final int PROP_MOLTEN_METAL_LOW = 0;
     private static final int PROP_MOLTEN_METAL_HIGH = 1;
@@ -79,7 +84,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     public SmelterBlockEntity(BlockPos pos, BlockState state) {
         super(BlockInit.SMELTER_ENTITY, pos, state);
-        this.inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
+        this.inventory = DefaultedList.ofSize(4, ItemStack.EMPTY);
     }
 
     @Override
@@ -96,6 +101,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         if (nbt.contains("cornerMinX")) {
             cornerMin = new BlockPos(nbt.getInt("cornerMinX"), nbt.getInt("cornerMinY"), nbt.getInt("cornerMinZ"));
         }
+        structureWidth = nbt.getInt("structureWidth");
+        structureDepth = nbt.getInt("structureDepth");
+        structureHeight = nbt.getInt("structureHeight");
     }
 
     @Override
@@ -113,6 +121,10 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             nbt.putInt("cornerMinY", cornerMin.getY());
             nbt.putInt("cornerMinZ", cornerMin.getZ());
         }
+
+        nbt.putInt("structureWidth", structureWidth);
+        nbt.putInt("structureDepth", structureDepth);
+        nbt.putInt("structureHeight", structureHeight);
     }
 
     public static void clientTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity blockEntity) {
@@ -144,7 +156,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
         if (!isFormed) return;
 
-        if (!inventory.get(0).isEmpty() && moltenMetal < MAX_CAPACITY) {
+        if (!inventory.get(1).isEmpty() && moltenMetal < MAX_CAPACITY) {
             smeltProgress++;
 
             if (smeltProgress >= SMELT_TIME) {
@@ -158,21 +170,12 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             Direction right = facing.rotateYCounterclockwise();
 
             BlockPos p1 = cornerMin.offset(right, 1).offset(facing.getOpposite(), 1);
-            BlockPos p2 = p1.offset(right, 2).offset(facing.getOpposite(), 2);
+            BlockPos p2 = cornerMin.offset(right, structureWidth - 2).offset(facing.getOpposite(), structureDepth - 2);
 
-            float fluidHeight = getFillPercent() * 1.6f;
+            float fluidHeight = getFillPercent() * (structureHeight * 0.8f);
 
             Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()),
                     Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
-
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.minY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.maxY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.maxY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.minY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.minY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.maxY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.minY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.maxY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
 
             List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, fluidBox, LivingEntity::isAlive);
             for (LivingEntity entity : entities) {
@@ -192,26 +195,40 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         World world = this.getWorld();
         if (world == null) return false;
 
-        BlockState controllerState = world.getBlockState(this.pos);
-        Direction facing = controllerState.get(SmelterBlock.FACING);
+        Direction facing = world.getBlockState(this.pos).get(SmelterBlock.FACING);
         Direction left = facing.rotateYClockwise();
-        BlockPos corner = this.pos.offset(left, 2).offset(facing.getOpposite(), 0);
 
-        this.cornerMin = corner;
-        if (!checkBottom(world, corner, facing)) {
-            return false;
+        for (int w = ConfigInit.CONFIG.smelterMaxWidth; w >= 5; w -= 2) {
+            for (int d = ConfigInit.CONFIG.smelterMaxWidth; d >= 5; d--) {
+                for (int h = ConfigInit.CONFIG.smelterMaxHeight; h >= 1; h--) {
+
+                    int halfWidth = (w - 1) / 2;
+                    BlockPos corner = this.pos.offset(left, halfWidth);
+
+                    if (tryValidate(world, corner, facing, w, d, h)) {
+                        this.cornerMin = corner;
+                        this.structureWidth = w;
+                        this.structureDepth = d;
+                        this.structureHeight = h;
+                        return true;
+                    }
+                }
+            }
         }
-        return checkWalls(world, corner, facing);
+        return false;
     }
 
-    private boolean checkBottom(World world, BlockPos corner, Direction facing) {
+    private boolean tryValidate(World world, BlockPos corner, Direction facing, int w, int d, int h) {
+        return tryCheckBottom(world, corner, facing, w, d) && tryCheckWalls(world, corner, facing, w, d, h);
+    }
+
+    private boolean tryCheckBottom(World world, BlockPos corner, Direction facing, int w, int d) {
         Direction right = facing.rotateYCounterclockwise();
-
-        for (int x = 0; x < 5; x++) {
-            for (int z = 0; z < 5; z++) {
-
+        for (int x = 0; x < w; x++) {
+            for (int z = 0; z < d; z++) {
                 BlockPos check = corner.down().offset(right, x).offset(facing.getOpposite(), z);
                 if (!world.getBlockState(check).isOf(Blocks.STONE_BRICKS)) {
+                    System.out.println(check);
                     return false;
                 }
             }
@@ -219,26 +236,25 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         return true;
     }
 
-    private boolean checkWalls(World world, BlockPos corner, Direction facing) {
+    private boolean tryCheckWalls(World world, BlockPos corner, Direction facing, int w, int d, int h) {
         Direction right = facing.rotateYCounterclockwise();
 
-        for (int y = 0; y < 2; y++) {
-            for (int x = 0; x < 5; x++) {
-                for (int z = 0; z < 5; z++) {
-                    boolean isWall = (x == 0 || x == 4 || z == 0 || z == 4);
-
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                for (int z = 0; z < d; z++) {
                     BlockPos check = corner.offset(right, x).offset(facing.getOpposite(), z).up(y);
+                    boolean isWall = (x == 0 || x == w - 1 || z == 0 || z == d - 1);
 
-                    boolean isWallBlock = world.getBlockState(check).isOf(Blocks.STONE_BRICKS);
-
-                    if (isWall && !isWallBlock) {
-                        if (check.equals(this.pos)) {
-                            continue;
-                        }
-                        return false;
+                    if (check.equals(this.pos)) {
+                        continue;
                     }
-                    if (!isWall && !world.getBlockState(check).isAir()) {
-                        return false;
+
+                    BlockState state = world.getBlockState(check);
+
+                    if (isWall) {
+                        if (!state.isOf(Blocks.STONE_BRICKS)) return false;
+                    } else {
+                        if (!state.isAir()) return false;
                     }
                 }
             }
@@ -267,17 +283,22 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     @Override
     public int size() {
-        return 1;
+        return 4;
     }
 
     @Override
     public boolean isEmpty() {
-        return this.getStack(0).isEmpty();
+        for (ItemStack itemStack : this.inventory) {
+            if (!itemStack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public ItemStack getStack(int slot) {
-        return this.inventory.get(0);
+        return this.inventory.get(slot);
     }
 
     @Override
@@ -295,7 +316,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     @Override
     public void setStack(int slot, ItemStack stack) {
-        this.inventory.set(0, stack);
+        this.inventory.set(slot, stack);
         this.markDirty();
     }
 
@@ -324,7 +345,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     }
 
     private void smeltItem() {
-        ItemStack input = inventory.get(0);
+        ItemStack input = inventory.get(1);
         if (input.isEmpty()) return;
 
         int yield = getMetalYield(input);
@@ -367,7 +388,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     }
 
     public int getMaxCapacity() {
-        return MAX_CAPACITY;
+        int innerW = structureWidth - 2;
+        int innerD = structureDepth - 2;
+        return innerW * innerD * structureHeight * 1000;
     }
 
     public int getMetalType() {
@@ -384,6 +407,18 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     public BlockPos getCornerMin() {
         return cornerMin;
+    }
+
+    public int getStructureWidth() {
+        return structureWidth;
+    }
+
+    public int getStructureHeight() {
+        return structureHeight;
+    }
+
+    public int getStructureDepth() {
+        return structureDepth;
     }
 
 }

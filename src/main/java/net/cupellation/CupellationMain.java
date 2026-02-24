@@ -3,6 +3,7 @@ package net.cupellation;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.ItemInit;
+import net.cupellation.init.TagInit;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 
@@ -12,6 +13,7 @@ public class CupellationMain implements ModInitializer {
         ConfigInit.init();
         BlockInit.init();
         ItemInit.init();
+        TagInit.init();
     }
 
     public static Identifier identifierOf(String name) {

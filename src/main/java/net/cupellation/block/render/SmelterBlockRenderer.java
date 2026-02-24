@@ -36,44 +36,36 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
         int lightFull = 15 << 4 | 15 << 20;
 
-        matrices.push();
+        float innerW = blockEntity.getStructureWidth() - 2f;
+        float innerD = blockEntity.getStructureDepth() - 2f;
 
-        matrices.translate(0.5, 0, 0.5);
-
-        float angle = -facing.asRotation();
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(angle));
-
-        matrices.translate(-0.5, 0, -4.5);
-
-        float startX = -1.0f;
-        float startZ = 1.0f;
-        float size = 3f;
-
-        float y = blockEntity.getFillPercent() * 0.8f + 0.1f;
-        VertexConsumer consumer = vertexConsumers.getBuffer(RenderLayer.getTranslucent());
+        float fillHeight = blockEntity.getFillPercent() * blockEntity.getStructureHeight() * 0.8f + 0.05f;
 
         int color = getMetalColor(blockEntity.getMetalType());
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
 
-        renderCenteredQuad(matrices, consumer, sprite, startX, y, startZ, size, r, g, b, lightFull, overlay);
+        matrices.push();
+
+        matrices.translate(0.5, 0.0, 0.5);
+        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-facing.asRotation()));
+        matrices.translate(-0.5, 0, -(blockEntity.getStructureDepth() - 0.5f));
+        float startX = 0.5f - (innerW / 2f);
+        float startZ = 1.0f;
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+        VertexConsumer consumer = vertexConsumers.getBuffer(RenderLayer.getTranslucent());
+
+        float minU = sprite.getMinU(), maxU = sprite.getMaxU();
+        float minV = sprite.getMinV(), maxV = sprite.getMaxV();
+
+        vertex(consumer, matrix, startX, fillHeight, startZ + innerD, r, g, b, minU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, startX + innerW, fillHeight, startZ + innerD, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, startX + innerW, fillHeight, startZ, r, g, b, maxU, minV, lightFull, overlay);
+        vertex(consumer, matrix, startX, fillHeight, startZ, r, g, b, minU, minV, lightFull, overlay);
 
         matrices.pop();
-    }
-
-    private void renderCenteredQuad(MatrixStack matrices, VertexConsumer consumer, Sprite sprite, float x, float y, float z, float size, float r, float g, float b, int light, int overlay) {
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-
-        float minU = sprite.getMinU();
-        float maxU = sprite.getMaxU();
-        float minV = sprite.getMinV();
-        float maxV = sprite.getMaxV();
-
-        vertex(consumer, matrix, x, y, z, r, g, b, minU, minV, light, overlay);
-        vertex(consumer, matrix, x, y, z + size, r, g, b, minU, maxV, light, overlay);
-        vertex(consumer, matrix, x + size, y, z + size, r, g, b, maxU, maxV, light, overlay);
-        vertex(consumer, matrix, x + size, y, z, r, g, b, maxU, minV, light, overlay);
     }
 
     private void vertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, float r, float g, float b, float u, float v, int light, int overlay) {
@@ -101,11 +93,4 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         };
     }
 
-    private double toX(Direction dir, int amount) {
-        return dir.getOffsetX() * amount;
-    }
-
-    private double toZ(Direction dir, int amount) {
-        return dir.getOffsetZ() * amount;
-    }
 }
