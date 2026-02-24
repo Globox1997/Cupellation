@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "cupellation",
+	"version": "${version}",
+	"name": "Cupellation",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Globox_Z"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "GPLv3",
+	"icon": "assets/cupellation/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.cupellation.CupellationMain"
+		],
+		"client": [
+			"net.cupellation.CupellationClient"
+		]
+	},
+	"mixins": [
+      "cupellation.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.2",
+		"minecraft": "*",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
