@@ -38,7 +38,6 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
         float innerW = blockEntity.getStructureWidth() - 2f;
         float innerD = blockEntity.getStructureDepth() - 2f;
-
         float fillHeight = blockEntity.getFillPercent() * blockEntity.getStructureHeight() * 0.8f + 0.05f;
 
         int color = getMetalColor(blockEntity.getMetalType());
@@ -51,8 +50,13 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         matrices.translate(0.5, 0.0, 0.5);
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-facing.asRotation()));
         matrices.translate(-0.5, 0, -(blockEntity.getStructureDepth() - 0.5f));
-        float startX = 0.5f - (innerW / 2f);
-        float startZ = 1.0f;
+
+        float x0 = 0.5f - (innerW / 2f);
+        float x1 = x0 + innerW;
+        float z0 = 1.0f;
+        float z1 = z0 + innerD;
+        float y0 = 0.0f;
+        float y1 = fillHeight;
 
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         VertexConsumer consumer = vertexConsumers.getBuffer(RenderLayer.getTranslucent());
@@ -60,10 +64,37 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float minU = sprite.getMinU(), maxU = sprite.getMaxU();
         float minV = sprite.getMinV(), maxV = sprite.getMaxV();
 
-        vertex(consumer, matrix, startX, fillHeight, startZ + innerD, r, g, b, minU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, startX + innerW, fillHeight, startZ + innerD, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, startX + innerW, fillHeight, startZ, r, g, b, maxU, minV, lightFull, overlay);
-        vertex(consumer, matrix, startX, fillHeight, startZ, r, g, b, minU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x0, y1, z1, r, g, b, minU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y1, z1, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y1, z0, r, g, b, maxU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x0, y1, z0, r, g, b, minU, minV, lightFull, overlay);
+
+        vertex(consumer, matrix, x0, y0, z0, r, g, b, minU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y0, z0, r, g, b, maxU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y0, z1, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x0, y0, z1, r, g, b, minU, maxV, lightFull, overlay);
+
+        float e = 0.001f;
+
+        vertex(consumer, matrix, x1, y0, z0 + e, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x0, y0, z0 + e, r, g, b, minU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x0, y1, z0 + e, r, g, b, minU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y1, z0 + e, r, g, b, maxU, minV, lightFull, overlay);
+
+        vertex(consumer, matrix, x0, y0, z1 - e, r, g, b, minU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y0, z1 - e, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x1, y1, z1 - e, r, g, b, maxU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x0, y1, z1 - e, r, g, b, minU, minV, lightFull, overlay);
+
+        vertex(consumer, matrix, x0 + e, y0, z0, r, g, b, minU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x0 + e, y0, z1, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x0 + e, y1, z1, r, g, b, maxU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x0 + e, y1, z0, r, g, b, minU, minV, lightFull, overlay);
+
+        vertex(consumer, matrix, x1 - e, y0, z1, r, g, b, minU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x1 - e, y0, z0, r, g, b, maxU, maxV, lightFull, overlay);
+        vertex(consumer, matrix, x1 - e, y1, z0, r, g, b, maxU, minV, lightFull, overlay);
+        vertex(consumer, matrix, x1 - e, y1, z1, r, g, b, minU, minV, lightFull, overlay);
 
         matrices.pop();
     }

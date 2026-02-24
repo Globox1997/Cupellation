@@ -228,7 +228,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             for (int z = 0; z < d; z++) {
                 BlockPos check = corner.down().offset(right, x).offset(facing.getOpposite(), z);
                 if (!world.getBlockState(check).isOf(Blocks.STONE_BRICKS)) {
-                    System.out.println(check);
                     return false;
                 }
             }
