@@ -62,7 +62,10 @@ public class SmelterBlock extends Block implements BlockEntityProvider {
         if (!world.isClient()) {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof SmelterBlockEntity smelter) {
-                player.openHandledScreen(new SimpleNamedScreenHandlerFactory((syncId, inv, p) -> new SmelterScreenHandler(syncId, inv, smelter, smelter), Text.translatable("block.cupellation.smelter")));
+                player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
+                        (syncId, inv, p) -> new SmelterScreenHandler(syncId, inv, smelter, smelter.propertyDelegate),
+                        Text.translatable("block.cupellation.smelter")
+                ));
             }
         }
         return ActionResult.SUCCESS;

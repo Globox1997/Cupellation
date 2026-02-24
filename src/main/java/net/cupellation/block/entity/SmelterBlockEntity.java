@@ -8,7 +8,6 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.LavaFluid;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -16,6 +15,7 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
+import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -40,6 +40,43 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     private int validateCooldown = 0;
     private static final int VALIDATE_INTERVAL = 40;
 
+    private static final int PROP_MOLTEN_METAL_LOW = 0;
+    private static final int PROP_MOLTEN_METAL_HIGH = 1;
+    private static final int PROP_METAL_TYPE = 2;
+    private static final int PROP_SMELT_PROGRESS = 3;
+    private static final int PROP_IS_FORMED = 4;
+    private static final int PROP_COUNT = 5;
+
+    public final PropertyDelegate propertyDelegate = new PropertyDelegate() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case PROP_MOLTEN_METAL_LOW -> moltenMetal & 0xFFFF;
+                case PROP_MOLTEN_METAL_HIGH -> (moltenMetal >> 16) & 0xFFFF;
+                case PROP_METAL_TYPE -> metalType;
+                case PROP_SMELT_PROGRESS -> smeltProgress;
+                case PROP_IS_FORMED -> isFormed ? 1 : 0;
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+            switch (index) {
+                case PROP_MOLTEN_METAL_LOW -> moltenMetal = (moltenMetal & 0xFFFF0000) | (value & 0xFFFF);
+                case PROP_MOLTEN_METAL_HIGH -> moltenMetal = (moltenMetal & 0x0000FFFF) | ((value & 0xFFFF) << 16);
+                case PROP_METAL_TYPE -> metalType = value;
+                case PROP_SMELT_PROGRESS -> smeltProgress = value;
+                case PROP_IS_FORMED -> isFormed = value == 1;
+            }
+        }
+
+        @Override
+        public int size() {
+            return PROP_COUNT;
+        }
+    };
+
     public SmelterBlockEntity(BlockPos pos, BlockState state) {
         super(BlockInit.SMELTER_ENTITY, pos, state);
         this.inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
@@ -57,11 +94,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         smeltProgress = nbt.getInt("smeltProgress");
 
         if (nbt.contains("cornerMinX")) {
-            cornerMin = new BlockPos(
-                    nbt.getInt("cornerMinX"),
-                    nbt.getInt("cornerMinY"),
-                    nbt.getInt("cornerMinZ")
-            );
+            cornerMin = new BlockPos(nbt.getInt("cornerMinX"), nbt.getInt("cornerMinY"), nbt.getInt("cornerMinZ"));
         }
     }
 
@@ -196,25 +229,15 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
                     BlockPos check = corner.offset(right, x).offset(facing.getOpposite(), z).up(y);
 
-//                    if (isWall)
-//                        ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, check.getX() + 0.5D, check.getY() + 0.5D, check.getZ() + 0.5D, 1, 0.0, 0.0, 0.0, 0.0);
-
-
                     boolean isWallBlock = world.getBlockState(check).isOf(Blocks.STONE_BRICKS);
 
                     if (isWall && !isWallBlock) {
                         if (check.equals(this.pos)) {
                             continue;
                         }
-//                        System.out.println("?? "+check);
-//                        ((ServerWorld)this.getWorld()).spawnParticles(ParticleTypes.FLAME, check.getX()+0.5D, check.getY()+0.5D,check.getZ()+0.5D, 5, 0.0, 0.0, 0.0, 0.0);
-
                         return false;
                     }
                     if (!isWall && !world.getBlockState(check).isAir()) {
-//                        System.out.println("XX "+check);
-//                        ((ServerWorld)this.getWorld()).spawnParticles(ParticleTypes.BUBBLE, check.getX()+0.5D, check.getY()+0.5D,check.getZ()+0.5D, 5, 0.0, 0.0, 0.0, 0.0);
-
                         return false;
                     }
                 }
