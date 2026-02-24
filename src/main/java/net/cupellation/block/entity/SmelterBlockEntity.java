@@ -5,7 +5,10 @@ import net.cupellation.init.BlockInit;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.LavaFluid;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -15,8 +18,11 @@ import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory {
     private DefaultedList<ItemStack> inventory;
@@ -115,11 +121,37 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             smeltProgress = 0;
         }
         if (moltenMetal > 0) {
+            Direction facing = getCachedState().get(SmelterBlock.FACING);
+            Direction right = facing.rotateYCounterclockwise();
 
-//            this.getWorld().getOtherEntities()
-//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, this.getCornerMin().getX() + 0.5D, this.getCornerMin().getY() + 2D, this.getCornerMin().getZ() + 0.5D, 5, 0.0, 0.0, 0.0, 0.0);
+            BlockPos p1 = cornerMin.offset(right, 1).offset(facing.getOpposite(), 1);
+            BlockPos p2 = p1.offset(right, 2).offset(facing.getOpposite(), 2);
 
-//            ((ServerWorld)this.getWorld()).spawnParticles()
+            float fluidHeight = getFillPercent() * 1.6f;
+
+            Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()),
+                    Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
+
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.minY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.maxY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.maxY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.minY, fluidBox.minZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.minY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.maxX, fluidBox.maxY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.minY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, fluidBox.minX, fluidBox.maxY, fluidBox.maxZ, 5, 0.0, 0.0, 0.0, 0.0);
+
+            List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, fluidBox, LivingEntity::isAlive);
+            for (LivingEntity entity : entities) {
+                entity.damage(world.getDamageSources().lava(), 4.0f);
+                entity.setOnFireFor(5);
+            }
+            List<ItemEntity> items = world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), entity -> true);
+            for (ItemEntity item : items) {
+                if (!item.isFireImmune()) {
+                    item.discard();
+                }
+            }
         }
     }
 
