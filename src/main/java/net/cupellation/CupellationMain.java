@@ -1,6 +1,7 @@
 package net.cupellation;
 
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.ConfigInit;
 import net.cupellation.init.ItemInit;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
@@ -8,6 +9,7 @@ import net.minecraft.util.Identifier;
 public class CupellationMain implements ModInitializer {
     @Override
     public void onInitialize() {
+        ConfigInit.init();
         BlockInit.init();
         ItemInit.init();
     }

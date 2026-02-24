@@ -103,8 +103,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             }
         }
 
-//        System.out.println(isFormed);
-
         if (!isFormed) return;
 
         if (!inventory.get(0).isEmpty() && moltenMetal < MAX_CAPACITY) {
