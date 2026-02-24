@@ -114,6 +114,13 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         } else {
             smeltProgress = 0;
         }
+        if (moltenMetal > 0) {
+
+//            this.getWorld().getOtherEntities()
+//            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.FLAME, this.getCornerMin().getX() + 0.5D, this.getCornerMin().getY() + 2D, this.getCornerMin().getZ() + 0.5D, 5, 0.0, 0.0, 0.0, 0.0);
+
+//            ((ServerWorld)this.getWorld()).spawnParticles()
+        }
     }
 
     public boolean validateStructure() {
@@ -125,10 +132,26 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         Direction left = facing.rotateYClockwise();
         BlockPos corner = this.pos.offset(left, 2).offset(facing.getOpposite(), 0);
 
-//        System.out.println(corner + " : " + checkWalls(world, corner, facing));
-
         this.cornerMin = corner;
+        if (!checkBottom(world, corner, facing)) {
+            return false;
+        }
         return checkWalls(world, corner, facing);
+    }
+
+    private boolean checkBottom(World world, BlockPos corner, Direction facing) {
+        Direction right = facing.rotateYCounterclockwise();
+
+        for (int x = 0; x < 5; x++) {
+            for (int z = 0; z < 5; z++) {
+
+                BlockPos check = corner.down().offset(right, x).offset(facing.getOpposite(), z);
+                if (!world.getBlockState(check).isOf(Blocks.STONE_BRICKS)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private boolean checkWalls(World world, BlockPos corner, Direction facing) {
@@ -148,7 +171,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
                     boolean isWallBlock = world.getBlockState(check).isOf(Blocks.STONE_BRICKS);
 
                     if (isWall && !isWallBlock) {
-                        if(check.equals(this.pos)){
+                        if (check.equals(this.pos)) {
                             continue;
                         }
 //                        System.out.println("?? "+check);
