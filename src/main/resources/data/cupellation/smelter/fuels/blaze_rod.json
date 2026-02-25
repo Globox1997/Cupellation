@@ -1,4 +1,5 @@
 {
   "item": "minecraft:blaze_rod",
-  "max_temperature": 1400
+  "max_temperature": 1400,
+  "burn_time": 2400
 }

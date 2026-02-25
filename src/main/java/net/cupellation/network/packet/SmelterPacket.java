@@ -8,6 +8,7 @@ import net.cupellation.misc.GradeRange;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,7 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         for (FuelData fuel : fuels) {
             buf.writeIdentifier(fuel.itemId());
             buf.writeInt(fuel.maxTemperature());
+            buf.writeInt(fuel.burnTime());
         }
     }
 
@@ -68,7 +70,7 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         int fuelCount = buf.readInt();
         List<FuelData> fuels = new ArrayList<>(fuelCount);
         for (int i = 0; i < fuelCount; i++) {
-            fuels.add(new FuelData(buf.readIdentifier(), buf.readInt()));
+            fuels.add(new FuelData(buf.readIdentifier(), buf.readInt(), buf.readInt()));
         }
 
         return new SmelterPacket(items, metals, fuels);
@@ -82,6 +84,7 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         }
     }
 
+    @Nullable
     private static GradeRange readNullableGradeRange(RegistryByteBuf buf) {
         boolean present = buf.readBoolean();
         if (!present) {

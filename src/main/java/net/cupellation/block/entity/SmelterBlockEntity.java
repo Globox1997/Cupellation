@@ -2,6 +2,7 @@ package net.cupellation.block.entity;
 
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.screen.SmelterScreenHandler;
+import net.cupellation.data.FuelData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.data.SmelterItemData;
 import net.cupellation.init.BlockInit;
@@ -262,16 +263,17 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (fuel.isEmpty()) {
             return;
         }
-        if (!SmelterData.isSmelterFuel(fuel.getItem())) {
+        FuelData fuelData = SmelterData.getFuelData(fuel.getItem());
+        if (fuelData == null) {
             return;
         }
-        Map<?, Integer> fuelMap = AbstractFurnaceBlockEntity.createFuelTimeMap();
-        Integer time = fuelMap.get(fuel.getItem());
-        if (time == null || time <= 0) return;
-
-        maxFuelTime = time;
-        fuelTime = maxFuelTime;
-        maxTemperature = SmelterData.getFuelMaxTemp(fuel.getItem());
+        int burnTime = fuelData.burnTime() >= 0 ? fuelData.burnTime() : AbstractFurnaceBlockEntity.createFuelTimeMap().getOrDefault(fuel.getItem(), 0);
+        if (burnTime <= 0) {
+            return;
+        }
+        maxFuelTime = burnTime;
+        fuelTime = burnTime;
+        maxTemperature = fuelData.maxTemperature();
         fuel.decrement(1);
         markDirty();
     }

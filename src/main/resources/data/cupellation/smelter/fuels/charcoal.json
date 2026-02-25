@@ -1,5 +1,5 @@
 {
   "item": "minecraft:charcoal",
   "max_temperature": 900,
-  "burn_time": 2
+  "burn_time": 1600
 }

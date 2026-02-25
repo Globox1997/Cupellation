@@ -1,4 +1,5 @@
 {
   "item": "minecraft:lava_bucket",
-  "max_temperature": 1300
+  "max_temperature": 1300,
+  "burn_time": 20000
 }
