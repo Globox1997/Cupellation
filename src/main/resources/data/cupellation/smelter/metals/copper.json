@@ -1,7 +1,21 @@
 {
   "id": "cupellation:copper",
   "name": "metal.cupellation.copper",
-  "required_temp": 900,
+  "required_temp": 700,
   "color": "FF4500",
-  "texture": "cupellation:fluid/molten_copper"
+  "texture": "cupellation:fluid/molten_copper",
+  "grades": {
+    "low": {
+      "min": 700,
+      "max": 900
+    },
+    "mid": {
+      "min": 900,
+      "max": 1100
+    },
+    "high": {
+      "min": 1100,
+      "max": 1300
+    }
+  }
 }

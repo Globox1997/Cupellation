@@ -1,7 +1,21 @@
 {
   "id": "cupellation:netherite",
   "name": "metal.cupellation.netherite",
-  "required_temp": 900,
+  "required_temp": 1300,
   "color": "FF4500",
-  "texture": "cupellation:fluid/molten_netherite"
+  "texture": "cupellation:fluid/molten_netherite",
+  "grades": {
+    "low": {
+      "min": 1300,
+      "max": 1400
+    },
+    "mid": {
+      "min": 1400,
+      "max": 1500
+    },
+    "high": {
+      "min": 1500,
+      "max": 1600
+    }
+  }
 }

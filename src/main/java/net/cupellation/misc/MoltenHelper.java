@@ -7,6 +7,7 @@ import net.minecraft.item.Items;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.util.Identifier;
 
+// TODO: TO BE REMOVED!
 public class MoltenHelper {
 
 //    private static final Identifier MOLTEN_IRON_SPRITE = CupellationMain.identifierOf("fluid/molten_iron");
@@ -52,14 +53,14 @@ public class MoltenHelper {
 //                || stack.isOf(Items.GOLD_INGOT)
 //                || stack.isOf(Items.COPPER_INGOT);
 //    }
-//
-    public static int getFuelMaxTemp(ItemStack fuel) {
-        if (fuel.isOf(Items.BLAZE_ROD) || fuel.isOf(Items.BLAZE_POWDER)) return 1400;
-        if (fuel.isOf(Items.COAL) || fuel.isOf(Items.COAL_BLOCK)) return 1000;
-        if (fuel.isOf(Items.CHARCOAL)) return 900;
-        if (fuel.isOf(Items.LAVA_BUCKET)) return 1300;
-        return 600;
-    }
+////
+//    public static int getFuelMaxTemp(ItemStack fuel) {
+//        if (fuel.isOf(Items.BLAZE_ROD) || fuel.isOf(Items.BLAZE_POWDER)) return 1400;
+//        if (fuel.isOf(Items.COAL) || fuel.isOf(Items.COAL_BLOCK)) return 1000;
+//        if (fuel.isOf(Items.CHARCOAL)) return 900;
+//        if (fuel.isOf(Items.LAVA_BUCKET)) return 1300;
+//        return 600;
+//    }
 
 //
 //    public static int getSmeltTime(ItemStack stack) {

@@ -38,6 +38,8 @@ import java.util.Map;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
+    // TODO: When too hot at casting process, it will just evaporate with smoke
+
     private DefaultedList<ItemStack> inventory;
 
     private boolean isFormed = false;
@@ -221,14 +223,17 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (!isFormed) return;
 
         if (hasAnyInput() && moltenMetal < getMaxCapacity()) {
-            if (fuelTime <= 0) tryConsumeFuel();
+            if (fuelTime <= 0) {
+                tryConsumeFuel();
+            }
         }
 
         tickTemperature();
 
         boolean burning = fuelTime > 0;
-        if (burning) fuelTime--;
-
+        if (burning) {
+            fuelTime--;
+        }
         if (getCachedState().get(SmelterBlock.LIT) != burning) {
             world.setBlockState(pos, getCachedState().with(SmelterBlock.LIT, burning));
         }
@@ -242,25 +247,31 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private void tickTemperature() {
         if (fuelTime > 0) {
-            if (temperature < maxTemperature)
+            if (temperature < maxTemperature) {
                 temperature = Math.min(maxTemperature, (int) (temperature + TEMP_RISE_RATE));
+            }
         } else {
-            if (temperature > 0)
+            if (temperature > 0) {
                 temperature = Math.max(0, (int) (temperature - TEMP_DECAY_RATE));
+            }
         }
     }
 
     private void tryConsumeFuel() {
         ItemStack fuel = inventory.get(0);
-        if (fuel.isEmpty() || !AbstractFurnaceBlockEntity.canUseAsFuel(fuel)) return;
-
+        if (fuel.isEmpty()) {
+            return;
+        }
+        if (!SmelterData.isSmelterFuel(fuel.getItem())) {
+            return;
+        }
         Map<?, Integer> fuelMap = AbstractFurnaceBlockEntity.createFuelTimeMap();
         Integer time = fuelMap.get(fuel.getItem());
         if (time == null || time <= 0) return;
 
         maxFuelTime = time;
         fuelTime = maxFuelTime;
-        maxTemperature = MoltenHelper.getFuelMaxTemp(fuel);
+        maxTemperature = SmelterData.getFuelMaxTemp(fuel.getItem());
         fuel.decrement(1);
         markDirty();
     }
@@ -339,14 +350,17 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             entity.setOnFireFor(5);
         }
         for (ItemEntity item : world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), e -> true)) {
-            if (!item.isFireImmune()) item.discard();
+            if (!item.isFireImmune()) {
+                item.discard();
+            }
         }
     }
 
     public boolean validateStructure() {
         World world = this.getWorld();
-        if (world == null) return false;
-
+        if (world == null) {
+            return false;
+        }
         Direction facing = world.getBlockState(this.pos).get(SmelterBlock.FACING);
         Direction left = facing.rotateYClockwise();
 
@@ -397,6 +411,14 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                     if (!isWall && !state.isAir()) return false;
                 }
         return true;
+    }
+
+    private int getFuelMaxTemp(ItemStack fuel) {
+        int temp = SmelterData.getFuelMaxTemp(fuel.getItem());
+        if (temp >= 0) {
+            return temp;
+        }
+        return 600;
     }
 
     private void onStructureFormed() {
@@ -562,7 +584,11 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private boolean hasAnyInput() {
-        for (int i = 1; i <= 3; i++) if (!inventory.get(i).isEmpty()) return true;
+        for (int i = 1; i <= 3; i++) {
+            if (!inventory.get(i).isEmpty()) {
+                return true;
+            }
+        }
         return false;
     }
 }

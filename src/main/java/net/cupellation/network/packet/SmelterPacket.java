@@ -1,8 +1,10 @@
 package net.cupellation.network.packet;
 
 import net.cupellation.CupellationMain;
+import net.cupellation.data.FuelData;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterItemData;
+import net.cupellation.misc.GradeRange;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.packet.CustomPayload;
@@ -10,11 +12,16 @@ import net.minecraft.network.packet.CustomPayload;
 import java.util.ArrayList;
 import java.util.List;
 
-public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> metals) implements CustomPayload {
+public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> metals, List<FuelData> fuels) implements CustomPayload {
 
     public static final CustomPayload.Id<SmelterPacket> PACKET_ID = new CustomPayload.Id<>(CupellationMain.identifierOf("smelter_packet"));
 
     public static final PacketCodec<RegistryByteBuf, SmelterPacket> CODEC = PacketCodec.of(SmelterPacket::write, SmelterPacket::read);
+
+    @Override
+    public Id<? extends CustomPayload> getId() {
+        return PACKET_ID;
+    }
 
     private void write(RegistryByteBuf buf) {
         buf.writeInt(items.size());
@@ -32,6 +39,15 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             buf.writeInt(metal.requiredTemp());
             buf.writeInt(metal.color());
             buf.writeIdentifier(metal.texture());
+            writeNullableGradeRange(buf, metal.lowGrade());
+            writeNullableGradeRange(buf, metal.midGrade());
+            writeNullableGradeRange(buf, metal.highGrade());
+        }
+
+        buf.writeInt(fuels.size());
+        for (FuelData fuel : fuels) {
+            buf.writeIdentifier(fuel.itemId());
+            buf.writeInt(fuel.maxTemperature());
         }
     }
 
@@ -45,15 +61,32 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         int metalCount = buf.readInt();
         List<MetalTypeData> metals = new ArrayList<>(metalCount);
         for (int i = 0; i < metalCount; i++) {
-            metals.add(new MetalTypeData(buf.readIdentifier(), buf.readString(), buf.readInt(), buf.readInt(), buf.readIdentifier()));
+            metals.add(new MetalTypeData(buf.readIdentifier(), buf.readString(), buf.readInt(), buf.readInt(), buf.readIdentifier(),
+                    readNullableGradeRange(buf), readNullableGradeRange(buf), readNullableGradeRange(buf)));
         }
 
-        return new SmelterPacket(items, metals);
+        int fuelCount = buf.readInt();
+        List<FuelData> fuels = new ArrayList<>(fuelCount);
+        for (int i = 0; i < fuelCount; i++) {
+            fuels.add(new FuelData(buf.readIdentifier(), buf.readInt()));
+        }
+
+        return new SmelterPacket(items, metals, fuels);
     }
 
-    @Override
-    public Id<? extends CustomPayload> getId() {
-        return PACKET_ID;
+    private static void writeNullableGradeRange(RegistryByteBuf buf, GradeRange range) {
+        buf.writeBoolean(range != null);
+        if (range != null) {
+            buf.writeInt(range.min());
+            buf.writeInt(range.max());
+        }
     }
 
+    private static GradeRange readNullableGradeRange(RegistryByteBuf buf) {
+        boolean present = buf.readBoolean();
+        if (!present) {
+            return null;
+        }
+        return new GradeRange(buf.readInt(), buf.readInt());
+    }
 }

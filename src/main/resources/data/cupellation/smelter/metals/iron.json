@@ -3,5 +3,19 @@
   "name": "metal.cupellation.iron",
   "required_temp": 900,
   "color": "FF4500",
-  "texture": "cupellation:fluid/molten_iron"
+  "texture": "cupellation:fluid/molten_iron",
+  "grades": {
+    "low": {
+      "min": 900,
+      "max": 1000
+    },
+    "mid": {
+      "min": 1000,
+      "max": 1200
+    },
+    "high": {
+      "min": 1200,
+      "max": 1600
+    }
+  }
 }

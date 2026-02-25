@@ -15,6 +15,7 @@ public final class SmelterData {
 
     private static final Map<Identifier, SmelterItemData> ITEMS = new HashMap<>();
     private static final Map<Identifier, MetalTypeData> METALS = new HashMap<>();
+    private static final Map<Identifier, FuelData> FUELS = new HashMap<>();
 
     private SmelterData() {
     }
@@ -27,6 +28,15 @@ public final class SmelterData {
     public static void setMetals(Map<Identifier, MetalTypeData> metals) {
         METALS.clear();
         METALS.putAll(metals);
+    }
+
+    public static void setFuels(Map<Identifier, FuelData> fuels) {
+        FUELS.clear();
+        FUELS.putAll(fuels);
+    }
+
+    public static boolean hasItem(Item item) {
+        return getItemData(item) != null;
     }
 
     @Nullable
@@ -52,12 +62,31 @@ public final class SmelterData {
 
     public static Identifier getTexture(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
-        return metal != null ? metal.texture() : Identifier.of("cupellation", "fluid/molten");
+        return metal != null ? metal.texture() : Identifier.of("cupellation", "fluid/molten_iron");
     }
 
     public static String getName(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
         return metal != null ? Text.translatable(metal.name()).getString() : "Unknown";
+    }
+
+    public static MetalTypeData.Grade getGradeAt(Identifier metalTypeId, int temperature) {
+        MetalTypeData metal = METALS.get(metalTypeId);
+        return metal != null ? metal.getGradeAt(temperature) : MetalTypeData.Grade.LOW;
+    }
+
+    @Nullable
+    public static FuelData getFuelData(Item item) {
+        return FUELS.get(Registries.ITEM.getId(item));
+    }
+
+    public static int getFuelMaxTemp(Item item) {
+        FuelData data = getFuelData(item);
+        return data != null ? data.maxTemperature() : -1;
+    }
+
+    public static boolean isSmelterFuel(Item item) {
+        return FUELS.containsKey(Registries.ITEM.getId(item));
     }
 
     public static Collection<SmelterItemData> allItems() {
@@ -68,7 +97,7 @@ public final class SmelterData {
         return Collections.unmodifiableCollection(METALS.values());
     }
 
-    public static boolean hasItem(Item item) {
-        return getItemData(item) != null;
+    public static Collection<FuelData> allFuels() {
+        return Collections.unmodifiableCollection(FUELS.values());
     }
 }

@@ -1,7 +1,21 @@
 {
   "id": "cupellation:gold",
   "name": "metal.cupellation.gold",
-  "required_temp": 900,
+  "required_temp": 650,
   "color": "FF4500",
-  "texture": "cupellation:fluid/molten_gold"
+  "texture": "cupellation:fluid/molten_gold",
+  "grades": {
+    "low": {
+      "min": 650,
+      "max": 850
+    },
+    "mid": {
+      "min": 850,
+      "max": 1050
+    },
+    "high": {
+      "min": 1050,
+      "max": 1250
+    }
+  }
 }
