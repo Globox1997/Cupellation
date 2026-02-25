@@ -1,8 +1,8 @@
 package net.cupellation.block.render;
 
-import net.cupellation.CupellationMain;
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.entity.SmelterBlockEntity;
+import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -14,15 +14,12 @@ import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.screen.PlayerScreenHandler;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 
 @Environment(EnvType.CLIENT)
 public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEntity> {
-
-    private static final Identifier MOLTEN_TEXTURE = CupellationMain.identifierOf("fluid/molten");
 
     public SmelterBlockRenderer(BlockEntityRendererFactory.Context ctx) {
     }
@@ -40,7 +37,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float innerD = blockEntity.getStructureDepth() - 2f;
         float fillHeight = blockEntity.getFillPercent() * blockEntity.getStructureHeight() * 0.8f + 0.05f;
 
-        int color = getMetalColor(blockEntity.getMetalType());
+        int color = MoltenHelper.getMoltenColor(blockEntity.getMetalType());
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -104,24 +101,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
     }
 
     private Sprite getFluidSprite(int metalType) {
-        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(getTextureId(metalType));
-    }
-
-    private Identifier getTextureId(int metalType) {
-        return switch (metalType) {
-            case 1 -> MOLTEN_TEXTURE;
-            case 2 -> MOLTEN_TEXTURE;
-            default -> MOLTEN_TEXTURE;
-        };
-    }
-
-    private int getMetalColor(int metalType) {
-        return switch (metalType) {
-//            case 1 -> 0xC8C8C8; // Eisen – silbrig
-            case 1 -> 0xFF4500; // Eisen – silbrig
-            case 2 -> 0xFFD700; // Gold – golden
-            default -> 0xFF4500; // Fallback – orange-rot
-        };
+        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(MoltenHelper.getMoltenSpriteId(metalType));
     }
 
 }

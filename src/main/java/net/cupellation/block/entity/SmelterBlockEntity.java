@@ -3,8 +3,10 @@ package net.cupellation.block.entity;
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
+import net.cupellation.misc.MoltenHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
@@ -12,7 +14,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
@@ -23,44 +24,75 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
-import java.util.List;
+import java.util.Map;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory {
+
     private DefaultedList<ItemStack> inventory;
 
     private boolean isFormed = false;
     private BlockPos cornerMin = BlockPos.ORIGIN;
-
-    private int moltenMetal = 0;
-    private static final int MAX_CAPACITY = 16000;
-    private int metalType = 0;
-
-    private int smeltProgress = 0;
-    private static final int SMELT_TIME = 200;
-
-    private int validateCooldown = 0;
-    private static final int VALIDATE_INTERVAL = 40;
-
     private int structureWidth = 3;
     private int structureDepth = 3;
     private int structureHeight = 2;
 
+    private int validateCooldown = 0;
+    private static final int VALIDATE_INTERVAL = 40;
+
+    private int moltenMetal = 0;
+    private int metalType = 0;
+
+    private int fuelTime = 0;
+    private int maxFuelTime = 0;
+
+    private int temperature = 0;
+    private int maxTemperature = 0;
+    private static final int TEMP_MAX_ABSOLUTE = 1600;
+    private static final float TEMP_RISE_RATE = 1.5f;
+    private static final float TEMP_DECAY_RATE = 0.5f;
+
+    private final int[] smeltProgress = new int[3];
+    private final int[] smeltTotal = new int[3];
+
     private static final int PROP_MOLTEN_METAL_LOW = 0;
     private static final int PROP_MOLTEN_METAL_HIGH = 1;
-    private static final int PROP_METAL_TYPE = 2;
-    private static final int PROP_SMELT_PROGRESS = 3;
-    private static final int PROP_IS_FORMED = 4;
-    private static final int PROP_COUNT = 5;
+    private static final int PROP_MAX_CAP_LOW = 2;
+    private static final int PROP_MAX_CAP_HIGH = 3;
+    private static final int PROP_METAL_TYPE = 4;
+    private static final int PROP_IS_FORMED = 5;
+    private static final int PROP_FUEL_TIME = 6;
+    private static final int PROP_MAX_FUEL_TIME = 7;
+    private static final int PROP_TEMPERATURE = 8;
+    private static final int PROP_MAX_TEMPERATURE = 9;
+    private static final int PROP_SMELT_PROGRESS_0 = 10;
+    private static final int PROP_SMELT_PROGRESS_1 = 11;
+    private static final int PROP_SMELT_PROGRESS_2 = 12;
+    private static final int PROP_SMELT_TOTAL_0 = 13;
+    private static final int PROP_SMELT_TOTAL_1 = 14;
+    private static final int PROP_SMELT_TOTAL_2 = 15;
+    private static final int PROP_COUNT = 16;
 
     public final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
         public int get(int index) {
+            int cap = getMaxCapacity();
             return switch (index) {
                 case PROP_MOLTEN_METAL_LOW -> moltenMetal & 0xFFFF;
                 case PROP_MOLTEN_METAL_HIGH -> (moltenMetal >> 16) & 0xFFFF;
+                case PROP_MAX_CAP_LOW -> cap & 0xFFFF;
+                case PROP_MAX_CAP_HIGH -> (cap >> 16) & 0xFFFF;
                 case PROP_METAL_TYPE -> metalType;
-                case PROP_SMELT_PROGRESS -> smeltProgress;
                 case PROP_IS_FORMED -> isFormed ? 1 : 0;
+                case PROP_FUEL_TIME -> fuelTime;
+                case PROP_MAX_FUEL_TIME -> maxFuelTime;
+                case PROP_TEMPERATURE -> temperature;
+                case PROP_MAX_TEMPERATURE -> maxTemperature;
+                case PROP_SMELT_PROGRESS_0 -> smeltProgress[0];
+                case PROP_SMELT_PROGRESS_1 -> smeltProgress[1];
+                case PROP_SMELT_PROGRESS_2 -> smeltProgress[2];
+                case PROP_SMELT_TOTAL_0 -> smeltTotal[0];
+                case PROP_SMELT_TOTAL_1 -> smeltTotal[1];
+                case PROP_SMELT_TOTAL_2 -> smeltTotal[2];
                 default -> 0;
             };
         }
@@ -71,8 +103,17 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
                 case PROP_MOLTEN_METAL_LOW -> moltenMetal = (moltenMetal & 0xFFFF0000) | (value & 0xFFFF);
                 case PROP_MOLTEN_METAL_HIGH -> moltenMetal = (moltenMetal & 0x0000FFFF) | ((value & 0xFFFF) << 16);
                 case PROP_METAL_TYPE -> metalType = value;
-                case PROP_SMELT_PROGRESS -> smeltProgress = value;
-                case PROP_IS_FORMED -> isFormed = value == 1;
+                case PROP_IS_FORMED -> isFormed = (value == 1);
+                case PROP_FUEL_TIME -> fuelTime = value;
+                case PROP_MAX_FUEL_TIME -> maxFuelTime = value;
+                case PROP_TEMPERATURE -> temperature = value;
+                case PROP_MAX_TEMPERATURE -> maxTemperature = value;
+                case PROP_SMELT_PROGRESS_0 -> smeltProgress[0] = value;
+                case PROP_SMELT_PROGRESS_1 -> smeltProgress[1] = value;
+                case PROP_SMELT_PROGRESS_2 -> smeltProgress[2] = value;
+                case PROP_SMELT_TOTAL_0 -> smeltTotal[0] = value;
+                case PROP_SMELT_TOTAL_1 -> smeltTotal[1] = value;
+                case PROP_SMELT_TOTAL_2 -> smeltTotal[2] = value;
             }
         }
 
@@ -96,7 +137,15 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         isFormed = nbt.getBoolean("isFormed");
         moltenMetal = nbt.getInt("moltenMetal");
         metalType = nbt.getInt("metalType");
-        smeltProgress = nbt.getInt("smeltProgress");
+        fuelTime = nbt.getInt("fuelTime");
+        maxFuelTime = nbt.getInt("maxFuelTime");
+        temperature = nbt.getInt("temperature");
+        maxTemperature = nbt.getInt("maxTemperature");
+
+        for (int i = 0; i < 3; i++) {
+            smeltProgress[i] = nbt.getInt("smeltProgress" + i);
+            smeltTotal[i] = nbt.getInt("smeltTotal" + i);
+        }
 
         if (nbt.contains("cornerMinX")) {
             cornerMin = new BlockPos(nbt.getInt("cornerMinX"), nbt.getInt("cornerMinY"), nbt.getInt("cornerMinZ"));
@@ -114,28 +163,36 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         nbt.putBoolean("isFormed", isFormed);
         nbt.putInt("moltenMetal", moltenMetal);
         nbt.putInt("metalType", metalType);
-        nbt.putInt("smeltProgress", smeltProgress);
+        nbt.putInt("fuelTime", fuelTime);
+        nbt.putInt("maxFuelTime", maxFuelTime);
+        nbt.putInt("temperature", temperature);
+        nbt.putInt("maxTemperature", maxTemperature);
+
+        for (int i = 0; i < 3; i++) {
+            nbt.putInt("smeltProgress" + i, smeltProgress[i]);
+            nbt.putInt("smeltTotal" + i, smeltTotal[i]);
+        }
 
         if (cornerMin != null) {
             nbt.putInt("cornerMinX", cornerMin.getX());
             nbt.putInt("cornerMinY", cornerMin.getY());
             nbt.putInt("cornerMinZ", cornerMin.getZ());
         }
-
         nbt.putInt("structureWidth", structureWidth);
         nbt.putInt("structureDepth", structureDepth);
         nbt.putInt("structureHeight", structureHeight);
     }
 
-    public static void clientTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity blockEntity) {
-        blockEntity.clientTick();
+    public static void clientTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity be) {
+        be.clientTick();
     }
 
-    public static void serverTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity blockEntity) {
-        blockEntity.serverTick();
+    public static void serverTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity be) {
+        be.serverTick();
     }
 
     private void clientTick() {
+
     }
 
     private void serverTick() {
@@ -145,49 +202,142 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             validateCooldown = VALIDATE_INTERVAL;
             boolean wasFormed = isFormed;
             isFormed = validateStructure();
+            if (wasFormed && !isFormed) onStructureDestroyed();
+            if (!wasFormed && isFormed) onStructureFormed();
+        }
 
-            if (wasFormed && !isFormed) {
-                onStructureDestroyed();
-            }
-            if (!wasFormed && isFormed) {
-                onStructureFormed();
+        if (!isFormed) {
+            return;
+        }
+        boolean hasAnyInput = hasAnyInput();
+        boolean tankFull = moltenMetal >= getMaxCapacity();
+
+        if (hasAnyInput && !tankFull) {
+            if (fuelTime <= 0) {
+                tryConsumeFuel();
             }
         }
 
-        if (!isFormed) return;
+        tickTemperature();
 
-        if (!inventory.get(1).isEmpty() && moltenMetal < MAX_CAPACITY) {
-            smeltProgress++;
+        boolean burning = fuelTime > 0;
+        if (burning) {
+            fuelTime--;
+        }
+        if (getCachedState().get(SmelterBlock.LIT) != burning) {
+            world.setBlockState(pos, getCachedState().with(SmelterBlock.LIT, burning));
+        }
 
-            if (smeltProgress >= SMELT_TIME) {
-                smeltItem();
+        for (int i = 0; i < 3; i++) {
+            tickSmeltSlot(i);
+        }
+
+        if (moltenMetal > 0) {
+            tickFluidDamage();
+        }
+    }
+
+    private void tickTemperature() {
+        if (fuelTime > 0) {
+            if (temperature < maxTemperature) {
+                temperature = Math.min(maxTemperature, (int) (temperature + TEMP_RISE_RATE));
             }
         } else {
-            smeltProgress = 0;
+            if (temperature > 0) {
+                temperature = Math.max(0, (int) (temperature - TEMP_DECAY_RATE));
+            }
         }
-        if (moltenMetal > 0) {
-            Direction facing = getCachedState().get(SmelterBlock.FACING);
-            Direction right = facing.rotateYCounterclockwise();
+    }
 
-            BlockPos p1 = cornerMin.offset(right, 1).offset(facing.getOpposite(), 1);
-            BlockPos p2 = cornerMin.offset(right, structureWidth - 2).offset(facing.getOpposite(), structureDepth - 2);
+    private void tryConsumeFuel() {
+        ItemStack fuel = inventory.get(0);
+        if (fuel.isEmpty() || !AbstractFurnaceBlockEntity.canUseAsFuel(fuel)) {
+            return;
+        }
+        Map<?, Integer> fuelMap = AbstractFurnaceBlockEntity.createFuelTimeMap();
+        Integer time = fuelMap.get(fuel.getItem());
+        if (time == null || time <= 0) {
+            return;
+        }
+        maxFuelTime = time;
+        fuelTime = maxFuelTime;
+        maxTemperature = MoltenHelper.getFuelMaxTemp(fuel);
+        fuel.decrement(1);
+        markDirty();
+    }
 
-            float fluidHeight = getFillPercent() * (structureHeight * 0.8f);
+    private void tickSmeltSlot(int slotIndex) {
+        int invSlot = slotIndex + 1;
+        ItemStack stack = inventory.get(invSlot);
 
-            Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()),
-                    Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
+        if (stack.isEmpty()) {
+            smeltProgress[slotIndex] = 0;
+            smeltTotal[slotIndex] = 0;
+            return;
+        }
 
-            List<LivingEntity> entities = world.getEntitiesByClass(LivingEntity.class, fluidBox, LivingEntity::isAlive);
-            for (LivingEntity entity : entities) {
-                entity.damage(world.getDamageSources().lava(), 4.0f);
-                entity.setOnFireFor(5);
-            }
-            List<ItemEntity> items = world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), entity -> true);
-            for (ItemEntity item : items) {
-                if (!item.isFireImmune()) {
-                    item.discard();
-                }
-            }
+        int type = MoltenHelper.getMetalType(stack);
+        int yield = MoltenHelper.getMetalYield(stack);
+
+        if (type == 0 || yield == 0) {
+            smeltProgress[slotIndex] = 0;
+            smeltTotal[slotIndex] = 0;
+            return;
+        }
+
+        if (moltenMetal > 0 && metalType != type) {
+            smeltProgress[slotIndex] = 0;
+            return;
+        }
+
+        int requiredTemp = MoltenHelper.getRequiredTemp(type);
+        if (temperature < requiredTemp) {
+            if (smeltProgress[slotIndex] > 0) smeltProgress[slotIndex]--;
+            return;
+        }
+
+        if (moltenMetal + yield > getMaxCapacity()) {
+            smeltProgress[slotIndex] = 0;
+            return;
+        }
+
+        if (smeltTotal[slotIndex] == 0) {
+            smeltTotal[slotIndex] = MoltenHelper.getSmeltTime(stack);
+        }
+
+        smeltProgress[slotIndex]++;
+
+        if (smeltProgress[slotIndex] >= smeltTotal[slotIndex]) {
+            moltenMetal += yield;
+            metalType = type;
+            stack.decrement(1);
+            smeltProgress[slotIndex] = 0;
+            smeltTotal[slotIndex] = 0;
+            markDirty();
+        }
+    }
+
+    private void tickFluidDamage() {
+        Direction facing = getCachedState().get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
+
+        BlockPos p1 = cornerMin.offset(right, 1).offset(facing.getOpposite(), 1);
+        BlockPos p2 = cornerMin.offset(right, structureWidth - 2).offset(facing.getOpposite(), structureDepth - 2);
+
+        float fluidHeight = getFillPercent() * (structureHeight * 0.8f);
+
+        Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()),
+                Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
+
+        World world = this.getWorld();
+        assert world != null;
+
+        for (LivingEntity entity : world.getEntitiesByClass(LivingEntity.class, fluidBox, LivingEntity::isAlive)) {
+            entity.damage(world.getDamageSources().lava(), 4.0f);
+            entity.setOnFireFor(5);
+        }
+        for (ItemEntity item : world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), e -> true)) {
+            if (!item.isFireImmune()) item.discard();
         }
     }
 
@@ -201,10 +351,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         for (int w = ConfigInit.CONFIG.smelterMaxWidth; w >= 5; w -= 2) {
             for (int d = ConfigInit.CONFIG.smelterMaxWidth; d >= 5; d--) {
                 for (int h = ConfigInit.CONFIG.smelterMaxHeight; h >= 1; h--) {
-
                     int halfWidth = (w - 1) / 2;
                     BlockPos corner = this.pos.offset(left, halfWidth);
-
                     if (tryValidate(world, corner, facing, w, d, h)) {
                         this.cornerMin = corner;
                         this.structureWidth = w;
@@ -237,7 +385,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     private boolean tryCheckWalls(World world, BlockPos corner, Direction facing, int w, int d, int h) {
         Direction right = facing.rotateYCounterclockwise();
-
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 for (int z = 0; z < d; z++) {
@@ -247,17 +394,81 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
                     if (check.equals(this.pos)) {
                         continue;
                     }
-
                     BlockState state = world.getBlockState(check);
-
                     if (isWall) {
-                        if (!state.isOf(Blocks.STONE_BRICKS)) return false;
+                        if (!state.isOf(Blocks.STONE_BRICKS)) {
+                            return false;
+                        }
                     } else {
-                        if (!state.isAir()) return false;
+                        if (!state.isAir()) {
+                            return false;
+                        }
                     }
                 }
             }
         }
+        return true;
+    }
+
+    private void onStructureFormed() {
+        markDirty();
+    }
+
+    private void onStructureDestroyed() {
+        for (int i = 0; i < 3; i++) {
+            smeltProgress[i] = 0;
+            smeltTotal[i] = 0;
+        }
+        markDirty();
+    }
+
+    @Override
+    public int size() {
+        return 4;
+    }
+
+    @Override
+    public void clear() {
+        inventory.clear();
+        markDirty();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return inventory.stream().allMatch(ItemStack::isEmpty);
+    }
+
+    @Override
+    public ItemStack getStack(int slot) {
+        return inventory.get(slot);
+    }
+
+    @Override
+    public ItemStack removeStack(int slot, int amount) {
+        ItemStack result = Inventories.splitStack(inventory, slot, amount);
+        markDirty();
+        return result;
+    }
+
+    @Override
+    public ItemStack removeStack(int slot) {
+        markDirty();
+        return Inventories.removeStack(inventory, slot);
+    }
+
+    @Override
+    public void setStack(int slot, ItemStack stack) {
+        inventory.set(slot, stack);
+        if (slot >= 1 && slot <= 3) {
+            int i = slot - 1;
+            smeltProgress[i] = 0;
+            smeltTotal[i] = 0;
+        }
+        markDirty();
+    }
+
+    @Override
+    public boolean canPlayerUse(PlayerEntity player) {
         return true;
     }
 
@@ -268,60 +479,10 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     }
 
     private void sendUpdate() {
-        if (this.getWorld() != null) {
-            BlockState state = this.getWorld().getBlockState(this.pos);
-            this.getWorld().updateListeners(this.pos, state, state, 3);
+        if (getWorld() != null) {
+            BlockState state = getWorld().getBlockState(pos);
+            getWorld().updateListeners(pos, state, state, 3);
         }
-    }
-
-    @Override
-    public void clear() {
-        this.inventory.clear();
-        this.markDirty();
-    }
-
-    @Override
-    public int size() {
-        return 4;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        for (ItemStack itemStack : this.inventory) {
-            if (!itemStack.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public ItemStack getStack(int slot) {
-        return this.inventory.get(slot);
-    }
-
-    @Override
-    public ItemStack removeStack(int slot, int amount) {
-        ItemStack result = Inventories.splitStack(this.inventory, slot, 1);
-        this.markDirty();
-        return result;
-    }
-
-    @Override
-    public ItemStack removeStack(int slot) {
-        this.markDirty();
-        return Inventories.removeStack(this.inventory, slot);
-    }
-
-    @Override
-    public void setStack(int slot, ItemStack stack) {
-        this.inventory.set(slot, stack);
-        this.markDirty();
-    }
-
-    @Override
-    public boolean canPlayerUse(PlayerEntity player) {
-        return true;
     }
 
     @Override
@@ -331,51 +492,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     @Override
     public NbtCompound toInitialChunkDataNbt(WrapperLookup registryLookup) {
-        return this.createNbt(registryLookup);
-    }
-
-    private void onStructureFormed() {
-        markDirty();
-    }
-
-    private void onStructureDestroyed() {
-        smeltProgress = 0;
-        markDirty();
-    }
-
-    private void smeltItem() {
-        ItemStack input = inventory.get(1);
-        if (input.isEmpty()) return;
-
-        int yield = getMetalYield(input);
-        int type = getMetalType(input);
-
-        if (moltenMetal > 0 && metalType != type) {
-            smeltProgress = 0;
-            return;
-        }
-
-        if (moltenMetal + yield <= MAX_CAPACITY) {
-            moltenMetal += yield;
-            metalType = type;
-            input.decrement(1);
-            smeltProgress = 0;
-            markDirty();
-        }
-    }
-
-    private int getMetalYield(ItemStack stack) {
-        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.RAW_IRON)) return 144;
-        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.RAW_GOLD)) return 144;
-        if (stack.isOf(Items.IRON_INGOT)) return 144;
-        if (stack.isOf(Items.GOLD_INGOT)) return 144;
-        return 0;
-    }
-
-    private int getMetalType(ItemStack stack) {
-        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.RAW_IRON) || stack.isOf(Items.IRON_INGOT)) return 1;
-        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.RAW_GOLD) || stack.isOf(Items.GOLD_INGOT)) return 2;
-        return 0;
+        return createNbt(registryLookup);
     }
 
     public boolean isFormed() {
@@ -386,22 +503,32 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         return moltenMetal;
     }
 
-    public int getMaxCapacity() {
-        int innerW = structureWidth - 2;
-        int innerD = structureDepth - 2;
-        return innerW * innerD * structureHeight * 1000;
-    }
-
     public int getMetalType() {
         return metalType;
     }
 
-    public float getFillPercent() {
-        return (float) moltenMetal / MAX_CAPACITY;
+    public int getFuelTime() {
+        return fuelTime;
     }
 
-    public int getSmeltProgress() {
-        return smeltProgress;
+    public int getMaxFuelTime() {
+        return maxFuelTime;
+    }
+
+    public int getTemperature() {
+        return temperature;
+    }
+
+    public int getMaxTemperature() {
+        return maxTemperature;
+    }
+
+    public int getSmeltProgress(int i) {
+        return smeltProgress[i];
+    }
+
+    public int getSmeltTotal(int i) {
+        return smeltTotal[i];
     }
 
     public BlockPos getCornerMin() {
@@ -420,4 +547,27 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         return structureDepth;
     }
 
+    public int getMaxCapacity() {
+        int innerW = Math.max(1, structureWidth - 2);
+        int innerD = Math.max(1, structureDepth - 2);
+        return innerW * innerD * structureHeight * 1000;
+    }
+
+    public float getFillPercent() {
+        int cap = getMaxCapacity();
+        return cap > 0 ? (float) moltenMetal / cap : 0f;
+    }
+
+    public boolean isBurning() {
+        return fuelTime > 0;
+    }
+
+    private boolean hasAnyInput() {
+        for (int i = 1; i <= 3; i++) {
+            if (!inventory.get(i).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
