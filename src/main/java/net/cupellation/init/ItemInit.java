@@ -5,10 +5,7 @@ import net.cupellation.CupellationMain;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.component.ComponentType;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
 import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -45,6 +42,6 @@ public class ItemInit {
 
     public static void init() {
         Registry.register(Registries.ITEM_GROUP, CUPELLATION_ITEM_GROUP,
-                FabricItemGroup.builder().icon(() -> new ItemStack(Items.STICK)).displayName(Text.translatable("item.cupellation.item_group")).build());
+                FabricItemGroup.builder().icon(() -> new ItemStack(BlockInit.SMELTER)).displayName(Text.translatable("item.cupellation.item_group")).build());
     }
 }

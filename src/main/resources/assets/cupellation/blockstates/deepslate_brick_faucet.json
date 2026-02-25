@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=south": {
+      "model": "cupellation:block/deepslate_brick_faucet"
+    },
+    "facing=west": {
+      "model": "cupellation:block/deepslate_brick_faucet",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "cupellation:block/deepslate_brick_faucet",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "cupellation:block/deepslate_brick_faucet",
+      "y": 270
+    }
+  }
+}

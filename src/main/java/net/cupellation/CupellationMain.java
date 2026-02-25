@@ -9,6 +9,7 @@ public class CupellationMain implements ModInitializer {
     @Override
     public void onInitialize() {
         ConfigInit.init();
+        CompatInit.init();
         LoaderInit.init();
         EventInit.init();
         BlockInit.init();

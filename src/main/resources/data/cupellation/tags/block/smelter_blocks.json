@@ -1,4 +1,9 @@
 {
   "values": [
+    "minecraft:deepslate_bricks",
+    "minecraft:deepslate_tiles",
+    "minecraft:polished_deepslate",
+    "cupellation:deepslate_brick_glass",
+    "cupellation:deepslate_brick_drain"
   ]
 }

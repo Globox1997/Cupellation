@@ -2,25 +2,38 @@ package net.cupellation.init;
 
 import net.cupellation.CupellationMain;
 import net.cupellation.block.SmelterBlock;
+import net.cupellation.block.SmelterDrain;
+import net.cupellation.block.SmelterFaucet;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.screen.SmelterScreenHandler;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.block.enums.NoteBlockInstrument;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
 
 public class BlockInit {
 
     public static final Block SMELTER = register("smelter", new SmelterBlock(AbstractBlock.Settings.copy(Blocks.FURNACE)));
+    public static final Block DEEPSLATE_BRICK_GLASS = register("deepslate_brick_glass", new TransparentBlock(
+            AbstractBlock.Settings.create().instrument(NoteBlockInstrument.HAT).strength(0.6F).sounds(BlockSoundGroup.DEEPSLATE).nonOpaque().allowsSpawning(Blocks::never).requiresTool()
+                    .solidBlock(Blocks::never).suffocates(Blocks::never).blockVision(Blocks::never)));
+    public static final Block DEEPSLATE_BRICK_DRAIN = register(
+            "deepslate_brick_drain",
+            new SmelterDrain(AbstractBlock.Settings.create().mapColor(MapColor.DEEPSLATE_GRAY).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
+                    .strength(3.0F, 6.0F).sounds(BlockSoundGroup.DEEPSLATE)));
+    public static final Block DEEPSLATE_BRICK_FAUCET = register(
+            "deepslate_brick_faucet",
+            new SmelterFaucet(AbstractBlock.Settings.create().mapColor(MapColor.DEEPSLATE_GRAY).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
+                    .strength(3.0F, 6.0F).sounds(BlockSoundGroup.DEEPSLATE)));
 
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
 

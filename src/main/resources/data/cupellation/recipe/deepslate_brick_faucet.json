@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "d": {
+      "item": "minecraft:deepslate_brick_slab"
+    }
+  },
+  "pattern": [
+    "d d",
+    "ddd"
+  ],
+  "result": {
+    "count": 4,
+    "id": "cupellation:deepslate_brick_faucet"
+  }
+}

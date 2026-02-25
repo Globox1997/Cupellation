@@ -7,6 +7,7 @@ import net.cupellation.data.SmelterData;
 import net.cupellation.data.SmelterItemData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
+import net.cupellation.init.TagInit;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
@@ -392,7 +393,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         for (int x = 0; x < w; x++)
             for (int z = 0; z < d; z++) {
                 BlockPos check = corner.down().offset(right, x).offset(facing.getOpposite(), z);
-                if (!world.getBlockState(check).isOf(Blocks.STONE_BRICKS)) {
+                if (!world.getBlockState(check).isIn(TagInit.SMELTER_BLOCKS)) {
                     return false;
                 }
             }
@@ -408,18 +409,14 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                     boolean isWall = (x == 0 || x == w - 1 || z == 0 || z == d - 1);
                     if (check.equals(this.pos)) continue;
                     BlockState state = world.getBlockState(check);
-                    if (isWall && !state.isOf(Blocks.STONE_BRICKS)) return false;
-                    if (!isWall && !state.isAir()) return false;
+                    if (isWall && !state.isIn(TagInit.SMELTER_BLOCKS)) {
+                        return false;
+                    }
+                    if (!isWall && !state.isAir()) {
+                        return false;
+                    }
                 }
         return true;
-    }
-
-    private int getFuelMaxTemp(ItemStack fuel) {
-        int temp = SmelterData.getFuelMaxTemp(fuel.getItem());
-        if (temp >= 0) {
-            return temp;
-        }
-        return 600;
     }
 
     private void onStructureFormed() {

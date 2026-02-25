@@ -18,6 +18,7 @@ public class RenderInit {
     public static void init() {
         BlockEntityRendererFactories.register(BlockInit.SMELTER_ENTITY, SmelterBlockRenderer::new);
         BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.SMELTER, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_GLASS, RenderLayer.getCutout());
 
         HandledScreens.register(BlockInit.SMELTER_SCREEN_HANDLER, SmelterScreen::new);
 
