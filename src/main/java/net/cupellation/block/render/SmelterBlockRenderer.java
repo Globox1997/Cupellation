@@ -21,6 +21,8 @@ import org.joml.Matrix4f;
 @Environment(EnvType.CLIENT)
 public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEntity> {
 
+    private enum FaceDirection {TOP, BOTTOM, NORTH, SOUTH, WEST, EAST}
+
     public SmelterBlockRenderer(BlockEntityRendererFactory.Context ctx) {
     }
 
@@ -61,39 +63,104 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float minU = sprite.getMinU(), maxU = sprite.getMaxU();
         float minV = sprite.getMinV(), maxV = sprite.getMaxV();
 
-        vertex(consumer, matrix, x0, y1, z1, r, g, b, minU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y1, z1, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y1, z0, r, g, b, maxU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x0, y1, z0, r, g, b, minU, minV, lightFull, overlay);
-
-        vertex(consumer, matrix, x0, y0, z0, r, g, b, minU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y0, z0, r, g, b, maxU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y0, z1, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x0, y0, z1, r, g, b, minU, maxV, lightFull, overlay);
-
         float e = 0.001f;
-
-        vertex(consumer, matrix, x1, y0, z0 + e, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x0, y0, z0 + e, r, g, b, minU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x0, y1, z0 + e, r, g, b, minU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y1, z0 + e, r, g, b, maxU, minV, lightFull, overlay);
-
-        vertex(consumer, matrix, x0, y0, z1 - e, r, g, b, minU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y0, z1 - e, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x1, y1, z1 - e, r, g, b, maxU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x0, y1, z1 - e, r, g, b, minU, minV, lightFull, overlay);
-
-        vertex(consumer, matrix, x0 + e, y0, z0, r, g, b, minU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x0 + e, y0, z1, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x0 + e, y1, z1, r, g, b, maxU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x0 + e, y1, z0, r, g, b, minU, minV, lightFull, overlay);
-
-        vertex(consumer, matrix, x1 - e, y0, z1, r, g, b, minU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x1 - e, y0, z0, r, g, b, maxU, maxV, lightFull, overlay);
-        vertex(consumer, matrix, x1 - e, y1, z0, r, g, b, maxU, minV, lightFull, overlay);
-        vertex(consumer, matrix, x1 - e, y1, z1, r, g, b, minU, minV, lightFull, overlay);
-
+        renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e, FaceDirection.NORTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        renderTiledFace(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e, FaceDirection.SOUTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        renderTiledFace(consumer, matrix, x0 + e, y0, z0, x0 + e, y1, z1, FaceDirection.WEST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        renderTiledFace(consumer, matrix, x1 - e, y0, z0, x1 - e, y1, z1, FaceDirection.EAST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
         matrices.pop();
+    }
+
+    private void renderTiledFace(VertexConsumer consumer, Matrix4f matrix, float x0, float y0, float z0, float x1, float y1, float z1, FaceDirection face,
+                                 float r, float g, float b, float minU, float maxU, float minV, float maxV, int light, int overlay) {
+        switch (face) {
+            case TOP -> {
+                for (float tx = 0; tx < (x1 - x0); tx++) {
+                    for (float tz = 0; tz < (z1 - z0); tz++) {
+                        float ax0 = x0 + tx, ax1 = Math.min(x0 + tx + 1, x1);
+                        float az0 = z0 + tz, az1 = Math.min(z0 + tz + 1, z1);
+                        float u1 = minU + (maxU - minU) * (ax1 - ax0);
+                        float v1 = minV + (maxV - minV) * (az1 - az0);
+                        vertex(consumer, matrix, ax0, y1, az0, r, g, b, minU, minV, light, overlay);
+                        vertex(consumer, matrix, ax0, y1, az1, r, g, b, minU, v1, light, overlay);
+                        vertex(consumer, matrix, ax1, y1, az1, r, g, b, u1, v1, light, overlay);
+                        vertex(consumer, matrix, ax1, y1, az0, r, g, b, u1, minV, light, overlay);
+                    }
+                }
+            }
+            case BOTTOM -> {
+                for (float tx = 0; tx < (x1 - x0); tx++) {
+                    for (float tz = 0; tz < (z1 - z0); tz++) {
+                        float ax0 = x0 + tx, ax1 = Math.min(x0 + tx + 1, x1);
+                        float az0 = z0 + tz, az1 = Math.min(z0 + tz + 1, z1);
+                        float u1 = minU + (maxU - minU) * (ax1 - ax0);
+                        float v1 = minV + (maxV - minV) * (az1 - az0);
+                        vertex(consumer, matrix, ax0, y0, az1, r, g, b, minU, v1, light, overlay);
+                        vertex(consumer, matrix, ax0, y0, az0, r, g, b, minU, minV, light, overlay);
+                        vertex(consumer, matrix, ax1, y0, az0, r, g, b, u1, minV, light, overlay);
+                        vertex(consumer, matrix, ax1, y0, az1, r, g, b, u1, v1, light, overlay);
+                    }
+                }
+            }
+            case NORTH -> {
+                for (float tx = 0; tx < (x1 - x0); tx++) {
+                    for (float ty = 0; ty < (y1 - y0); ty++) {
+                        float ax0 = x0 + tx, ax1 = Math.min(x0 + tx + 1, x1);
+                        float ay0 = y0 + ty, ay1 = Math.min(y0 + ty + 1, y1);
+                        float u1 = minU + (maxU - minU) * (ax1 - ax0);
+                        float v0 = maxV - (maxV - minV) * (ay1 - ay0);
+                        vertex(consumer, matrix, ax1, ay0, z0, r, g, b, u1, maxV, light, overlay);
+                        vertex(consumer, matrix, ax0, ay0, z0, r, g, b, minU, maxV, light, overlay);
+                        vertex(consumer, matrix, ax0, ay1, z0, r, g, b, minU, v0, light, overlay);
+                        vertex(consumer, matrix, ax1, ay1, z0, r, g, b, u1, v0, light, overlay);
+                    }
+                }
+            }
+            case SOUTH -> {
+                for (float tx = 0; tx < (x1 - x0); tx++) {
+                    for (float ty = 0; ty < (y1 - y0); ty++) {
+                        float ax0 = x0 + tx, ax1 = Math.min(x0 + tx + 1, x1);
+                        float ay0 = y0 + ty, ay1 = Math.min(y0 + ty + 1, y1);
+                        float u1 = minU + (maxU - minU) * (ax1 - ax0);
+                        float v0 = maxV - (maxV - minV) * (ay1 - ay0);
+                        vertex(consumer, matrix, ax0, ay0, z1, r, g, b, minU, maxV, light, overlay);
+                        vertex(consumer, matrix, ax1, ay0, z1, r, g, b, u1, maxV, light, overlay);
+                        vertex(consumer, matrix, ax1, ay1, z1, r, g, b, u1, v0, light, overlay);
+                        vertex(consumer, matrix, ax0, ay1, z1, r, g, b, minU, v0, light, overlay);
+                    }
+                }
+            }
+            case WEST -> {
+                for (float tz = 0; tz < (z1 - z0); tz++) {
+                    for (float ty = 0; ty < (y1 - y0); ty++) {
+                        float az0 = z0 + tz, az1 = Math.min(z0 + tz + 1, z1);
+                        float ay0 = y0 + ty, ay1 = Math.min(y0 + ty + 1, y1);
+                        float u1 = minU + (maxU - minU) * (az1 - az0);
+                        float v0 = maxV - (maxV - minV) * (ay1 - ay0);
+                        vertex(consumer, matrix, x0, ay0, az0, r, g, b, minU, maxV, light, overlay);
+                        vertex(consumer, matrix, x0, ay0, az1, r, g, b, u1, maxV, light, overlay);
+                        vertex(consumer, matrix, x0, ay1, az1, r, g, b, u1, v0, light, overlay);
+                        vertex(consumer, matrix, x0, ay1, az0, r, g, b, minU, v0, light, overlay);
+                    }
+                }
+            }
+            case EAST -> {
+                for (float tz = 0; tz < (z1 - z0); tz++) {
+                    for (float ty = 0; ty < (y1 - y0); ty++) {
+                        float az0 = z0 + tz, az1 = Math.min(z0 + tz + 1, z1);
+                        float ay0 = y0 + ty, ay1 = Math.min(y0 + ty + 1, y1);
+                        float u1 = minU + (maxU - minU) * (az1 - az0);
+                        float v0 = maxV - (maxV - minV) * (ay1 - ay0);
+                        vertex(consumer, matrix, x1, ay0, az1, r, g, b, u1, maxV, light, overlay);
+                        vertex(consumer, matrix, x1, ay0, az0, r, g, b, minU, maxV, light, overlay);
+                        vertex(consumer, matrix, x1, ay1, az0, r, g, b, minU, v0, light, overlay);
+                        vertex(consumer, matrix, x1, ay1, az1, r, g, b, u1, v0, light, overlay);
+                    }
+                }
+            }
+        }
     }
 
     private void vertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, float r, float g, float b, float u, float v, int light, int overlay) {
