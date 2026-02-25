@@ -33,9 +33,20 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     try (InputStream stream = resource.getInputStream()) {
                         JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
                         SmelterItemData data = parseItem(json);
-                        if (data != null) {
+                        if (data == null) return;
+
+                        boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
+
+                        if (items.containsKey(data.itemId())) {
+                            if (replace) {
+                                items.put(data.itemId(), data);
+                                LOGGER.info("[Smelter] Replaced item: {} (from {})", data.itemId(), id);
+                            } else {
+                                LOGGER.info("[Smelter] Skipped duplicate item: {} (from {}), use replace=true to override", data.itemId(), id);
+                            }
+                        } else {
                             items.put(data.itemId(), data);
-                            LOGGER.info("[Smelter] Loaded item: {}", data.itemId());
+                            LOGGER.info("[Smelter] Loaded item: {} (from {})", data.itemId(), id);
                         }
                     } catch (Exception e) {
                         LOGGER.error("[Smelter] Failed to load item file {}: {}", id, e.toString());
@@ -47,9 +58,20 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     try (InputStream stream = resource.getInputStream()) {
                         JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
                         MetalTypeData data = parseMetal(json);
-                        if (data != null) {
+                        if (data == null) return;
+
+                        boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
+
+                        if (metals.containsKey(data.id())) {
+                            if (replace) {
+                                metals.put(data.id(), data);
+                                LOGGER.info("[Smelter] Replaced metal type: {} (from {})", data.id(), id);
+                            } else {
+                                LOGGER.info("[Smelter] Skipped duplicate metal type: {} (from {}), use replace=true to override", data.id(), id);
+                            }
+                        } else {
                             metals.put(data.id(), data);
-                            LOGGER.info("[Smelter] Loaded metal type: {}", data.id());
+                            LOGGER.info("[Smelter] Loaded metal type: {} (from {})", data.id(), id);
                         }
                     } catch (Exception e) {
                         LOGGER.error("[Smelter] Failed to load metal file {}: {}", id, e.toString());
@@ -67,13 +89,8 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             LOGGER.warn("[Smelter] Item JSON missing required fields, skipping.");
             return null;
         }
-
-        Identifier itemId = Identifier.of(json.get("item").getAsString());
-        Identifier metalTypeId = Identifier.of(json.get("metal_type").getAsString());
-        int smeltTime = json.get("smelt_time").getAsInt();
-        int yield = json.get("yield").getAsInt();
-
-        return new SmelterItemData(itemId, metalTypeId, smeltTime, yield);
+        return new SmelterItemData(Identifier.of(json.get("item").getAsString()),
+                Identifier.of(json.get("metal_type").getAsString()), json.get("smelt_time").getAsInt(), json.get("yield").getAsInt());
     }
 
     private MetalTypeData parseMetal(JsonObject json) {
@@ -81,19 +98,11 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             LOGGER.warn("[Smelter] Metal JSON missing required fields, skipping.");
             return null;
         }
-
-        Identifier id = Identifier.of(json.get("id").getAsString());
-        String name = json.get("name").getAsString();
-        int requiredTemp = json.get("required_temp").getAsInt();
-        int color = parseColor(json.get("color").getAsString());
-        Identifier texture = Identifier.of(json.get("texture").getAsString());
-
-        return new MetalTypeData(id, name, requiredTemp, color, texture);
+        return new MetalTypeData(Identifier.of(json.get("id").getAsString()), json.get("name").getAsString(), json.get("required_temp").getAsInt(),
+                parseColor(json.get("color").getAsString()), Identifier.of(json.get("texture").getAsString()));
     }
 
     private int parseColor(String hex) {
-        hex = hex.replace("#", "");
-        return (int) Long.parseLong(hex, 16);
+        return (int) Long.parseLong(hex.replace("#", ""), 16);
     }
-
 }

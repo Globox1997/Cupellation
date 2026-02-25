@@ -19,5 +19,7 @@
   "text.autoconfig.cupellation.option.smelterMaxHeight": "Smelter Max Height",
   "text.autoconfig.cupellation.option.lowGradeDurability": "Low Grade Durability",
   "text.autoconfig.cupellation.option.midGradeDurability": "Mid Grade Durability",
-  "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability"
+  "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability",
+
+  "block.cupellation.smelter.incorrect": "Smelter is not built correctly!"
 }

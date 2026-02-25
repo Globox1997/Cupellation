@@ -4,7 +4,9 @@ import net.cupellation.CupellationMain;
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.screen.SmelterScreenHandler;
+import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -13,7 +15,6 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
-import net.minecraft.resource.featuretoggle.FeatureFlags;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
 
@@ -24,7 +25,8 @@ public class BlockInit {
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
 
     public static final ScreenHandlerType<SmelterScreenHandler> SMELTER_SCREEN_HANDLER =
-            Registry.register(Registries.SCREEN_HANDLER, CupellationMain.identifierOf("smelter"), new ScreenHandlerType<>(SmelterScreenHandler::new, FeatureFlags.VANILLA_FEATURES));
+            Registry.register(Registries.SCREEN_HANDLER, CupellationMain.identifierOf("smelter"),
+                    new ExtendedScreenHandlerType<>(SmelterScreenHandler::new, SmelterScreenPacket.CODEC));
 
     private static Block register(String id, Block block) {
         return register(CupellationMain.identifierOf(id), block);

@@ -1,9 +1,14 @@
 package net.cupellation.block.entity;
 
 import net.cupellation.block.SmelterBlock;
+import net.cupellation.block.screen.SmelterScreenHandler;
+import net.cupellation.data.SmelterData;
+import net.cupellation.data.SmelterItemData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.misc.MoltenHelper;
+import net.cupellation.network.packet.SmelterScreenPacket;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
@@ -11,6 +16,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -18,6 +24,10 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.screen.PropertyDelegate;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -26,7 +36,7 @@ import net.minecraft.world.World;
 
 import java.util.Map;
 
-public class SmelterBlockEntity extends BlockEntity implements Inventory {
+public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
     private DefaultedList<ItemStack> inventory;
 
@@ -40,14 +50,14 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     private static final int VALIDATE_INTERVAL = 40;
 
     private int moltenMetal = 0;
-    private int metalType = 0;
+
+    private Identifier metalTypeId = null;
 
     private int fuelTime = 0;
     private int maxFuelTime = 0;
 
     private int temperature = 0;
     private int maxTemperature = 0;
-    private static final int TEMP_MAX_ABSOLUTE = 1600;
     private static final float TEMP_RISE_RATE = 1.5f;
     private static final float TEMP_DECAY_RATE = 0.5f;
 
@@ -58,19 +68,18 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     private static final int PROP_MOLTEN_METAL_HIGH = 1;
     private static final int PROP_MAX_CAP_LOW = 2;
     private static final int PROP_MAX_CAP_HIGH = 3;
-    private static final int PROP_METAL_TYPE = 4;
-    private static final int PROP_IS_FORMED = 5;
-    private static final int PROP_FUEL_TIME = 6;
-    private static final int PROP_MAX_FUEL_TIME = 7;
-    private static final int PROP_TEMPERATURE = 8;
-    private static final int PROP_MAX_TEMPERATURE = 9;
-    private static final int PROP_SMELT_PROGRESS_0 = 10;
-    private static final int PROP_SMELT_PROGRESS_1 = 11;
-    private static final int PROP_SMELT_PROGRESS_2 = 12;
-    private static final int PROP_SMELT_TOTAL_0 = 13;
-    private static final int PROP_SMELT_TOTAL_1 = 14;
-    private static final int PROP_SMELT_TOTAL_2 = 15;
-    private static final int PROP_COUNT = 16;
+    private static final int PROP_IS_FORMED = 4;
+    private static final int PROP_FUEL_TIME = 5;
+    private static final int PROP_MAX_FUEL_TIME = 6;
+    private static final int PROP_TEMPERATURE = 7;
+    private static final int PROP_MAX_TEMPERATURE = 8;
+    private static final int PROP_SMELT_PROGRESS_0 = 9;
+    private static final int PROP_SMELT_PROGRESS_1 = 10;
+    private static final int PROP_SMELT_PROGRESS_2 = 11;
+    private static final int PROP_SMELT_TOTAL_0 = 12;
+    private static final int PROP_SMELT_TOTAL_1 = 13;
+    private static final int PROP_SMELT_TOTAL_2 = 14;
+    private static final int PROP_COUNT = 15;
 
     public final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
@@ -81,7 +90,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
                 case PROP_MOLTEN_METAL_HIGH -> (moltenMetal >> 16) & 0xFFFF;
                 case PROP_MAX_CAP_LOW -> cap & 0xFFFF;
                 case PROP_MAX_CAP_HIGH -> (cap >> 16) & 0xFFFF;
-                case PROP_METAL_TYPE -> metalType;
                 case PROP_IS_FORMED -> isFormed ? 1 : 0;
                 case PROP_FUEL_TIME -> fuelTime;
                 case PROP_MAX_FUEL_TIME -> maxFuelTime;
@@ -102,7 +110,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             switch (index) {
                 case PROP_MOLTEN_METAL_LOW -> moltenMetal = (moltenMetal & 0xFFFF0000) | (value & 0xFFFF);
                 case PROP_MOLTEN_METAL_HIGH -> moltenMetal = (moltenMetal & 0x0000FFFF) | ((value & 0xFFFF) << 16);
-                case PROP_METAL_TYPE -> metalType = value;
                 case PROP_IS_FORMED -> isFormed = (value == 1);
                 case PROP_FUEL_TIME -> fuelTime = value;
                 case PROP_MAX_FUEL_TIME -> maxFuelTime = value;
@@ -136,7 +143,13 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
         isFormed = nbt.getBoolean("isFormed");
         moltenMetal = nbt.getInt("moltenMetal");
-        metalType = nbt.getInt("metalType");
+
+        if (nbt.contains("metalTypeId") && !nbt.getString("metalTypeId").isEmpty()) {
+            metalTypeId = Identifier.of(nbt.getString("metalTypeId"));
+        } else {
+            metalTypeId = null;
+        }
+
         fuelTime = nbt.getInt("fuelTime");
         maxFuelTime = nbt.getInt("maxFuelTime");
         temperature = nbt.getInt("temperature");
@@ -162,7 +175,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
         nbt.putBoolean("isFormed", isFormed);
         nbt.putInt("moltenMetal", moltenMetal);
-        nbt.putInt("metalType", metalType);
+        nbt.putString("metalTypeId", metalTypeId != null ? metalTypeId.toString() : "");
         nbt.putInt("fuelTime", fuelTime);
         nbt.putInt("maxFuelTime", maxFuelTime);
         nbt.putInt("temperature", temperature);
@@ -183,16 +196,15 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         nbt.putInt("structureHeight", structureHeight);
     }
 
-    public static void clientTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity be) {
-        be.clientTick();
+    public static void clientTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity blockEntity) {
+        blockEntity.clientTick();
     }
 
-    public static void serverTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity be) {
-        be.serverTick();
+    public static void serverTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity blockEntity) {
+        blockEntity.serverTick();
     }
 
     private void clientTick() {
-
     }
 
     private void serverTick() {
@@ -206,24 +218,17 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             if (!wasFormed && isFormed) onStructureFormed();
         }
 
-        if (!isFormed) {
-            return;
-        }
-        boolean hasAnyInput = hasAnyInput();
-        boolean tankFull = moltenMetal >= getMaxCapacity();
+        if (!isFormed) return;
 
-        if (hasAnyInput && !tankFull) {
-            if (fuelTime <= 0) {
-                tryConsumeFuel();
-            }
+        if (hasAnyInput() && moltenMetal < getMaxCapacity()) {
+            if (fuelTime <= 0) tryConsumeFuel();
         }
 
         tickTemperature();
 
         boolean burning = fuelTime > 0;
-        if (burning) {
-            fuelTime--;
-        }
+        if (burning) fuelTime--;
+
         if (getCachedState().get(SmelterBlock.LIT) != burning) {
             world.setBlockState(pos, getCachedState().with(SmelterBlock.LIT, burning));
         }
@@ -232,33 +237,27 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             tickSmeltSlot(i);
         }
 
-        if (moltenMetal > 0) {
-            tickFluidDamage();
-        }
+        if (moltenMetal > 0) tickFluidDamage();
     }
 
     private void tickTemperature() {
         if (fuelTime > 0) {
-            if (temperature < maxTemperature) {
+            if (temperature < maxTemperature)
                 temperature = Math.min(maxTemperature, (int) (temperature + TEMP_RISE_RATE));
-            }
         } else {
-            if (temperature > 0) {
+            if (temperature > 0)
                 temperature = Math.max(0, (int) (temperature - TEMP_DECAY_RATE));
-            }
         }
     }
 
     private void tryConsumeFuel() {
         ItemStack fuel = inventory.get(0);
-        if (fuel.isEmpty() || !AbstractFurnaceBlockEntity.canUseAsFuel(fuel)) {
-            return;
-        }
+        if (fuel.isEmpty() || !AbstractFurnaceBlockEntity.canUseAsFuel(fuel)) return;
+
         Map<?, Integer> fuelMap = AbstractFurnaceBlockEntity.createFuelTimeMap();
         Integer time = fuelMap.get(fuel.getItem());
-        if (time == null || time <= 0) {
-            return;
-        }
+        if (time == null || time <= 0) return;
+
         maxFuelTime = time;
         fuelTime = maxFuelTime;
         maxTemperature = MoltenHelper.getFuelMaxTemp(fuel);
@@ -276,43 +275,46 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
             return;
         }
 
-        int type = MoltenHelper.getMetalType(stack);
-        int yield = MoltenHelper.getMetalYield(stack);
-
-        if (type == 0 || yield == 0) {
+        SmelterItemData data = SmelterData.getItemData(stack.getItem());
+        if (data == null) {
             smeltProgress[slotIndex] = 0;
             smeltTotal[slotIndex] = 0;
             return;
         }
 
-        if (moltenMetal > 0 && metalType != type) {
+        Identifier itemMetalType = data.metalTypeId();
+
+        if (metalTypeId != null && !metalTypeId.equals(itemMetalType)) {
             smeltProgress[slotIndex] = 0;
             return;
         }
 
-        int requiredTemp = MoltenHelper.getRequiredTemp(type);
+        int requiredTemp = SmelterData.getRequiredTemp(itemMetalType);
         if (temperature < requiredTemp) {
             if (smeltProgress[slotIndex] > 0) smeltProgress[slotIndex]--;
             return;
         }
 
-        if (moltenMetal + yield > getMaxCapacity()) {
+        if (moltenMetal + data.yield() > getMaxCapacity()) {
             smeltProgress[slotIndex] = 0;
             return;
         }
 
         if (smeltTotal[slotIndex] == 0) {
-            smeltTotal[slotIndex] = MoltenHelper.getSmeltTime(stack);
+            smeltTotal[slotIndex] = data.smeltTime();
         }
 
         smeltProgress[slotIndex]++;
 
         if (smeltProgress[slotIndex] >= smeltTotal[slotIndex]) {
-            moltenMetal += yield;
-            metalType = type;
+            moltenMetal += data.yield();
+            metalTypeId = itemMetalType;
             stack.decrement(1);
             smeltProgress[slotIndex] = 0;
             smeltTotal[slotIndex] = 0;
+            if (moltenMetal <= 0) {
+                metalTypeId = null;
+            }
             markDirty();
         }
     }
@@ -372,41 +374,28 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     private boolean tryCheckBottom(World world, BlockPos corner, Direction facing, int w, int d) {
         Direction right = facing.rotateYCounterclockwise();
-        for (int x = 0; x < w; x++) {
+        for (int x = 0; x < w; x++)
             for (int z = 0; z < d; z++) {
                 BlockPos check = corner.down().offset(right, x).offset(facing.getOpposite(), z);
                 if (!world.getBlockState(check).isOf(Blocks.STONE_BRICKS)) {
                     return false;
                 }
             }
-        }
         return true;
     }
 
     private boolean tryCheckWalls(World world, BlockPos corner, Direction facing, int w, int d, int h) {
         Direction right = facing.rotateYCounterclockwise();
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
                 for (int z = 0; z < d; z++) {
                     BlockPos check = corner.offset(right, x).offset(facing.getOpposite(), z).up(y);
                     boolean isWall = (x == 0 || x == w - 1 || z == 0 || z == d - 1);
-
-                    if (check.equals(this.pos)) {
-                        continue;
-                    }
+                    if (check.equals(this.pos)) continue;
                     BlockState state = world.getBlockState(check);
-                    if (isWall) {
-                        if (!state.isOf(Blocks.STONE_BRICKS)) {
-                            return false;
-                        }
-                    } else {
-                        if (!state.isAir()) {
-                            return false;
-                        }
-                    }
+                    if (isWall && !state.isOf(Blocks.STONE_BRICKS)) return false;
+                    if (!isWall && !state.isAir()) return false;
                 }
-            }
-        }
         return true;
     }
 
@@ -460,9 +449,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     public void setStack(int slot, ItemStack stack) {
         inventory.set(slot, stack);
         if (slot >= 1 && slot <= 3) {
-            int i = slot - 1;
-            smeltProgress[i] = 0;
-            smeltTotal[i] = 0;
+            smeltProgress[slot - 1] = 0;
+            smeltTotal[slot - 1] = 0;
         }
         markDirty();
     }
@@ -475,13 +463,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
     @Override
     public void markDirty() {
         super.markDirty();
-        sendUpdate();
-    }
-
-    private void sendUpdate() {
-        if (getWorld() != null) {
-            BlockState state = getWorld().getBlockState(pos);
-            getWorld().updateListeners(pos, state, state, 3);
+        if (this.getWorld() != null) {
+            BlockState state = this.getWorld().getBlockState(pos);
+            this.getWorld().updateListeners(pos, state, state, 3);
         }
     }
 
@@ -492,7 +476,22 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
 
     @Override
     public NbtCompound toInitialChunkDataNbt(WrapperLookup registryLookup) {
-        return createNbt(registryLookup);
+        return this.createNbt(registryLookup);
+    }
+
+    @Override
+    public Text getDisplayName() {
+        return Text.translatable("block.cupellation.smelter");
+    }
+
+    @Override
+    public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
+        return new SmelterScreenHandler(syncId, playerInventory, this, this.propertyDelegate, this.pos);
+    }
+
+    @Override
+    public SmelterScreenPacket getScreenOpeningData(ServerPlayerEntity player) {
+        return new SmelterScreenPacket(this.pos);
     }
 
     public boolean isFormed() {
@@ -503,8 +502,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         return moltenMetal;
     }
 
-    public int getMetalType() {
-        return metalType;
+    public Identifier getMetalTypeId() {
+        return metalTypeId;
     }
 
     public int getFuelTime() {
@@ -547,6 +546,10 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         return structureDepth;
     }
 
+    public boolean isBurning() {
+        return fuelTime > 0;
+    }
+
     public int getMaxCapacity() {
         int innerW = Math.max(1, structureWidth - 2);
         int innerD = Math.max(1, structureDepth - 2);
@@ -558,16 +561,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory {
         return cap > 0 ? (float) moltenMetal / cap : 0f;
     }
 
-    public boolean isBurning() {
-        return fuelTime > 0;
-    }
-
     private boolean hasAnyInput() {
-        for (int i = 1; i <= 3; i++) {
-            if (!inventory.get(i).isEmpty()) {
-                return true;
-            }
-        }
+        for (int i = 1; i <= 3; i++) if (!inventory.get(i).isEmpty()) return true;
         return false;
     }
 }

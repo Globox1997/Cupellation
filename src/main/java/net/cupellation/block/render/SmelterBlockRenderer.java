@@ -2,7 +2,7 @@ package net.cupellation.block.render;
 
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.entity.SmelterBlockEntity;
-import net.cupellation.misc.MoltenHelper;
+import net.cupellation.data.SmelterData;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -14,6 +14,7 @@ import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.screen.PlayerScreenHandler;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
@@ -30,7 +31,8 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
     public void render(SmelterBlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (!blockEntity.isFormed() || blockEntity.getMoltenMetal() <= 0) return;
 
-        Sprite sprite = getFluidSprite(blockEntity.getMetalType());
+        Identifier metalTypeId = blockEntity.getMetalTypeId();
+        Sprite sprite = getFluidSprite(metalTypeId);
         Direction facing = blockEntity.getCachedState().get(SmelterBlock.FACING);
 
         int lightFull = 15 << 4 | 15 << 20;
@@ -39,7 +41,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float innerD = blockEntity.getStructureDepth() - 2f;
         float fillHeight = blockEntity.getFillPercent() * blockEntity.getStructureHeight() * 0.8f + 0.05f;
 
-        int color = MoltenHelper.getMoltenColor(blockEntity.getMetalType());
+        int color = SmelterData.getColor(metalTypeId);
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
@@ -167,8 +169,9 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         consumer.vertex(matrix, x, y, z).color(r, g, b, 1.0f).texture(u, v).overlay(overlay).light(light).normal(0, 1, 0);
     }
 
-    private Sprite getFluidSprite(int metalType) {
-        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(MoltenHelper.getMoltenSpriteId(metalType));
+    private Sprite getFluidSprite(Identifier metalTypeId) {
+        Identifier textureId = SmelterData.getTexture(metalTypeId);
+        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(textureId);
     }
 
 }
