@@ -19,7 +19,7 @@ public class AbstractFurnaceBlockEntityMixin {
     @WrapOperation(method = "craftRecipe", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;copy()Lnet/minecraft/item/ItemStack;"))
     private static ItemStack craftRecipeMixin(ItemStack instance, Operation<ItemStack> original, DynamicRegistryManager registryManager, @Nullable RecipeEntry<?> recipe, DefaultedList<ItemStack> slots, int count) {
         ItemStack itemStack = slots.get(0);
-        if (SmelterData.getItemData(itemStack.getItem()) != null) {
+        if (SmelterData.hasItem(itemStack.getItem())) {
             instance.set(ItemInit.QUALITY_GRADE, 1);
         }
         return original.call(instance);

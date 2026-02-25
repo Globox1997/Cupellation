@@ -7,7 +7,6 @@ import net.cupellation.data.SmelterData;
 import net.cupellation.data.SmelterItemData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
-import net.cupellation.misc.MoltenHelper;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
@@ -35,11 +34,11 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
-import java.util.Map;
-
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
     // TODO: When too hot at casting process, it will just evaporate with smoke
+    // Tell max temperature at screen
+    // Tell grade info at screen
 
     private DefaultedList<ItemStack> inventory;
 

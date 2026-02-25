@@ -2,6 +2,7 @@ package net.cupellation.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import net.cupellation.data.SmelterData;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.ItemInit;
 import net.minecraft.component.DataComponentTypes;
@@ -17,20 +18,26 @@ public class ShapedRecipeMixin {
 
     @WrapOperation(method = "craft(Lnet/minecraft/recipe/input/CraftingRecipeInput;Lnet/minecraft/registry/RegistryWrapper$WrapperLookup;)Lnet/minecraft/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;copy()Lnet/minecraft/item/ItemStack;"))
     private ItemStack craftMixin(ItemStack instance, Operation<ItemStack> original, CraftingRecipeInput craftingRecipeInput, RegistryWrapper.WrapperLookup wrapperLookup) {
-        if (instance.isDamageable()) {
-            int totalQuality = 0;
-            int count = 0;
-            for (int i = 0; i < craftingRecipeInput.getSize(); i++) {
-                ItemStack ingredient = craftingRecipeInput.getStackInSlot(i);
-                if (!ingredient.isEmpty() && ingredient.contains(ItemInit.QUALITY_GRADE)) {
+
+        int totalQuality = 0;
+        int count = 0;
+        for (int i = 0; i < craftingRecipeInput.getSize(); i++) {
+            ItemStack ingredient = craftingRecipeInput.getStackInSlot(i);
+            if (!ingredient.isEmpty()) {
+                if (ingredient.contains(ItemInit.QUALITY_GRADE)) {
                     totalQuality += ingredient.get(ItemInit.QUALITY_GRADE);
+                    count++;
+                } else if (SmelterData.hasItem(ingredient.getItem())) {
+                    totalQuality += 1;
                     count++;
                 }
             }
-            if (count > 0) {
-                int finalQuality = totalQuality / count;
-                instance.set(ItemInit.QUALITY_GRADE, finalQuality);
+        }
+        if (count > 0) {
+            int finalQuality = totalQuality / count;
+            instance.set(ItemInit.QUALITY_GRADE, finalQuality);
 
+            if (instance.isDamageable()) {
                 int maxDamage = instance.getMaxDamage();
                 int newDurability = switch (finalQuality) {
                     case 1 -> maxDamage * (100 - ConfigInit.CONFIG.lowGradeDurability) / 100;
@@ -40,8 +47,8 @@ public class ShapedRecipeMixin {
                 };
 
                 instance.set(DataComponentTypes.MAX_DAMAGE, newDurability);
-
             }
+
         }
         return original.call(instance);
     }

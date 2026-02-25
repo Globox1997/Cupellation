@@ -95,7 +95,7 @@ public class SmelterScreenHandler extends ScreenHandler {
                         return ItemStack.EMPTY;
                     }
 
-                } else if (SmelterData.getItemData(originalStack.getItem()) != null) {
+                } else if (SmelterData.hasItem(originalStack.getItem())) {
                     if (!this.insertItem(originalStack, 1, 4, false)) {
                         return ItemStack.EMPTY;
                     }
@@ -225,7 +225,7 @@ public class SmelterScreenHandler extends ScreenHandler {
 
         @Override
         public boolean canInsert(ItemStack stack) {
-            return SmelterData.getItemData(stack.getItem()) != null;
+            return SmelterData.hasItem(stack.getItem());
         }
     }
 }
