@@ -1,6 +1,7 @@
 package net.cupellation;
 
 import net.cupellation.init.RenderInit;
+import net.cupellation.network.CupellationClientPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -10,5 +11,6 @@ public class CupellationClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         RenderInit.init();
+        CupellationClientPacket.init();
     }
 }

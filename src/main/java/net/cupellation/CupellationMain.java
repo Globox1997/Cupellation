@@ -1,9 +1,7 @@
 package net.cupellation;
 
-import net.cupellation.init.BlockInit;
-import net.cupellation.init.ConfigInit;
-import net.cupellation.init.ItemInit;
-import net.cupellation.init.TagInit;
+import net.cupellation.init.*;
+import net.cupellation.network.CupellationServerPacket;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 
@@ -11,9 +9,12 @@ public class CupellationMain implements ModInitializer {
     @Override
     public void onInitialize() {
         ConfigInit.init();
+        LoaderInit.init();
+        EventInit.init();
         BlockInit.init();
         ItemInit.init();
         TagInit.init();
+        CupellationServerPacket.init();
     }
 
     public static Identifier identifierOf(String name) {

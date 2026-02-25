@@ -1,6 +1,7 @@
 package net.cupellation.misc;
 
 import net.cupellation.CupellationMain;
+import net.cupellation.data.SmelterData;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.tag.ItemTags;
@@ -53,57 +54,53 @@ public class MoltenHelper {
     }
 
     public static int getFuelMaxTemp(ItemStack fuel) {
-        // Blaze rod / blaze powder → hottest
         if (fuel.isOf(Items.BLAZE_ROD) || fuel.isOf(Items.BLAZE_POWDER)) return 1400;
-        // Coal-based fuels
         if (fuel.isOf(Items.COAL) || fuel.isOf(Items.COAL_BLOCK)) return 1000;
         if (fuel.isOf(Items.CHARCOAL)) return 900;
-        // Lava bucket
         if (fuel.isOf(Items.LAVA_BUCKET)) return 1300;
-        // Wooden fuels (planks, sticks, logs, …)
-        // Everything else that can be used as fuel is wood-tier
         return 600;
     }
 
 
-    public static  int getSmeltTime(ItemStack stack) {
-        // Raw ores / ore blocks take longer than pre-smelted ingots
-        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.DEEPSLATE_IRON_ORE)) return 200;
-        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.DEEPSLATE_GOLD_ORE)) return 200;
-        if (stack.isOf(Items.COPPER_ORE) || stack.isOf(Items.DEEPSLATE_COPPER_ORE)) return 200;
-        if (stack.isOf(Items.RAW_IRON)) return 160;
-        if (stack.isOf(Items.RAW_GOLD)) return 160;
-        if (stack.isOf(Items.RAW_COPPER)) return 160;
-        if (stack.isOf(Items.IRON_INGOT)) return 120;
-        if (stack.isOf(Items.GOLD_INGOT)) return 120;
-        if (stack.isOf(Items.COPPER_INGOT)) return 120;
-        return 150;
+    public static int getSmeltTime(ItemStack stack) {
+        return SmelterData.getItemData(stack.getItem()).smeltTime();
+
+//        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.DEEPSLATE_IRON_ORE)) return 200;
+//        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.DEEPSLATE_GOLD_ORE)) return 200;
+//        if (stack.isOf(Items.COPPER_ORE) || stack.isOf(Items.DEEPSLATE_COPPER_ORE)) return 200;
+//        if (stack.isOf(Items.RAW_IRON)) return 160;
+//        if (stack.isOf(Items.RAW_GOLD)) return 160;
+//        if (stack.isOf(Items.RAW_COPPER)) return 160;
+//        if (stack.isOf(Items.IRON_INGOT)) return 120;
+//        if (stack.isOf(Items.GOLD_INGOT)) return 120;
+//        if (stack.isOf(Items.COPPER_INGOT)) return 120;
+//        return 150;
     }
 
-    public static  int getMetalYield(ItemStack stack) {
-        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.DEEPSLATE_IRON_ORE)) return 144;
-        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.DEEPSLATE_GOLD_ORE)) return 144;
-        if (stack.isOf(Items.COPPER_ORE) || stack.isOf(Items.DEEPSLATE_COPPER_ORE)) return 144;
-        if (stack.isOf(Items.RAW_IRON)) return 144;
-        if (stack.isOf(Items.RAW_GOLD)) return 144;
-        if (stack.isOf(Items.RAW_COPPER)) return 144;
-        if (stack.isOf(Items.IRON_INGOT)) return 144;
-        if (stack.isOf(Items.GOLD_INGOT)) return 144;
-        if (stack.isOf(Items.COPPER_INGOT)) return 144;
+    public static int getMetalYield(ItemStack stack) {
+        return SmelterData.getItemData(stack.getItem()).yield();
+
+//        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.DEEPSLATE_IRON_ORE)) return 144;
+//        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.DEEPSLATE_GOLD_ORE)) return 144;
+//        if (stack.isOf(Items.COPPER_ORE) || stack.isOf(Items.DEEPSLATE_COPPER_ORE)) return 144;
+//        if (stack.isOf(Items.RAW_IRON)) return 144;
+//        if (stack.isOf(Items.RAW_GOLD)) return 144;
+//        if (stack.isOf(Items.RAW_COPPER)) return 144;
+//        if (stack.isOf(Items.IRON_INGOT)) return 144;
+//        if (stack.isOf(Items.GOLD_INGOT)) return 144;
+//        if (stack.isOf(Items.COPPER_INGOT)) return 144;
+//        return 0;
+    }
+
+    public static int getMetalType(ItemStack stack) {
+//        return SmelterData.getItemData(stack.getItem()).
+        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.DEEPSLATE_IRON_ORE)|| stack.isOf(Items.RAW_IRON) || stack.isOf(Items.IRON_INGOT)) return 1;
+        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.DEEPSLATE_GOLD_ORE)|| stack.isOf(Items.RAW_GOLD) || stack.isOf(Items.GOLD_INGOT)) return 2;
+        if (stack.isOf(Items.COPPER_ORE) || stack.isOf(Items.DEEPSLATE_COPPER_ORE)|| stack.isOf(Items.RAW_COPPER) || stack.isOf(Items.COPPER_INGOT)) return 3;
         return 0;
     }
 
-    public static  int getMetalType(ItemStack stack) {
-        if (stack.isOf(Items.IRON_ORE) || stack.isOf(Items.DEEPSLATE_IRON_ORE)
-                || stack.isOf(Items.RAW_IRON) || stack.isOf(Items.IRON_INGOT)) return 1;
-        if (stack.isOf(Items.GOLD_ORE) || stack.isOf(Items.DEEPSLATE_GOLD_ORE)
-                || stack.isOf(Items.RAW_GOLD) || stack.isOf(Items.GOLD_INGOT)) return 2;
-        if (stack.isOf(Items.COPPER_ORE) || stack.isOf(Items.DEEPSLATE_COPPER_ORE)
-                || stack.isOf(Items.RAW_COPPER) || stack.isOf(Items.COPPER_INGOT)) return 3;
-        return 0;
-    }
-
-    public static  int getRequiredTemp(int type) {
+    public static int getRequiredTemp(int type) {
         return switch (type) {
             case 1 -> 900;  // Iron:   needs coal+ fuel
             case 2 -> 700;  // Gold:   charcoal is enough

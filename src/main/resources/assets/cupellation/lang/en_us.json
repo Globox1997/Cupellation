@@ -1,9 +1,18 @@
 {
   "item.cupellation.item_group": "Cupellation",
+  "item.cupellation.tooltip.quality": "Quality:",
+  "item.cupellation.tooltip.quality.1": "Low",
+  "item.cupellation.tooltip.quality.2": "Medium",
+  "item.cupellation.tooltip.quality.3": "High",
+
+  "item.cupellation.calcite_powder": "Calcite Powder",
 
   "block.cupellation.smelter": "Smelter",
 
   "text.autoconfig.cupellation.title": "Cupellation Config",
   "text.autoconfig.cupellation.option.smelterMaxWidth": "Smelter Max Width",
-  "text.autoconfig.cupellation.option.smelterMaxHeight": "Smelter Max Height"
+  "text.autoconfig.cupellation.option.smelterMaxHeight": "Smelter Max Height",
+  "text.autoconfig.cupellation.option.lowGradeDurability": "Low Grade Durability",
+  "text.autoconfig.cupellation.option.midGradeDurability": "Mid Grade Durability",
+  "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability"
 }
