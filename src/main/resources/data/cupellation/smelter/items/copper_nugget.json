@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:copper_nugget",
+  "metal_type": "cupellation:copper",
+  "smelt_time": 40,
+  "yield": 16
+}

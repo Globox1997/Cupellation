@@ -1,0 +1,7 @@
+{
+  "id": "cupellation:netherite",
+  "name": "metal.cupellation.netherite",
+  "required_temp": 900,
+  "color": "FF4500",
+  "texture": "cupellation:fluid/molten_netherite"
+}

@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:netherite_debris",
+  "metal_type": "cupellation:netherite",
+  "smelt_time": 200,
+  "yield": 144
+}

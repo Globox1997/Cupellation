@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:raw_copper",
+  "metal_type": "cupellation:copper",
+  "smelt_time": 200,
+  "yield": 144
+}

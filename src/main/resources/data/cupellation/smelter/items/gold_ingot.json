@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:gold_ingot",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 200,
+  "yield": 144
+}

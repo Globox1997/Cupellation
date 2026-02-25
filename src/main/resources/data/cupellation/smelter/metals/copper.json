@@ -1,0 +1,7 @@
+{
+  "id": "cupellation:copper",
+  "name": "metal.cupellation.copper",
+  "required_temp": 900,
+  "color": "FF4500",
+  "texture": "cupellation:fluid/molten_copper"
+}

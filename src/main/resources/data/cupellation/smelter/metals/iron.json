@@ -1,0 +1,7 @@
+{
+  "id": "cupellation:iron",
+  "name": "metal.cupellation.iron",
+  "required_temp": 900,
+  "color": "FF4500",
+  "texture": "cupellation:fluid/molten_iron"
+}

@@ -9,6 +9,11 @@
 
   "block.cupellation.smelter": "Smelter",
 
+  "metal.cupellation.copper": "Molten Copper",
+  "metal.cupellation.gold": "Molten Gold",
+  "metal.cupellation.iron": "Molten Iron",
+  "metal.cupellation.netherite": "Molten Netherite",
+
   "text.autoconfig.cupellation.title": "Cupellation Config",
   "text.autoconfig.cupellation.option.smelterMaxWidth": "Smelter Max Width",
   "text.autoconfig.cupellation.option.smelterMaxHeight": "Smelter Max Height",

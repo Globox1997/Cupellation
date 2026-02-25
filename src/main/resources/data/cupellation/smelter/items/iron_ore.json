@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:iron_ore",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 200,
+  "yield": 144
+}

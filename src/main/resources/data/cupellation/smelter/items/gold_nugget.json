@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:gold_nugget",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 40,
+  "yield": 16
+}

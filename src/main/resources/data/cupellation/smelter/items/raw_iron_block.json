@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:raw_iron_block",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 1800,
+  "yield": 1296
+}

@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:raw_gold_block",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 1800,
+  "yield": 1296
+}

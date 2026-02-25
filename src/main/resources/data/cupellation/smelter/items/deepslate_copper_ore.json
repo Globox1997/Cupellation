@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:deepslate_copper_ore",
+  "metal_type": "cupellation:copper",
+  "smelt_time": 200,
+  "yield": 144
+}

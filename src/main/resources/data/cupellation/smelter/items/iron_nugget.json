@@ -1,0 +1,6 @@
+{
+  "item": "minecraft:iron_nugget",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 40,
+  "yield": 16
+}
