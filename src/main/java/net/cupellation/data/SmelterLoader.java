@@ -38,20 +38,21 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     try (InputStream stream = resource.getInputStream()) {
                         JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
                         SmelterItemData data = parseItem(json);
-                        if (data == null) return;
-
+                        if (data == null) {
+                            return;
+                        }
                         boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
 
                         if (items.containsKey(data.itemId())) {
                             if (replace) {
                                 items.put(data.itemId(), data);
-                                LOGGER.info("[Smelter] Replaced item: {} (from {})", data.itemId(), id);
+                                // LOGGER.info("[Smelter] Replaced item: {} (from {})", data.itemId(), id);
                             } else {
-                                LOGGER.info("[Smelter] Skipped duplicate item: {} (from {}), use replace=true to override", data.itemId(), id);
+                                // LOGGER.info("[Smelter] Skipped duplicate item: {} (from {}), use replace=true to override", data.itemId(), id);
                             }
                         } else {
                             items.put(data.itemId(), data);
-                            LOGGER.info("[Smelter] Loaded item: {} (from {})", data.itemId(), id);
+                            // LOGGER.info("[Smelter] Loaded item: {} (from {})", data.itemId(), id);
                         }
                     } catch (Exception e) {
                         LOGGER.error("[Smelter] Failed to load item file {}: {}", id, e.toString());
@@ -63,20 +64,21 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     try (InputStream stream = resource.getInputStream()) {
                         JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
                         MetalTypeData data = parseMetal(json);
-                        if (data == null) return;
-
+                        if (data == null) {
+                            return;
+                        }
                         boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
 
                         if (metals.containsKey(data.id())) {
                             if (replace) {
                                 metals.put(data.id(), data);
-                                LOGGER.info("[Smelter] Replaced metal type: {} (from {})", data.id(), id);
+                                // LOGGER.info("[Smelter] Replaced metal type: {} (from {})", data.id(), id);
                             } else {
-                                LOGGER.info("[Smelter] Skipped duplicate metal type: {} (from {}), use replace=true to override", data.id(), id);
+                                // LOGGER.info("[Smelter] Skipped duplicate metal type: {} (from {}), use replace=true to override", data.id(), id);
                             }
                         } else {
                             metals.put(data.id(), data);
-                            LOGGER.info("[Smelter] Loaded metal type: {} (from {})", data.id(), id);
+                            // LOGGER.info("[Smelter] Loaded metal type: {} (from {})", data.id(), id);
                         }
                     } catch (Exception e) {
                         LOGGER.error("[Smelter] Failed to load metal file {}: {}", id, e.toString());
@@ -88,20 +90,21 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     try (InputStream stream = resource.getInputStream()) {
                         JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
                         List<FuelData> resolved = parseFuel(json, resourceManager);
-                        if (resolved.isEmpty()) return;
-
+                        if (resolved.isEmpty()) {
+                            return;
+                        }
                         boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
                         for (FuelData data : resolved) {
                             if (fuels.containsKey(data.itemId())) {
                                 if (replace) {
                                     fuels.put(data.itemId(), data);
-                                    LOGGER.info("[Smelter] Replaced fuel: {} (from {})", data.itemId(), id);
+                                    // LOGGER.info("[Smelter] Replaced fuel: {} (from {})", data.itemId(), id);
                                 } else {
-                                    LOGGER.info("[Smelter] Skipped duplicate fuel: {} (from {})", data.itemId(), id);
+                                    // LOGGER.info("[Smelter] Skipped duplicate fuel: {} (from {})", data.itemId(), id);
                                 }
                             } else {
                                 fuels.put(data.itemId(), data);
-                                LOGGER.info("[Smelter] Loaded fuel: {} (from {})", data.itemId(), id);
+                                // LOGGER.info("[Smelter] Loaded fuel: {} (from {})", data.itemId(), id);
                             }
                         }
                     } catch (Exception e) {
@@ -170,9 +173,15 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         GradeRange low = null, mid = null, high = null;
         if (json.has("grades")) {
             JsonObject grades = json.getAsJsonObject("grades");
-            if (grades.has("low")) low = parseGradeRange(grades.getAsJsonObject("low"));
-            if (grades.has("mid")) mid = parseGradeRange(grades.getAsJsonObject("mid"));
-            if (grades.has("high")) high = parseGradeRange(grades.getAsJsonObject("high"));
+            if (grades.has("low")) {
+                low = parseGradeRange(grades.getAsJsonObject("low"));
+            }
+            if (grades.has("mid")) {
+                mid = parseGradeRange(grades.getAsJsonObject("mid"));
+            }
+            if (grades.has("high")) {
+                high = parseGradeRange(grades.getAsJsonObject("high"));
+            }
         }
 
         return new MetalTypeData(Identifier.of(json.get("id").getAsString()), json.get("name").getAsString(), json.get("required_temp").getAsInt(),
@@ -219,8 +228,9 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     result.clear();
                 }
 
-                if (!json.has("values")) continue;
-
+                if (!json.has("values")) {
+                    continue;
+                }
                 JsonArray values = json.getAsJsonArray("values");
                 for (JsonElement element : values) {
                     String entry = element.getAsString();
