@@ -2,6 +2,7 @@ package net.cupellation.block;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.ai.pathing.NavigationType;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.EnumProperty;
@@ -27,6 +28,11 @@ public class SmelterDrain extends Block {
         Direction facing = ctx.getHorizontalPlayerFacing();
         Direction.Axis axis = (facing.getAxis() == Direction.Axis.Z) ? Direction.Axis.Z : Direction.Axis.X;
         return this.getDefaultState().with(AXIS, axis);
+    }
+
+    @Override
+    protected boolean canPathfindThrough(BlockState state, NavigationType type) {
+        return false;
     }
 
     public static boolean isFaucetSide(BlockState drainState, Direction side) {

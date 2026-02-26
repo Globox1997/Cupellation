@@ -1,8 +1,17 @@
 package net.cupellation.block;
 
+import net.cupellation.block.entity.CastingBasinEntity;
+import net.cupellation.block.entity.SmelterBlockEntity;
+import net.cupellation.block.entity.SmelterFaucetEntity;
+import net.cupellation.init.BlockInit;
+import net.cupellation.init.ConfigInit;
+import net.cupellation.init.TagInit;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.ai.pathing.NavigationType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.state.StateManager;
@@ -10,6 +19,7 @@ import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -20,7 +30,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.Nullable;
 
-public class SmelterFaucet extends Block {
+public class SmelterFaucet extends Block implements BlockEntityProvider {
 
     public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;
     public static final BooleanProperty OPEN = BooleanProperty.of("open");
@@ -46,6 +56,12 @@ public class SmelterFaucet extends Block {
         this.setDefaultState(getStateManager().getDefaultState().with(FACING, Direction.NORTH).with(OPEN, false));
     }
 
+    @Nullable
+    @Override
+    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+        return new SmelterFaucetEntity(pos, state);
+    }
+
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         builder.add(FACING, OPEN);
@@ -69,7 +85,6 @@ public class SmelterFaucet extends Block {
 
     @Override
     protected VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-
         return switch (state.get(FACING)) {
             case Direction.NORTH -> NORTH_SHAPE;
             case Direction.EAST -> EAST_SHAPE;
@@ -95,18 +110,131 @@ public class SmelterFaucet extends Block {
     }
 
     @Override
+    protected boolean canPathfindThrough(BlockState state, NavigationType type) {
+        return false;
+    }
+
+    @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
         if (world.isClient()) {
             return ActionResult.SUCCESS;
         }
         boolean nowOpen = !state.get(OPEN);
-        world.setBlockState(pos, state.with(OPEN, nowOpen));
 
-        Direction facing = state.get(FACING);
-        BlockPos drainPos = pos.offset(facing.getOpposite());
-        world.updateNeighbor(drainPos, this, pos);
+        if (nowOpen) {
+            CastingBasinEntity basin = findBasinBelow(world, pos);
+            if (basin == null) {
+                return ActionResult.FAIL;
+            }
+            BlockPos drainPos = getDrainPos(state, pos);
+            BlockState drainState = world.getBlockState(drainPos);
 
-        return ActionResult.SUCCESS;
+            if (!(drainState.getBlock() instanceof SmelterDrain)) {
+                return ActionResult.FAIL;
+            }
+
+            SmelterBlockEntity smelter = findSmelter(world, drainPos, state);
+
+            if (smelter == null) {
+                return ActionResult.FAIL;
+            }
+
+            if (!isMoltenHighEnough(smelter, drainPos)) {
+                return ActionResult.FAIL;
+            }
+            Identifier metalType = smelter.getMetalTypeId();
+            if (metalType == null || smelter.getMoltenMetal() <= 0) {
+                return ActionResult.FAIL;
+            }
+
+            boolean started = basin.startFilling(smelter.getPos(), metalType);
+            if (!started) {
+                return ActionResult.FAIL;
+            }
+            if (world.getBlockEntity(pos) instanceof SmelterFaucetEntity faucetEntity) {
+                faucetEntity.link(smelter.getPos(), metalType);
+            }
+            world.setBlockState(pos, state.with(OPEN, true));
+            return ActionResult.SUCCESS;
+        } else {
+            if (world.getBlockEntity(pos) instanceof SmelterFaucetEntity faucetEntity) {
+                faucetEntity.unlink();
+            }
+            world.setBlockState(pos, state.with(OPEN, false));
+            CastingBasinEntity basin = findBasinBelow(world, pos);
+            if (basin != null) basin.stopFilling(world);
+            return ActionResult.SUCCESS;
+        }
+    }
+
+    private CastingBasinEntity findBasinBelow(World world, BlockPos faucetPos) {
+        for (int dy = 1; dy <= 2; dy++) {
+            BlockPos checkPos = faucetPos.down(dy);
+            if (world.getBlockEntity(checkPos) instanceof CastingBasinEntity basin) {
+                return basin;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private SmelterBlockEntity findSmelter(World world, BlockPos drainPos, BlockState faucetState) {
+        Direction inward = faucetState.get(FACING).getOpposite();
+        BlockPos startAir = drainPos.offset(inward);
+
+        if (!world.isAir(startAir)) {
+            return null;
+        }
+        int minX = startAir.getX(), maxX = startAir.getX();
+        int minY = startAir.getY(), maxY = startAir.getY();
+        int minZ = startAir.getZ(), maxZ = startAir.getZ();
+
+        for (Direction dir : Direction.values()) {
+            for (int i = 1; i <= ConfigInit.CONFIG.smelterMaxWidth + 1; i++) {
+                BlockPos check = startAir.offset(dir, i);
+                if (!world.isAir(check)) {
+                    if (!world.getBlockState(check).isIn(TagInit.SMELTER_BLOCKS) && !world.getBlockState(check).isOf(BlockInit.SMELTER)) {
+                        return null;
+                    }
+                    break;
+                }
+                minX = Math.min(minX, check.getX());
+                maxX = Math.max(maxX, check.getX());
+                minY = Math.min(minY, check.getY());
+                maxY = Math.max(maxY, check.getY());
+                minZ = Math.min(minZ, check.getZ());
+                maxZ = Math.max(maxZ, check.getZ());
+            }
+        }
+
+        for (int x = minX - 1; x <= maxX + 1; x++) {
+            for (int y = minY - 1; y <= maxY + 1; y++) {
+                for (int z = minZ - 1; z <= maxZ + 1; z++) {
+                    if (x == minX - 1 || x == maxX + 1 || y == minY - 1 || y == maxY + 1 || z == minZ - 1 || z == maxZ + 1) {
+                        BlockEntity blockEntity = world.getBlockEntity(new BlockPos(x, y, z));
+                        if (blockEntity instanceof SmelterBlockEntity smelter) {
+                            if (smelter.isFormed()) {
+                                return smelter;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isMoltenHighEnough(SmelterBlockEntity smelter, BlockPos drainPos) {
+        BlockPos corner = smelter.getCornerMin();
+        if (corner == null) {
+            return false;
+        }
+        float fillHeight = smelter.getFillPercent() * smelter.getStructureHeight() * 1f; // 1.0f instead of 0.8 makes sense here
+
+
+        float drainRelativeY = drainPos.getY() - corner.getY();
+
+        return drainRelativeY <= fillHeight;
     }
 
     private boolean canAttachTo(BlockState drainState, Direction faucetFacing) {

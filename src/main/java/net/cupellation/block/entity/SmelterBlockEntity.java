@@ -40,6 +40,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     // TODO: When too hot at casting process, it will just evaporate with smoke
     // Tell max temperature at screen
     // Tell grade info at screen
+    // Extend material datapack with block and ingot id
+    // Set item quality at basin
 
     private DefaultedList<ItemStack> inventory;
 
@@ -588,5 +590,15 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             }
         }
         return false;
+    }
+
+    public void drainMoltenMetal(int amount) {
+        return; // TODO ONLY FOR TESTING RETURN HERE
+//        moltenMetal = Math.max(0, moltenMetal - amount);
+//        if (moltenMetal <= 0) {
+//            moltenMetal = 0;
+//            metalTypeId = null;
+//        }
+//        markDirty();
     }
 }

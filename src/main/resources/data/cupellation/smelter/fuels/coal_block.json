@@ -1,5 +1,5 @@
 {
-  "item": "minecraft:coal",
+  "item": "minecraft:coal_block",
   "max_temperature": 1000,
   "burn_time": 16000
 }
