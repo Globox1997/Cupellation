@@ -4,6 +4,8 @@
   "required_temp": 1300,
   "color": "FF4500",
   "texture": "cupellation:fluid/molten_netherite",
+  "ingot": "minecraft:netherite_ingot",
+  "block": "minecraft:netherite_block",
   "grades": {
     "low": {
       "min": 1300,

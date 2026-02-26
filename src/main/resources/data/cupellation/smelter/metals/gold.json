@@ -4,6 +4,8 @@
   "required_temp": 650,
   "color": "FF4500",
   "texture": "cupellation:fluid/molten_gold",
+  "ingot": "minecraft:gold_ingot",
+  "block": "minecraft:gold_block",
   "grades": {
     "low": {
       "min": 650,

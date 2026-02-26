@@ -7,9 +7,9 @@ import net.cupellation.init.BlockInit;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -142,7 +142,7 @@ public class CastingBasinEntity extends BlockEntity {
         if (metal == null) {
             return ItemStack.EMPTY;
         }
-        ItemStack result = getResultBlock(metal);
+        ItemStack result = new ItemStack(Registries.BLOCK.get(metal.blockId()).asItem());
         if (result.isEmpty()) {
             return ItemStack.EMPTY;
         }
@@ -153,15 +153,6 @@ public class CastingBasinEntity extends BlockEntity {
         markDirty();
 
         return result;
-    }
-
-    private ItemStack getResultBlock(MetalTypeData metal) {
-        return switch (metal.id().toString()) {
-            case "cupellation:iron" -> new ItemStack(Items.IRON_BLOCK);
-            case "cupellation:gold" -> new ItemStack(Items.GOLD_BLOCK);
-            case "cupellation:copper" -> new ItemStack(Items.COPPER_BLOCK);
-            default -> ItemStack.EMPTY;
-        };
     }
 
     public int getMoltenAmount() {

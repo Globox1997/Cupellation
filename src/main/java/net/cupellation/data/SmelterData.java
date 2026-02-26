@@ -65,6 +65,16 @@ public final class SmelterData {
         return metal != null ? metal.texture() : Identifier.of("cupellation", "fluid/molten_iron");
     }
 
+    public static Identifier getIngotId(Identifier metalTypeId) {
+        MetalTypeData metal = METALS.get(metalTypeId);
+        return metal != null ? metal.ingotId() : Identifier.of("minecraft", "iron_ingot");
+    }
+
+    public static Identifier getBlockId(Identifier metalTypeId) {
+        MetalTypeData metal = METALS.get(metalTypeId);
+        return metal != null ? metal.blockId() : Identifier.of("minecraft", "iron_block");
+    }
+
     public static String getName(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
         return metal != null ? Text.translatable(metal.name()).getString() : "Unknown";

@@ -94,7 +94,6 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
         matrices.pop();
     }
 
-
     private void renderHorizontalStream(VertexConsumer c, Matrix4f m, Direction facing, float cx, float cy, float cz, float r, float g, float b, float minU, float maxU, float horizontalMaxU, float minV, float maxV, float horizontalMaxV, int light, int overlay) {
         float y0 = cy - STREAM_HALF;
         float y1 = cy + STREAM_HALF;
