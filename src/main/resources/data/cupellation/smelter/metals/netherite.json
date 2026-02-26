@@ -3,6 +3,7 @@
   "name": "metal.cupellation.netherite",
   "required_temp": 1300,
   "color": "FF4500",
+  "cooled_color": "484548",
   "texture": "cupellation:fluid/molten_netherite",
   "ingot": "minecraft:netherite_ingot",
   "block": "minecraft:netherite_block",

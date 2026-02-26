@@ -3,6 +3,7 @@
   "name": "metal.cupellation.gold",
   "required_temp": 650,
   "color": "FF4500",
+  "cooled_color": "FFD83E",
   "texture": "cupellation:fluid/molten_gold",
   "ingot": "minecraft:gold_ingot",
   "block": "minecraft:gold_block",

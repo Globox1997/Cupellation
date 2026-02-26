@@ -3,6 +3,7 @@
   "name": "metal.cupellation.iron",
   "required_temp": 900,
   "color": "FF4500",
+  "cooled_color": "DCDCDC",
   "texture": "cupellation:fluid/molten_iron",
   "ingot": "minecraft:iron_ingot",
   "block": "minecraft:iron_block",

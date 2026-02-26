@@ -39,6 +39,7 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             buf.writeString(metal.name());
             buf.writeInt(metal.requiredTemp());
             buf.writeInt(metal.color());
+            buf.writeInt(metal.cooledColor());
             buf.writeIdentifier(metal.texture());
             buf.writeIdentifier(metal.ingotId());
             buf.writeIdentifier(metal.blockId());
@@ -65,7 +66,7 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         int metalCount = buf.readInt();
         List<MetalTypeData> metals = new ArrayList<>(metalCount);
         for (int i = 0; i < metalCount; i++) {
-            metals.add(new MetalTypeData(buf.readIdentifier(), buf.readString(), buf.readInt(), buf.readInt(), buf.readIdentifier(), buf.readIdentifier(), buf.readIdentifier(),
+            metals.add(new MetalTypeData(buf.readIdentifier(), buf.readString(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readIdentifier(), buf.readIdentifier(), buf.readIdentifier(),
                     readNullableGradeRange(buf), readNullableGradeRange(buf), readNullableGradeRange(buf)));
         }
 

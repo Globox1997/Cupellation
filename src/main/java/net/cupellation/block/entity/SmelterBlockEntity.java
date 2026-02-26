@@ -11,7 +11,6 @@ import net.cupellation.init.TagInit;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
@@ -40,7 +39,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     // TODO: When too hot at casting process, it will just evaporate with smoke
     // Tell max temperature at screen
     // Tell grade info at screen
-    // Extend material datapack with block and ingot id
     // Set item quality at basin
 
     private DefaultedList<ItemStack> inventory;

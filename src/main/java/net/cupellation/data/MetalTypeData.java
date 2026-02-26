@@ -4,7 +4,7 @@ import net.cupellation.misc.GradeRange;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-public record MetalTypeData(Identifier id, String name, int requiredTemp, int color, Identifier texture, Identifier ingotId, Identifier blockId, @Nullable GradeRange lowGrade,
+public record MetalTypeData(Identifier id, String name, int requiredTemp, int color,int cooledColor, Identifier texture, Identifier ingotId, Identifier blockId, @Nullable GradeRange lowGrade,
                             @Nullable GradeRange midGrade, @Nullable GradeRange highGrade) {
 
     public enum Grade {LOW, MID, HIGH}

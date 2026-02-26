@@ -3,6 +3,7 @@
   "name": "metal.cupellation.copper",
   "required_temp": 700,
   "color": "FF4500",
+  "cooled_color": "D67B5B",
   "texture": "cupellation:fluid/molten_copper",
   "ingot": "minecraft:copper_ingot",
   "block": "minecraft:copper_block",

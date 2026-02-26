@@ -2,6 +2,7 @@ package net.cupellation.block;
 
 import com.mojang.serialization.MapCodec;
 import net.cupellation.block.entity.CastingBasinEntity;
+import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.init.BlockInit;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -57,10 +58,7 @@ public class CastingBasin extends BlockWithEntity {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
-        if (world.isClient()) {
-            return null;
-        }
-        return validateTicker(type, BlockInit.CASTING_BASIN_ENTITY, CastingBasinEntity::serverTick);
+        return validateTicker(type, BlockInit.CASTING_BASIN_ENTITY, world.isClient() ? CastingBasinEntity::clientTick : CastingBasinEntity::serverTick);
     }
 
     @Override

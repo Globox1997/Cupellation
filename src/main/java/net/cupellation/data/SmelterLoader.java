@@ -165,8 +165,8 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
     }
 
     private MetalTypeData parseMetal(JsonObject json) {
-        if (!json.has("id") || !json.has("name") || !json.has("required_temp") || !json.has("color") || !json.has("texture")
-                || !json.has("ingot") || !json.has("block")) {
+        if (!json.has("id") || !json.has("name") || !json.has("required_temp") || !json.has("color") || !json.has("cooled_color")
+                || !json.has("texture") || !json.has("ingot") || !json.has("block")) {
             LOGGER.warn("[Smelter] Metal JSON missing required fields, skipping.");
             return null;
         }
@@ -186,7 +186,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         }
 
         return new MetalTypeData(Identifier.of(json.get("id").getAsString()), json.get("name").getAsString(), json.get("required_temp").getAsInt(),
-                parseColor(json.get("color").getAsString()), Identifier.of(json.get("texture").getAsString()), Identifier.of(json.get("ingot").getAsString()),
+                parseColor(json.get("color").getAsString()), parseColor(json.get("cooled_color").getAsString()), Identifier.of(json.get("texture").getAsString()), Identifier.of(json.get("ingot").getAsString()),
                 Identifier.of(json.get("block").getAsString()), low, mid, high);
     }
 

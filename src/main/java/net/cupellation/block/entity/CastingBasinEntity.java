@@ -36,14 +36,22 @@ public class CastingBasinEntity extends BlockEntity {
         super(BlockInit.CASTING_BASIN_ENTITY, pos, state);
     }
 
+    public static void clientTick(World world, BlockPos pos, BlockState state, CastingBasinEntity blockEntity) {
+        blockEntity.clientTick();
+    }
+
     public static void serverTick(World world, BlockPos pos, BlockState state, CastingBasinEntity basin) {
         basin.serverTick(world);
     }
 
+    private void clientTick() {
+        if (this.cooldownTicks > 0) {
+            this.cooldownTicks--;
+        }
+    }
+
     private void serverTick(World world) {
         if (filling && linkedSmelterPos != null && !cooled) {
-
-
             if (moltenAmount >= CAPACITY) {
                 startCooling();
                 stopFilling(world);
@@ -232,6 +240,6 @@ public class CastingBasinEntity extends BlockEntity {
 
     @Override
     public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registryLookup) {
-        return createNbt(registryLookup);
+        return this.createNbt(registryLookup);
     }
 }

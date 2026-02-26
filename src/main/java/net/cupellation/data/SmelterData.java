@@ -60,6 +60,11 @@ public final class SmelterData {
         return metal != null ? metal.color() : 0xFF4500;
     }
 
+    public static int getCooledColor(Identifier metalTypeId) {
+        MetalTypeData metal = METALS.get(metalTypeId);
+        return metal != null ? metal.cooledColor() : 0xFF4500;
+    }
+
     public static Identifier getTexture(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
         return metal != null ? metal.texture() : Identifier.of("cupellation", "fluid/molten_iron");
