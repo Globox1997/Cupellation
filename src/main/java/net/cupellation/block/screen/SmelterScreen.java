@@ -2,6 +2,7 @@ package net.cupellation.block.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.cupellation.CupellationMain;
+import net.cupellation.data.FuelData;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.fabricmc.api.EnvType;
@@ -13,6 +14,7 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -142,18 +144,31 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         context.drawText(textRenderer, this.title, this.titleX, this.titleY, 0x404040, false);
         context.drawText(textRenderer, this.playerInventoryTitle,
                 this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
+        context.drawText(this.textRenderer, Text.translatable("block.cupellation.smelter.degree"), 131, 18, 0xFFFFFF, true);
 
         int relX = mouseX - (this.width - GUI_WIDTH) / 2;
         int relY = mouseY - (this.height - GUI_HEIGHT) / 2;
 
         drawFluidTooltip(context, relX, relY);
-        drawTemperaturInfo(context, relX, relY);
+        drawGradeInfo(context, relX, relY);
         drawTemperatureTooltip(context, relX, relY);
         drawSmeltingTooltip(context, relX, relY);
+        drawFuelTooltip(context, relX, relY);
     }
 
-    private void drawTemperaturInfo(DrawContext context, int relX, int relY) {
-        context.drawText(this.textRenderer, Text.translatable("block.cupellation.smelter.degree"),  131, 18, 0xFFFFFF, true);
+    private void drawFuelTooltip(DrawContext context, int relX, int relY) {
+        if (relX >= 153 && relX <= 153 + 13 && relY >= 19 && relY <= 19 + 13) {
+            List<Text> tooltip = new ArrayList<>();
+            for (FuelData fuelData : SmelterData.allFuels()) {
+                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly().append(Text.literal(": ")).append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
+            }
+            if (!tooltip.isEmpty()) {
+                context.drawTooltip(textRenderer, tooltip, relX, relY);
+            }
+        }
+    }
+
+    private void drawGradeInfo(DrawContext context, int relX, int relY) {
         if (relX >= 131 && relX <= 131 + 11 && relY >= 18 && relY <= 18 + 8) {
             List<Text> tooltip = new ArrayList<>();
             if (handler.getMetalTypeId() != null) {
@@ -175,7 +190,9 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
                     }
                 }
             }
-            context.drawTooltip(textRenderer, tooltip, relX, relY);
+            if (!tooltip.isEmpty()) {
+                context.drawTooltip(textRenderer, tooltip, relX, relY);
+            }
         }
     }
 

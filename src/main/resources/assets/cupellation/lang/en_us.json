@@ -29,6 +29,7 @@
 
   "block.cupellation.smelter.incorrect": "Smelter is not built correctly!",
   "block.cupellation.smelter.degree": "°C",
+  "block.cupellation.smelter.degree.info": "%s°C",
   "block.cupellation.smelter.grades": "Grades",
   "block.cupellation.smelter.grade.info": "%s°C - %s°C"
 }

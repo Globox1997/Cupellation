@@ -472,9 +472,18 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             smeltProgress[slot - 1] = 0;
             smeltTotal[slot - 1] = 0;
         }
+        if (slot == 0) {
+            if (stack.isEmpty()) {
+                maxTemperature = 0;
+            } else {
+                FuelData fuelData = SmelterData.getFuelData(stack.getItem());
+                if (fuelData != null) {
+                    maxTemperature = fuelData.maxTemperature();
+                }
+            }
+        }
         markDirty();
     }
-
     @Override
     public boolean canPlayerUse(PlayerEntity player) {
         return true;
