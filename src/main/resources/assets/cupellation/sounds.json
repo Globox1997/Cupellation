@@ -3,5 +3,10 @@
     "sounds": [
       "cupellation:molten"
     ]
+  },
+  "casting": {
+    "sounds": [
+      "cupellation:casting"
+    ]
   }
 }

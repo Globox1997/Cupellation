@@ -4,17 +4,23 @@ import net.cupellation.block.SmelterFaucet;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.SoundInit;
 import net.cupellation.misc.CastingEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
@@ -32,6 +38,8 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
+    @Nullable
+    private SoundInstance casting = null;
 
     public CastingBasinEntity(BlockPos pos, BlockState state) {
         super(BlockInit.CASTING_BASIN_ENTITY, pos, state);
@@ -51,6 +59,16 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             if (this.cooldownTicks == 0) {
                 this.cooled = true;
             }
+        }
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (this.filling) {
+            if (this.casting == null) {
+                this.casting = new PositionedSoundInstance(SoundInit.CASTING_EVENT, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, world.getRandom(), pos.getX(), pos.getY(), pos.getZ());
+                client.getSoundManager().play(this.casting);
+            }
+        } else if (this.casting != null && client.getSoundManager().isPlaying(this.casting)) {
+            client.getSoundManager().stop(this.casting);
+            this.casting = null;
         }
     }
 

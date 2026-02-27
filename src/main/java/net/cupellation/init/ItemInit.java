@@ -15,9 +15,14 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.UnaryOperator;
 
 public class ItemInit {
+
+    // Map
+    public static final Map<Identifier, Item> MOLDS = new HashMap<>();
 
     // Item Group
     public static final RegistryKey<ItemGroup> CUPELLATION_ITEM_GROUP = RegistryKey.of(RegistryKeys.ITEM_GROUP, CupellationMain.identifierOf("item_group"));
@@ -34,6 +39,9 @@ public class ItemInit {
     }
 
     private static Item register(String id, Item item) {
+        if (item instanceof MoldItem moldItem) {
+            MOLDS.put(moldItem.getMetalTypeId(), item);
+        }
         return register(CupellationMain.identifierOf(id), item);
     }
 

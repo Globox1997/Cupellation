@@ -4,19 +4,24 @@ import net.cupellation.block.SmelterFaucet;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
-import net.cupellation.item.MoldItem;
+import net.cupellation.init.SoundInit;
 import net.cupellation.misc.CastingEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.sound.PositionedSoundInstance;
+import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
@@ -36,6 +41,9 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
+    @Nullable
+    private SoundInstance casting = null;
+
     public CastingTableEntity(BlockPos pos, BlockState state) {
         super(BlockInit.CASTING_TABLE_ENTITY, pos, state);
     }
@@ -51,6 +59,16 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;
+        }
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (this.filling) {
+            if (this.casting == null) {
+                this.casting = new PositionedSoundInstance(SoundInit.CASTING_EVENT, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, world.getRandom(), pos.getX(), pos.getY(), pos.getZ());
+                client.getSoundManager().play(this.casting);
+            }
+        } else if (this.casting != null && client.getSoundManager().isPlaying(this.casting)) {
+            client.getSoundManager().stop(this.casting);
+            this.casting = null;
         }
     }
 
@@ -117,7 +135,9 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 if (result.isEmpty() && !mold.isEmpty()) {
                     result = new ItemStack(Registries.ITEM.get(SmelterData.getIngotId(metalTypeId)));
                 } else if (!result.isEmpty() && mold.isEmpty()) {
-                    mold = new ItemStack(ItemInit.INGOT_MOLD);
+                    if (ItemInit.MOLDS.containsKey(metalTypeId)) {
+                        mold = new ItemStack(ItemInit.MOLDS.get(metalTypeId));
+                    }
                 }
                 moltenAmount = 0;
                 metalTypeId = null;
@@ -144,7 +164,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         if (metalTypeId != null && !metalTypeId.equals(metalType)) {
             return false;
         }
-        if (!mold.isEmpty() && mold.getItem() instanceof MoldItem moldItem && !moldItem.getMetalTypeId().equals(metalTypeId)) {
+        if (mold.isEmpty() && !ItemInit.MOLDS.containsKey(metalTypeId)) {
             return false;
         }
         this.linkedSmelterPos = smelterPos;
@@ -212,9 +232,8 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         if (filling || moltenAmount > 0 || mold.isEmpty()) {
             return ItemStack.EMPTY;
         }
-
+        ItemStack extractingMold = mold.copy();
         mold = ItemStack.EMPTY;
-        ItemStack extractingMold = new ItemStack(ItemInit.INGOT_MOLD);
 
         moltenAmount = 0;
         metalTypeId = null;

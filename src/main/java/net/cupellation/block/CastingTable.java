@@ -81,16 +81,16 @@ public class CastingTable extends BlockWithEntity {
         if (!table.isFilling() && table.getMoltenAmount() <= 0) {
             if (!heldItem.isEmpty()) {
                 if (heldItem.isIn(ConventionalItemTags.INGOTS) && table.tryInsertResult(heldItem)) {
-                    world.playSound(null, pos, SoundEvents.BLOCK_STONE_HIT, SoundCategory.BLOCKS, 1f, 1f);
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
                     return ActionResult.SUCCESS;
                 } else if (heldItem.getItem() instanceof MoldItem && table.tryInsertMold(heldItem)) {
-                    world.playSound(null, pos, SoundEvents.BLOCK_STONE_HIT, SoundCategory.BLOCKS, 1f, 1f);
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
                     return ActionResult.SUCCESS;
                 }
 
                 ItemStack ingot = table.tryExtractResult();
                 if (!ingot.isEmpty()) {
-                    world.playSound(null, pos, SoundEvents.BLOCK_STONE_BREAK, SoundCategory.BLOCKS, 1f, 1.2f);
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
                     if (!player.getInventory().insertStack(ingot)) {
                         player.dropItem(ingot, false);
                     }
@@ -99,7 +99,7 @@ public class CastingTable extends BlockWithEntity {
             } else {
                 ItemStack ingot = table.tryExtractResult();
                 if (!ingot.isEmpty()) {
-                    world.playSound(null, pos, SoundEvents.BLOCK_STONE_BREAK, SoundCategory.BLOCKS, 1f, 1.2f);
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
                     if (!player.getInventory().insertStack(ingot)) {
                         player.dropItem(ingot, false);
                     }
@@ -108,7 +108,7 @@ public class CastingTable extends BlockWithEntity {
 
                 ItemStack mold = table.tryExtractMold();
                 if (!mold.isEmpty()) {
-                    world.playSound(null, pos, SoundEvents.BLOCK_STONE_BREAK, SoundCategory.BLOCKS, 1f, 1.2f);
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
                     if (!player.getInventory().insertStack(mold)) {
                         player.dropItem(mold, false);
                     }
