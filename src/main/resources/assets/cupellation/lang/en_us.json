@@ -27,5 +27,8 @@
   "text.autoconfig.cupellation.option.midGradeDurability": "Mid Grade Durability",
   "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability",
 
-  "block.cupellation.smelter.incorrect": "Smelter is not built correctly!"
+  "block.cupellation.smelter.incorrect": "Smelter is not built correctly!",
+  "block.cupellation.smelter.degree": "°C",
+  "block.cupellation.smelter.grades": "Grades",
+  "block.cupellation.smelter.grade.info": "%s°C - %s°C"
 }

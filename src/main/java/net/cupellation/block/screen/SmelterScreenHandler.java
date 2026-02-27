@@ -17,12 +17,14 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class SmelterScreenHandler extends ScreenHandler {
 
     private final Inventory inventory;
     private final PropertyDelegate propertyDelegate;
 
+    @Nullable
     private Identifier metalTypeId = null;
 
     private final BlockPos pos;
@@ -62,7 +64,7 @@ public class SmelterScreenHandler extends ScreenHandler {
         this.addSlot(new Slot(inventory, 0, 152, 35) {
             @Override
             public boolean canInsert(ItemStack stack) {
-                return AbstractFurnaceBlockEntity.canUseAsFuel(stack);
+                return SmelterData.getFuelData(stack.getItem()) != null;
             }
         });
 
@@ -194,6 +196,7 @@ public class SmelterScreenHandler extends ScreenHandler {
         this.metalTypeId = id;
     }
 
+    @Nullable
     public Identifier getMetalTypeId() {
         return metalTypeId;
     }

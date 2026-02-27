@@ -2,6 +2,8 @@ package net.cupellation.block.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.cupellation.CupellationMain;
+import net.cupellation.data.MetalTypeData;
+import net.cupellation.data.SmelterData;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -12,8 +14,12 @@ import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
@@ -141,8 +147,36 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         int relY = mouseY - (this.height - GUI_HEIGHT) / 2;
 
         drawFluidTooltip(context, relX, relY);
+        drawTemperaturInfo(context, relX, relY);
         drawTemperatureTooltip(context, relX, relY);
         drawSmeltingTooltip(context, relX, relY);
+    }
+
+    private void drawTemperaturInfo(DrawContext context, int relX, int relY) {
+        context.drawText(this.textRenderer, Text.translatable("block.cupellation.smelter.degree"),  131, 18, 0xFFFFFF, true);
+        if (relX >= 131 && relX <= 131 + 11 && relY >= 18 && relY <= 18 + 8) {
+            List<Text> tooltip = new ArrayList<>();
+            if (handler.getMetalTypeId() != null) {
+                MetalTypeData metalTypeData = SmelterData.getMetalType(handler.getMetalTypeId());
+
+                if (metalTypeData != null && metalTypeData.hasGrades()) {
+                    tooltip.add(Text.translatable("block.cupellation.smelter.grades"));
+                    if (metalTypeData.highGrade() != null) {
+                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED).append(Text.literal(": ")).
+                                append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
+                    }
+                    if (metalTypeData.midGrade() != null) {
+                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD).append(Text.literal(": ")).
+                                append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
+                    }
+                    if (metalTypeData.lowGrade() != null) {
+                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW).append(Text.literal(": ")).
+                                append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
+                    }
+                }
+            }
+            context.drawTooltip(textRenderer, tooltip, relX, relY);
+        }
     }
 
     private void drawFluidTooltip(DrawContext context, int relX, int relY) {
