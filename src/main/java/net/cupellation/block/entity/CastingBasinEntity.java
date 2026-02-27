@@ -4,8 +4,10 @@ import net.cupellation.block.SmelterFaucet;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.ItemInit;
 import net.cupellation.init.SoundInit;
 import net.cupellation.misc.CastingEntity;
+import net.cupellation.misc.MoltenHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -19,7 +21,6 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -39,6 +40,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
     private int cooldownTicks = 0;
     private boolean cooled = false;
 
+    private int cachedGrade = 1;
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
@@ -191,6 +193,10 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
     private void startCooling() {
         filling = false;
         cooldownTicks = COOL_TIME;
+
+        if (linkedSmelterPos != null && metalTypeId != null && this.getWorld() != null) {
+            cachedGrade = MoltenHelper.getGrade(this.getWorld(), linkedSmelterPos, metalTypeId);
+        }
         markDirty();
     }
 
@@ -206,10 +212,12 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         if (result.isEmpty()) {
             return ItemStack.EMPTY;
         }
+        result.set(ItemInit.QUALITY_GRADE, cachedGrade);
         moltenAmount = 0;
         metalTypeId = null;
         cooled = false;
         cooldownTicks = 0;
+        cachedGrade = 1;
         markDirty();
 
         return result;
@@ -246,6 +254,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         cooldownTicks = nbt.getInt("cooldownTicks");
         cooled = nbt.getBoolean("cooled");
         filling = nbt.getBoolean("filling");
+        cachedGrade = nbt.getInt("cachedGrade");
 
         if (nbt.contains("metalTypeId") && !nbt.getString("metalTypeId").isEmpty()) {
             metalTypeId = Identifier.of(nbt.getString("metalTypeId"));
@@ -267,6 +276,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         nbt.putInt("cooldownTicks", cooldownTicks);
         nbt.putBoolean("cooled", cooled);
         nbt.putBoolean("filling", filling);
+        nbt.putInt("cachedGrade", cachedGrade);
         nbt.putString("metalTypeId", metalTypeId != null ? metalTypeId.toString() : "");
 
         if (linkedSmelterPos != null) {

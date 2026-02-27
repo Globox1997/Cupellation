@@ -7,6 +7,7 @@ import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
 import net.cupellation.init.SoundInit;
 import net.cupellation.misc.CastingEntity;
+import net.cupellation.misc.MoltenHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -42,6 +43,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private ItemStack result = ItemStack.EMPTY;
     private ItemStack mold = ItemStack.EMPTY;
 
+    private int cachedGrade = 1;
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
@@ -150,7 +152,9 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             cooldownTicks--;
             if (cooldownTicks == 0) {
                 if (result.isEmpty() && !mold.isEmpty()) {
-                    result = new ItemStack(Registries.ITEM.get(SmelterData.getIngotId(metalTypeId)));
+                    ItemStack stack = new ItemStack(Registries.ITEM.get(SmelterData.getIngotId(metalTypeId)));
+                    stack.set(ItemInit.QUALITY_GRADE, cachedGrade);
+                    result = stack;
                 } else if (!result.isEmpty() && mold.isEmpty()) {
                     if (ItemInit.MOLDS.containsKey(metalTypeId)) {
                         mold = new ItemStack(ItemInit.MOLDS.get(metalTypeId));
@@ -159,6 +163,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 moltenAmount = 0;
                 metalTypeId = null;
                 cooldownTicks = 0;
+                cachedGrade = 1;
                 markDirty();
             }
         }
@@ -215,6 +220,10 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private void startCooling() {
         filling = false;
         cooldownTicks = COOL_TIME;
+
+        if (linkedSmelterPos != null && metalTypeId != null && this.getWorld() != null) {
+            cachedGrade = MoltenHelper.getGrade(this.getWorld(), linkedSmelterPos, metalTypeId);
+        }
         markDirty();
     }
 
@@ -312,6 +321,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         moltenAmount = nbt.getInt("moltenAmount");
         cooldownTicks = nbt.getInt("cooldownTicks");
         filling = nbt.getBoolean("filling");
+        cachedGrade = nbt.getInt("cachedGrade");
 
         if (nbt.contains("metalTypeId") && !nbt.getString("metalTypeId").isEmpty()) {
             metalTypeId = Identifier.of(nbt.getString("metalTypeId"));
@@ -344,6 +354,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         nbt.putInt("moltenAmount", moltenAmount);
         nbt.putInt("cooldownTicks", cooldownTicks);
         nbt.putBoolean("filling", filling);
+        nbt.putInt("cachedGrade", cachedGrade);
         nbt.putString("metalTypeId", metalTypeId != null ? metalTypeId.toString() : "");
 
         if (!result.isEmpty()) {

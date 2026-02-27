@@ -37,7 +37,7 @@ import net.minecraft.world.World;
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
     // TODO:
-    // Set item quality at basin
+    // Cooling mechanic + calcite mechanic
 
     private DefaultedList<ItemStack> inventory;
 
