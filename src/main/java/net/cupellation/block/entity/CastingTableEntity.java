@@ -1,14 +1,16 @@
 package net.cupellation.block.entity;
 
 import net.cupellation.block.SmelterFaucet;
-import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.ItemInit;
+import net.cupellation.item.MoldItem;
 import net.cupellation.misc.CastingEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
@@ -16,62 +18,75 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
-public class CastingBasinEntity extends BlockEntity implements CastingEntity {
+public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
-    public static final int CAPACITY = 1296;
+    public static final int CAPACITY = 144;
 
-    public static final int FILL_RATE = 20;
+    public static final int FILL_RATE = 5;
 
     public static final int COOL_TIME = 200;
 
     private int moltenAmount = 0;
     private Identifier metalTypeId = null;
     private int cooldownTicks = 0;
-    private boolean cooled = false;
+
+    private ItemStack result = ItemStack.EMPTY;
+    private ItemStack mold = ItemStack.EMPTY;
 
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
-
-    public CastingBasinEntity(BlockPos pos, BlockState state) {
-        super(BlockInit.CASTING_BASIN_ENTITY, pos, state);
+    public CastingTableEntity(BlockPos pos, BlockState state) {
+        super(BlockInit.CASTING_TABLE_ENTITY, pos, state);
     }
 
-    public static void clientTick(World world, BlockPos pos, BlockState state, CastingBasinEntity blockEntity) {
+    public static void clientTick(World world, BlockPos pos, BlockState state, CastingTableEntity blockEntity) {
         blockEntity.clientTick();
     }
 
-    public static void serverTick(World world, BlockPos pos, BlockState state, CastingBasinEntity blockEntity) {
+    public static void serverTick(World world, BlockPos pos, BlockState state, CastingTableEntity blockEntity) {
         blockEntity.serverTick(world);
     }
 
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;
-            if (this.cooldownTicks == 0) {
-                this.cooled = true;
-            }
         }
     }
 
     private void serverTick(World world) {
-        if (filling && linkedSmelterPos != null && !cooled) {
+        if (filling) {
+            if (result.isEmpty() && mold.isEmpty()) {
+                stopFilling(world);
+                return;
+            }
+            if (!result.isEmpty() && !mold.isEmpty()) {
+                stopFilling(world);
+                return;
+            }
+        }
+
+        if (filling && linkedSmelterPos != null) {
             if (moltenAmount >= CAPACITY) {
                 startCooling();
                 stopFilling(world);
                 return;
             }
 
-            BlockEntity be = world.getBlockEntity(linkedSmelterPos);
-            if (!(be instanceof SmelterBlockEntity smelter)) {
+            BlockEntity blockEntity = world.getBlockEntity(linkedSmelterPos);
+            if (!(blockEntity instanceof SmelterBlockEntity smelter)) {
                 stopFilling(world);
-                if (moltenAmount > 0) startCooling();
+                if (moltenAmount > 0) {
+                    startCooling();
+                }
                 return;
             }
 
             if (smelter.getMoltenMetal() <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) startCooling();
+                if (moltenAmount > 0) {
+                    startCooling();
+                }
                 return;
             }
 
@@ -99,7 +114,14 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         if (cooldownTicks > 0) {
             cooldownTicks--;
             if (cooldownTicks == 0) {
-                cooled = true;
+                if (result.isEmpty() && !mold.isEmpty()) {
+                    result = new ItemStack(Registries.ITEM.get(SmelterData.getIngotId(metalTypeId)));
+                } else if (!result.isEmpty() && mold.isEmpty()) {
+                    mold = new ItemStack(ItemInit.INGOT_MOLD);
+                }
+                moltenAmount = 0;
+                metalTypeId = null;
+                cooldownTicks = 0;
                 markDirty();
             }
         }
@@ -107,7 +129,10 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
     @Override
     public boolean startFilling(BlockPos smelterPos, Identifier metalType) {
-        if (cooled) {
+        if (result.isEmpty() && mold.isEmpty()) {
+            return false;
+        }
+        if (!result.isEmpty() && !mold.isEmpty()) {
             return false;
         }
         if (cooldownTicks > 0) {
@@ -117,6 +142,9 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             return false;
         }
         if (metalTypeId != null && !metalTypeId.equals(metalType)) {
+            return false;
+        }
+        if (!mold.isEmpty() && mold.getItem() instanceof MoldItem moldItem && !moldItem.getMetalTypeId().equals(metalTypeId)) {
             return false;
         }
         this.linkedSmelterPos = smelterPos;
@@ -144,7 +172,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
     @Override
     public int castingDistance() {
-        return 21;
+        return 10;
     }
 
     private void startCooling() {
@@ -153,25 +181,57 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         markDirty();
     }
 
-    public ItemStack tryExtract() {
-        if (!cooled || moltenAmount < CAPACITY || metalTypeId == null) {
+    public boolean tryInsertResult(ItemStack stack) {
+        if (!result.isEmpty() || filling) {
+            return false;
+        }
+        if (moltenAmount > 0) {
+            return false;
+        }
+        result = stack.copyWithCount(1);
+        stack.decrement(1);
+        markDirty();
+        return true;
+    }
+
+    public boolean tryInsertMold(ItemStack stack) {
+        if (!mold.isEmpty() || filling) {
+            return false;
+        }
+        if (moltenAmount > 0) {
+            return false;
+        }
+        mold = stack.copyWithCount(1);
+        stack.decrement(1);
+        markDirty();
+        return true;
+    }
+
+
+    public ItemStack tryExtractMold() {
+        if (filling || moltenAmount > 0 || mold.isEmpty()) {
             return ItemStack.EMPTY;
         }
-        MetalTypeData metal = SmelterData.getMetalType(metalTypeId);
-        if (metal == null) {
-            return ItemStack.EMPTY;
-        }
-        ItemStack result = new ItemStack(Registries.BLOCK.get(metal.blockId()).asItem());
-        if (result.isEmpty()) {
-            return ItemStack.EMPTY;
-        }
+
+        mold = ItemStack.EMPTY;
+        ItemStack extractingMold = new ItemStack(ItemInit.INGOT_MOLD);
+
         moltenAmount = 0;
         metalTypeId = null;
-        cooled = false;
         cooldownTicks = 0;
         markDirty();
+        return extractingMold;
+    }
 
-        return result;
+
+    public ItemStack tryExtractResult() {
+        if (!result.isEmpty() && !filling || moltenAmount > 0) {
+            ItemStack out = result.copy();
+            result = ItemStack.EMPTY;
+            markDirty();
+            return out;
+        }
+        return ItemStack.EMPTY;
     }
 
     public int getMoltenAmount() {
@@ -180,10 +240,6 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
     public Identifier getMetalTypeId() {
         return metalTypeId;
-    }
-
-    public boolean isCooled() {
-        return cooled;
     }
 
     public boolean isFilling() {
@@ -198,18 +254,45 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         return (float) moltenAmount / CAPACITY;
     }
 
+    public ItemStack getResult() {
+        return result;
+    }
+
+    public boolean hasResult() {
+        return !result.isEmpty();
+    }
+
+    public ItemStack getMold() {
+        return mold;
+    }
+
+    public boolean hasMold() {
+        return !mold.isEmpty();
+    }
+
     @Override
     protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         super.readNbt(nbt, registryLookup);
         moltenAmount = nbt.getInt("moltenAmount");
         cooldownTicks = nbt.getInt("cooldownTicks");
-        cooled = nbt.getBoolean("cooled");
         filling = nbt.getBoolean("filling");
 
         if (nbt.contains("metalTypeId") && !nbt.getString("metalTypeId").isEmpty()) {
             metalTypeId = Identifier.of(nbt.getString("metalTypeId"));
         } else {
             metalTypeId = null;
+        }
+
+        if (nbt.contains("result", NbtElement.COMPOUND_TYPE)) {
+            result = ItemStack.fromNbt(registryLookup, nbt.getCompound("result")).orElse(ItemStack.EMPTY);
+        } else {
+            result = ItemStack.EMPTY;
+        }
+
+        if (nbt.contains("mold", NbtElement.COMPOUND_TYPE)) {
+            mold = ItemStack.fromNbt(registryLookup, nbt.getCompound("mold")).orElse(ItemStack.EMPTY);
+        } else {
+            mold = ItemStack.EMPTY;
         }
 
         if (nbt.contains("linkedSmelterX")) {
@@ -224,9 +307,17 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         super.writeNbt(nbt, registryLookup);
         nbt.putInt("moltenAmount", moltenAmount);
         nbt.putInt("cooldownTicks", cooldownTicks);
-        nbt.putBoolean("cooled", cooled);
         nbt.putBoolean("filling", filling);
         nbt.putString("metalTypeId", metalTypeId != null ? metalTypeId.toString() : "");
+
+        if (!result.isEmpty()) {
+            NbtCompound ingotNbt = new NbtCompound();
+            nbt.put("result", result.encode(registryLookup, ingotNbt));
+        }
+        if (!mold.isEmpty()) {
+            NbtCompound moldNbt = new NbtCompound();
+            nbt.put("mold", mold.encode(registryLookup, moldNbt));
+        }
 
         if (linkedSmelterPos != null) {
             nbt.putInt("linkedSmelterX", linkedSmelterPos.getX());

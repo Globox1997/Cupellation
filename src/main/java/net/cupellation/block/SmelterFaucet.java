@@ -1,11 +1,11 @@
 package net.cupellation.block;
 
-import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
+import net.cupellation.misc.CastingEntity;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
@@ -122,8 +122,8 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
         boolean nowOpen = !state.get(OPEN);
 
         if (nowOpen) {
-            CastingBasinEntity basin = findBasinBelow(world, pos);
-            if (basin == null) {
+            CastingEntity castingEntityBelow = findCastingEntityBelow(world, pos);
+            if (castingEntityBelow == null) {
                 return ActionResult.FAIL;
             }
             BlockPos drainPos = getDrainPos(state, pos);
@@ -147,7 +147,7 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
                 return ActionResult.FAIL;
             }
 
-            boolean started = basin.startFilling(smelter.getPos(), metalType);
+            boolean started = castingEntityBelow.startFilling(smelter.getPos(), metalType);
             if (!started) {
                 return ActionResult.FAIL;
             }
@@ -161,17 +161,22 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
                 faucetEntity.unlink();
             }
             world.setBlockState(pos, state.with(OPEN, false));
-            CastingBasinEntity basin = findBasinBelow(world, pos);
-            if (basin != null) basin.stopFilling(world);
+
+            CastingEntity castingEntityBelow = findCastingEntityBelow(world, pos);
+            if (castingEntityBelow != null) {
+                castingEntityBelow.stopFilling(world);
+            }
+
             return ActionResult.SUCCESS;
         }
     }
 
-    private CastingBasinEntity findBasinBelow(World world, BlockPos faucetPos) {
+    private CastingEntity findCastingEntityBelow(World world, BlockPos faucetPos) {
         for (int dy = 1; dy <= 2; dy++) {
             BlockPos checkPos = faucetPos.down(dy);
-            if (world.getBlockEntity(checkPos) instanceof CastingBasinEntity basin) {
-                return basin;
+            BlockEntity blockEntity = world.getBlockEntity(checkPos);
+            if (blockEntity instanceof CastingEntity castingEntity) {
+                return castingEntity;
             }
         }
         return null;

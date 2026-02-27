@@ -1,9 +1,9 @@
 package net.cupellation.block.render;
 
 import net.cupellation.block.SmelterFaucet;
-import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
 import net.cupellation.data.SmelterData;
+import net.cupellation.misc.CastingEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -69,8 +69,8 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
 
         Direction facing = faucetState.get(SmelterFaucet.FACING);
 
-        int basinDist = getBasinDistance(world, faucetPos);
-        if (basinDist < 0) {
+        float castingDistance = getCastingDistance(world, faucetPos);
+        if (castingDistance < 0.0001f) {
             return;
         }
         matrices.push();
@@ -84,10 +84,10 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
         renderHorizontalStream(consumer, matrix, facing, cx, cy, cz, r, g, b, minU, maxU, horizontalMaxU, minV, maxV, horizontalMaxV, lightFull, overlay);
 
         float streamTop = cy + STREAM_HALF;
-        float streamBottom = streamTop - basinDist - (5f / 16f);
+        float streamBottom = streamTop - castingDistance;
 
-        float verticalMaxU = minU + (sprite.getMaxU() - sprite.getMinU()) * (5f / 16f + basinDist);
-        float verticalMaxV = minV + (sprite.getMaxV() - sprite.getMinV()) * (5f / 16f + basinDist);
+        float verticalMaxU = minU + (sprite.getMaxU() - sprite.getMinU()) * castingDistance;
+        float verticalMaxV = minV + (sprite.getMaxV() - sprite.getMinV()) * castingDistance;
 
         renderVerticalStream(consumer, matrix, facing, cx, cz, streamTop, streamBottom, r, g, b, minU, maxU, verticalMaxU, minV, maxV, verticalMaxV, lightFull, overlay);
 
@@ -233,10 +233,10 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
         c.vertex(m, x, y, z).color(r, g, b, 1f).texture(u, v).overlay(overlay).light(light).normal(0, 1, 0);
     }
 
-    private int getBasinDistance(World world, BlockPos faucetPos) {
+    private float getCastingDistance(World world, BlockPos faucetPos) {
         for (int dy = 1; dy <= 2; dy++) {
-            if (world.getBlockEntity(faucetPos.down(dy)) instanceof CastingBasinEntity) {
-                return dy;
+            if (world.getBlockEntity(faucetPos.down(dy)) instanceof CastingEntity castingEntity) {
+                return (float) castingEntity.castingDistance() / 16f + (dy - 1) * 1f;
             }
         }
         return -1;

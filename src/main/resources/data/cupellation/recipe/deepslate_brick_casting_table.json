@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "d": {
+      "item": "minecraft:deepslate_bricks"
+    }
+  },
+  "pattern": [
+    "ddd",
+    "d d",
+    "d d"
+  ],
+  "result": {
+    "count": 1,
+    "id": "cupellation:deepslate_brick_casting_table"
+  }
+}

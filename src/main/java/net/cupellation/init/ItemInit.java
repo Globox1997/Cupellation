@@ -2,6 +2,7 @@ package net.cupellation.init;
 
 import com.mojang.serialization.Codec;
 import net.cupellation.CupellationMain;
+import net.cupellation.item.MoldItem;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.component.ComponentType;
@@ -26,6 +27,7 @@ public class ItemInit {
 
     // Items
     public static final Item CALCITE_POWDER = register("calcite_powder", new Item(new Item.Settings()));
+    public static final Item INGOT_MOLD = register("ingot_mold", new MoldItem(CupellationMain.identifierOf("gold"), new Item.Settings()));
 
     private static <T> ComponentType<T> registerComponent(String id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
         return Registry.register(Registries.DATA_COMPONENT_TYPE, id, builderOperator.apply(ComponentType.builder()).build());

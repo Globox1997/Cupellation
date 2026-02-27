@@ -6,12 +6,14 @@
   "item.cupellation.tooltip.quality.3": "High",
 
   "item.cupellation.calcite_powder": "Calcite Powder",
+  "item.cupellation.ingot_mold": "Ingot Mold",
 
   "block.cupellation.smelter": "Smelter",
   "block.cupellation.deepslate_brick_glass": "Deepslate Brick Glass",
   "block.cupellation.deepslate_brick_drain": "Deepslate Brick Drain",
   "block.cupellation.deepslate_brick_faucet": "Deepslate Brick Faucet",
   "block.cupellation.deepslate_brick_casting_basin": "Deepslate Brick Casting Basin",
+  "block.cupellation.deepslate_brick_casting_table": "Deepslate Brick Casting Table",
 
   "metal.cupellation.copper": "Molten Copper",
   "metal.cupellation.gold": "Molten Gold",

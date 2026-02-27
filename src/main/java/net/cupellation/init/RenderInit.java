@@ -1,6 +1,7 @@
 package net.cupellation.init;
 
 import net.cupellation.block.render.CastingBasinRenderer;
+import net.cupellation.block.render.CastingTableRenderer;
 import net.cupellation.block.render.SmelterBlockRenderer;
 import net.cupellation.block.render.SmelterFaucetRenderer;
 import net.cupellation.block.screen.SmelterScreen;
@@ -21,9 +22,11 @@ public class RenderInit {
         BlockEntityRendererFactories.register(BlockInit.SMELTER_ENTITY, SmelterBlockRenderer::new);
         BlockEntityRendererFactories.register(BlockInit.CASTING_BASIN_ENTITY, CastingBasinRenderer::new);
         BlockEntityRendererFactories.register(BlockInit.SMELTER_FAUCET_ENTITY, SmelterFaucetRenderer::new);
+        BlockEntityRendererFactories.register(BlockInit.CASTING_TABLE_ENTITY, CastingTableRenderer::new);
         BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.SMELTER, RenderLayer.getCutout());
         BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_GLASS, RenderLayer.getCutout());
         BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_CASTING_BASIN, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_CASTING_TABLE, RenderLayer.getCutout());
         BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_FAUCET, RenderLayer.getCutoutMipped());
 
         HandledScreens.register(BlockInit.SMELTER_SCREEN_HANDLER, SmelterScreen::new);
