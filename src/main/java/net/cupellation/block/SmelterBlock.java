@@ -3,6 +3,7 @@ package net.cupellation.block;
 import com.mojang.serialization.MapCodec;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.SoundInit;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -11,7 +12,11 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.FluidState;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.DirectionProperty;
@@ -21,6 +26,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,6 +84,40 @@ public class SmelterBlock extends BlockWithEntity {
             }
         }
         return ActionResult.SUCCESS;
+    }
+
+    @Override
+    public void randomDisplayTick(BlockState state, World world, BlockPos pos, Random random) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity && smelterBlockEntity.isFormed() && smelterBlockEntity.getMoltenMetal() > 0) {
+
+            BlockPos corner = smelterBlockEntity.getCornerMin();
+            if (corner == null) {
+                return;
+            }
+            int innerW = smelterBlockEntity.getStructureWidth() - 2;
+            int innerD = smelterBlockEntity.getStructureDepth() - 2;
+            int innerH = smelterBlockEntity.getStructureHeight();
+
+            float fillHeight = smelterBlockEntity.getFillPercent() * innerH;
+
+            double px = corner.getX() + 1 + random.nextDouble() * innerW;
+            double pz = corner.getZ() + 1 + random.nextDouble() * innerD;
+            double py = corner.getY() + fillHeight;
+
+            BlockPos surfacePos = BlockPos.ofFloored(px, py, pz);
+            BlockPos aboveSurface = surfacePos.up();
+            if (!world.getBlockState(aboveSurface).isAir()) {
+                return;
+            }
+
+            world.addParticle(ParticleTypes.LAVA, px, py, pz, 0.0, 0.0, 0.0);
+
+            if (random.nextInt(50) == 0) {
+                world.playSound(px, py, pz, SoundInit.MOLTEN_EVENT, SoundCategory.BLOCKS,
+                        0.2F + random.nextFloat() * 0.2F, 0.9F + random.nextFloat() * 0.15F, false);
+            }
+        }
     }
 
 }

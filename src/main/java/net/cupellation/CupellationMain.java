@@ -15,6 +15,7 @@ public class CupellationMain implements ModInitializer {
         BlockInit.init();
         ItemInit.init();
         TagInit.init();
+        SoundInit.init();
         CupellationServerPacket.init();
     }
 
