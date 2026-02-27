@@ -39,7 +39,7 @@
   "block.cupellation.smelter.grades": "Grades",
   "block.cupellation.smelter.grade.info": "%s°C - %s°C",
 
-  "tag.cupellation.cooling_items": "Cooling Items",
-  "tag.cupellation.flux_items": "Flux Items",
-  "tag.cupellation.smelter_blocks": "Smelter Blocks"
+  "tag.item.cupellation.cooling_items": "Cooling Items",
+  "tag.item.cupellation.flux_items": "Flux Items",
+  "tag.block.cupellation.smelter_blocks": "Smelter Blocks"
 }
