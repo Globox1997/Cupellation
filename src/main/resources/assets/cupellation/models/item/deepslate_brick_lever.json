@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cupellation:block/deepslate_brick_lever"
+  }
+}

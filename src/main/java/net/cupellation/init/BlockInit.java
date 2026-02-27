@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.enums.NoteBlockInstrument;
+import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
@@ -43,6 +44,9 @@ public class BlockInit {
             "deepslate_brick_casting_table",
             new CastingTable(AbstractBlock.Settings.create().mapColor(MapColor.DEEPSLATE_GRAY).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
                     .strength(3.0F, 6.0F).sounds(BlockSoundGroup.DEEPSLATE)));
+    public static final Block DEEPSLATE_BRICK_LEVER = register(
+            "deepslate_brick_lever", new LeverBlock(AbstractBlock.Settings.create().noCollision().strength(1.0F).sounds(BlockSoundGroup.DEEPSLATE).pistonBehavior(PistonBehavior.DESTROY))
+    );
 
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
     public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY;
