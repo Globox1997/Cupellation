@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "d": {
+      "item": "minecraft:deepslate_bricks"
+    },
+    "e": {
+      "item": "minecraft:blast_furnace"
+    }
+  },
+  "pattern": [
+    "ddd",
+    "ded",
+    "ddd"
+  ],
+  "result": {
+    "count": 1,
+    "id": "cupellation:smelter"
+  }
+}
