@@ -36,6 +36,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
@@ -55,6 +56,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private int moltenMetal = 0;
 
+    @Nullable
     private Identifier metalTypeId = null;
 
     private int fuelTime = 0;
