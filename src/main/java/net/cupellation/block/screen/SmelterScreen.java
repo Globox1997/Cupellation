@@ -12,6 +12,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerInventory;
@@ -20,6 +25,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +71,6 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         handler.syncMetalType(MinecraftClient.getInstance().world);
-
         this.renderBackground(context, mouseX, mouseY, delta);
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
@@ -84,42 +89,79 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         drawFluidFill(context, x, y);
         drawSlagFill(context, x, y);
 
-        drawBarFromBottom(context, x + TEMP_BAR_X, y + TEMP_BAR_Y, TEMP_BAR_W, TEMP_BAR_H, TEMP_U, TEMP_V, handler.getTemperature(), Math.max(1, handler.getMaxTemperature()));
+        drawBarFromBottom(context, x + TEMP_BAR_X, y + TEMP_BAR_Y, TEMP_BAR_W, TEMP_BAR_H, TEMP_U, TEMP_V,
+                handler.getTemperature(), Math.max(1, handler.getMaxTemperature()));
 
         for (int i = 0; i < 3; i++) {
-            drawBarFromBottom(context, x + SMELT_BAR_X, y + SMELT_SLOT_Y[i], SMELT_BAR_W, SMELT_BAR_H, SMELT_U, SMELT_V, handler.getSmeltProgress(i), Math.max(1, handler.getSmeltTotal(i)));
+            drawBarFromBottom(context, x + SMELT_BAR_X, y + SMELT_SLOT_Y[i], SMELT_BAR_W, SMELT_BAR_H,
+                    SMELT_U, SMELT_V, handler.getSmeltProgress(i), Math.max(1, handler.getSmeltTotal(i)));
         }
 
         drawFuelFlame(context, x, y);
         drawBurnArrow(context, x, y);
     }
 
+    private void drawTiledSprite(DrawContext context, int destX, int destY, int destW, int destH, Sprite sprite, float r, float g, float b) {
+        if (destW <= 0 || destH <= 0) {
+            return;
+        }
+        float uMin = sprite.getMinU();
+        float vMin = sprite.getMinV();
+        float uSpan = sprite.getMaxU() - uMin;
+        float vSpan = sprite.getMaxV() - vMin;
+
+        RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buf = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
+
+        for (int ty = 0; ty < destH; ty += 16) {
+            int tileH = Math.min(16, destH - ty);
+            float v0 = vMin;
+            float v1 = vMin + (tileH / 16f) * vSpan;
+
+            for (int tx = 0; tx < destW; tx += 16) {
+                int tileW = Math.min(16, destW - tx);
+                float u0 = uMin;
+                float u1 = uMin + (tileW / 16f) * uSpan;
+
+                float sx0 = destX + tx;
+                float sy0 = destY + ty;
+                float sx1 = sx0 + tileW;
+                float sy1 = sy0 + tileH;
+
+                buf.vertex(matrix, sx0, sy1, 0f).texture(u0, v1).color(r, g, b, 1f);
+                buf.vertex(matrix, sx1, sy1, 0f).texture(u1, v1).color(r, g, b, 1f);
+                buf.vertex(matrix, sx1, sy0, 0f).texture(u1, v0).color(r, g, b, 1f);
+                buf.vertex(matrix, sx0, sy0, 0f).texture(u0, v0).color(r, g, b, 1f);
+            }
+        }
+
+        BufferRenderer.drawWithGlobalProgram(buf.end());
+        RenderSystem.disableBlend();
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+    }
+
     private void drawFluidFill(DrawContext context, int x, int y) {
         float fill = handler.getFillPercent();
-        if (fill <= 0f) return;
-
+        if (fill <= 0f) {
+            return;
+        }
         int filledH = MathHelper.ceil(FLUID_H * fill);
         int topY = y + FLUID_Y + (FLUID_H - filledH);
 
-        Identifier spriteId = handler.getMetalTexture();
-        Sprite sprite = MinecraftClient.getInstance().getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).apply(spriteId);
+        Sprite sprite = MoltenHelper.getFluidSprite(handler.getMetalTexture());
 
         int color = handler.getMetalColor();
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
-        RenderSystem.setShaderColor(r, g, b, 1f);
-        RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
 
-        for (int tileX = 0; tileX < FLUID_W; tileX += 16) {
-            for (int tileY = 0; tileY < filledH; tileY += 16) {
-                int drawW = Math.min(16, FLUID_W - tileX);
-                int drawH = Math.min(16, filledH - tileY);
-                context.drawSprite(x + FLUID_X + tileX, topY + tileY, 0, drawW, drawH, sprite);
-            }
-        }
-
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        drawTiledSprite(context, x + FLUID_X, topY, FLUID_W, filledH, sprite, r, g, b);
     }
 
     private void drawSlagFill(DrawContext context, int x, int y) {
@@ -128,36 +170,24 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             return;
         }
         float totalFill = handler.getTotalFillPercent();
-        int totalFilledH = MathHelper.ceil(FLUID_H * totalFill);
-        int slagFilledH = MathHelper.ceil(FLUID_H * slagFill);
-
-        int maxSlagH = Math.min(slagFilledH, FLUID_H);
-        if (maxSlagH <= 0) {
+        int totalFilledH = Math.min(MathHelper.ceil(FLUID_H * totalFill), FLUID_H);
+        int slagFilledH = Math.min(MathHelper.ceil(FLUID_H * slagFill), totalFilledH);
+        if (slagFilledH <= 0) {
             return;
         }
-        int slagTopY = y + FLUID_Y + (FLUID_H - totalFilledH);
+        int columnTopY = y + FLUID_Y + (FLUID_H - totalFilledH);
 
-        Sprite slagSprite = MinecraftClient.getInstance().getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).apply(MoltenHelper.SLAG_TEXTURE);
+        Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
 
         float sr = ((SLAG_COLOR >> 16) & 0xFF) / 255f;
         float sg = ((SLAG_COLOR >> 8) & 0xFF) / 255f;
         float sb = (SLAG_COLOR & 0xFF) / 255f;
 
-        RenderSystem.setShaderColor(sr, sg, sb, 1f);
-        RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
-
-        for (int tileX = 0; tileX < FLUID_W; tileX += 16) {
-            for (int tileY = 0; tileY < maxSlagH; tileY += 16) {
-                int drawW = Math.min(16, FLUID_W - tileX);
-                int drawH = Math.min(16, maxSlagH - tileY);
-                context.drawSprite(x + FLUID_X + tileX, slagTopY + tileY, 0, drawW, drawH, slagSprite);
-            }
-        }
-
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        drawTiledSprite(context, x + FLUID_X, columnTopY, FLUID_W, slagFilledH, slagSprite, sr, sg, sb);
     }
 
-    private void drawBarFromBottom(DrawContext context, int screenX, int screenY, int barW, int barH, int u, int v, int current, int max) {
+    private void drawBarFromBottom(DrawContext context, int screenX, int screenY, int barW, int barH,
+                                   int u, int v, int current, int max) {
         if (current <= 0) return;
         int filledH = MathHelper.ceil(barH * ((float) current / max));
         int offsetY = barH - filledH;
@@ -199,7 +229,9 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         if (relX >= 153 && relX <= 153 + 13 && relY >= 19 && relY <= 19 + 13) {
             List<Text> tooltip = new ArrayList<>();
             for (FuelData fuelData : SmelterData.allFuels()) {
-                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly().append(Text.literal(": ")).append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
+                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly()
+                        .append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
             }
             if (!tooltip.isEmpty()) {
                 context.drawTooltip(textRenderer, tooltip, relX, relY);
@@ -212,20 +244,25 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             List<Text> tooltip = new ArrayList<>();
             if (handler.getMetalTypeId() != null) {
                 MetalTypeData metalTypeData = SmelterData.getMetalType(handler.getMetalTypeId());
-
                 if (metalTypeData != null && metalTypeData.hasGrades()) {
                     tooltip.add(Text.translatable("block.cupellation.smelter.grades"));
                     if (metalTypeData.highGrade() != null) {
-                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED).append(Text.literal(": ")).
-                                append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
+                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED)
+                                .append(Text.literal(": "))
+                                .append(Text.translatable("block.cupellation.smelter.grade.info",
+                                        metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
                     }
                     if (metalTypeData.midGrade() != null) {
-                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD).append(Text.literal(": ")).
-                                append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
+                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD)
+                                .append(Text.literal(": "))
+                                .append(Text.translatable("block.cupellation.smelter.grade.info",
+                                        metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
                     }
                     if (metalTypeData.lowGrade() != null) {
-                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW).append(Text.literal(": ")).
-                                append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
+                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW)
+                                .append(Text.literal(": "))
+                                .append(Text.translatable("block.cupellation.smelter.grade.info",
+                                        metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
                     }
                 }
             }
@@ -252,7 +289,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
 
     private void drawTemperatureTooltip(DrawContext context, int relX, int relY) {
         if (relX >= TEMP_BAR_X && relX <= TEMP_BAR_X + TEMP_BAR_W && relY >= TEMP_BAR_Y && relY <= TEMP_BAR_Y + TEMP_BAR_H) {
-            context.drawTooltip(textRenderer, Text.literal("Temperature: " + handler.getTemperature() + " / " + handler.getMaxTemperature() + " °C"), relX, relY);
+            context.drawTooltip(textRenderer, Text.translatable("block.cupellation.smelter.temperature").copyContentOnly().append(Text.literal(": " + handler.getTemperature() + " / " + handler.getMaxTemperature() + " ").append(Text.translatable("block.cupellation.smelter.degree"))), relX, relY);
         }
     }
 
@@ -263,7 +300,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
                 int total = handler.getSmeltTotal(i);
                 if (total > 0) {
                     int percent = (int) (handler.getSmeltPercent(i) * 100);
-                    context.drawTooltip(textRenderer, Text.literal("Smelting: " + percent + "% (" + handler.getSmeltProgress(i) + "/" + total + " ticks)"), relX, relY);
+                    context.drawTooltip(textRenderer, Text.translatable("block.cupellation.smelter.smelting").copyContentOnly().append(Text.literal(": " + percent + "% (" + handler.getSmeltProgress(i) + "/" + total + " ticks)")), relX, relY);
                 }
                 break;
             }

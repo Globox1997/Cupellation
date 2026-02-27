@@ -11,6 +11,8 @@
   "block.cupellation.smelter": "Smelter",
   "block.cupellation.smelter.slag": "Slag",
   "block.cupellation.smelter.capacity": "Capacity",
+  "block.cupellation.smelter.temperature": "Temperature",
+  "block.cupellation.smelter.smelting": "Smelting",
   "block.cupellation.deepslate_brick_glass": "Deepslate Brick Glass",
   "block.cupellation.deepslate_brick_drain": "Deepslate Brick Drain",
   "block.cupellation.deepslate_brick_faucet": "Deepslate Brick Faucet",
