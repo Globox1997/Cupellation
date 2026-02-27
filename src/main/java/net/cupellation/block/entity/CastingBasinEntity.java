@@ -14,9 +14,13 @@ import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -83,13 +87,17 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             BlockEntity be = world.getBlockEntity(linkedSmelterPos);
             if (!(be instanceof SmelterBlockEntity smelter)) {
                 stopFilling(world);
-                if (moltenAmount > 0) startCooling();
+                if (moltenAmount > 0) {
+                    startCooling();
+                }
                 return;
             }
 
             if (smelter.getMoltenMetal() <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) startCooling();
+                if (moltenAmount > 0) {
+                    startCooling();
+                }
                 return;
             }
 
@@ -110,6 +118,21 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             int actual = Math.min(toFill, available);
 
             smelter.drainMoltenMetal(actual);
+
+            int smelterTemp = smelter.getTemperature();
+            MetalTypeData metalData = SmelterData.getMetalType(metalTypeId);
+            if (metalData != null && smelterTemp > metalData.getMaxGradeTemperature()) {
+                int overheat = smelterTemp - metalData.getMaxGradeTemperature();
+                int evaporate = Math.max(1, overheat / 10);
+                actual = Math.max(1, actual - evaporate);
+
+                ((ServerWorld) world).spawnParticles(ParticleTypes.SMOKE, pos.getX() + 0.2 + world.random.nextDouble() * 0.6, pos.getY() + 1.1,
+                        pos.getZ() + 0.2 + world.random.nextDouble() * 0.6, 3, 0.1, 0.05, 0.1, 0.02);
+                if (this.getWorld().getRandom().nextInt(20) == 0) {
+                    ((ServerWorld) world).playSound(null, this.getPos().getX(), this.getPos().getY(), this.getPos().getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 1.0f, this.getWorld().getRandom().nextLong());
+                }
+            }
+
             moltenAmount += actual;
             markDirty();
         }

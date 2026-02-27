@@ -36,9 +36,7 @@ import net.minecraft.world.World;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
-    // TODO: When too hot at casting process, it will just evaporate with smoke
-    // Tell max temperature at screen
-    // Tell grade info at screen
+    // TODO:
     // Set item quality at basin
 
     private DefaultedList<ItemStack> inventory;

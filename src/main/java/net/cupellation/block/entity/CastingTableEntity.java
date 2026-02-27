@@ -1,6 +1,7 @@
 package net.cupellation.block.entity;
 
 import net.cupellation.block.SmelterFaucet;
+import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
@@ -15,9 +16,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -125,6 +129,19 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             int actual = Math.min(toFill, available);
 
             smelter.drainMoltenMetal(actual);
+            int smelterTemp = smelter.getTemperature();
+            MetalTypeData metalData = SmelterData.getMetalType(metalTypeId);
+            if (metalData != null && smelterTemp > metalData.getMaxGradeTemperature()) {
+                int overheat = smelterTemp - metalData.getMaxGradeTemperature();
+                int evaporate = Math.max(1, overheat / 10);
+                actual = Math.max(1, actual - evaporate);
+
+                ((ServerWorld) world).spawnParticles(ParticleTypes.SMOKE, pos.getX() + 0.2 + world.random.nextDouble() * 0.6, pos.getY() + 1.1,
+                        pos.getZ() + 0.2 + world.random.nextDouble() * 0.6, 3, 0.1, 0.05, 0.1, 0.02);
+                if (this.getWorld().getRandom().nextInt(20) == 0) {
+                    ((ServerWorld) world).playSound(null, this.getPos().getX(), this.getPos().getY(), this.getPos().getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 1.0f, this.getWorld().getRandom().nextLong());
+                }
+            }
             moltenAmount += actual;
             markDirty();
         }
