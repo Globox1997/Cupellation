@@ -23,7 +23,7 @@ import static net.cupellation.misc.MoltenHelper.*;
 @Environment(EnvType.CLIENT)
 public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEntity> {
 
-    private enum FaceDirection {TOP, BOTTOM, NORTH, SOUTH, WEST, EAST}
+    private enum FaceDirection {TOP, TOP_INNER, BOTTOM, NORTH, SOUTH, WEST, EAST}
 
     public SmelterBlockRenderer(BlockEntityRendererFactory.Context ctx) {
     }
@@ -78,6 +78,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         if (molten > 0) {
             float y1 = moltenFillHeight;
             renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP_INNER, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
             renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
             renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e, FaceDirection.NORTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
             renderTiledFace(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e, FaceDirection.SOUTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
@@ -92,11 +93,12 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
             float slagY0 = moltenFillHeight;
             float slagY1 = totalFillHeight;
-
             if (slagY1 - slagY0 < 0.05f) {
                 slagY1 = slagY0 + 0.05f;
             }
+
             renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.TOP, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.TOP_INNER, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
             if (molten <= 0) {
                 renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.BOTTOM, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
             }
@@ -123,6 +125,21 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
                         vertex(consumer, matrix, ax0, y1, az1, r, g, b, minU, v1, light, overlay);
                         vertex(consumer, matrix, ax1, y1, az1, r, g, b, u1, v1, light, overlay);
                         vertex(consumer, matrix, ax1, y1, az0, r, g, b, u1, minV, light, overlay);
+                    }
+                }
+            }
+            case TOP_INNER -> {
+                float yInner = y1 - 0.002f;
+                for (float tx = 0; tx < (x1 - x0); tx++) {
+                    for (float tz = 0; tz < (z1 - z0); tz++) {
+                        float ax0 = x0 + tx, ax1 = Math.min(x0 + tx + 1, x1);
+                        float az0 = z0 + tz, az1 = Math.min(z0 + tz + 1, z1);
+                        float u1 = minU + (maxU - minU) * (ax1 - ax0);
+                        float v1 = minV + (maxV - minV) * (az1 - az0);
+                        vertex(consumer, matrix, ax1, yInner, az0, r, g, b, u1, minV, light, overlay);
+                        vertex(consumer, matrix, ax1, yInner, az1, r, g, b, u1, v1, light, overlay);
+                        vertex(consumer, matrix, ax0, yInner, az1, r, g, b, minU, v1, light, overlay);
+                        vertex(consumer, matrix, ax0, yInner, az0, r, g, b, minU, minV, light, overlay);
                     }
                 }
             }
