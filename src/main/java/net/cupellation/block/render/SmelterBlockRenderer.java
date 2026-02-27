@@ -3,9 +3,9 @@ package net.cupellation.block.render;
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.data.SmelterData;
+import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -13,7 +13,6 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationAxis;
@@ -32,7 +31,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         if (!blockEntity.isFormed() || blockEntity.getMoltenMetal() <= 0) return;
 
         Identifier metalTypeId = blockEntity.getMetalTypeId();
-        Sprite sprite = getFluidSprite(metalTypeId);
+        Sprite sprite = MoltenHelper.getFluidSprite(metalTypeId);
         Direction facing = blockEntity.getCachedState().get(SmelterBlock.FACING);
 
         int lightFull = 15 << 4 | 15 << 20;
@@ -167,11 +166,6 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
     private void vertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, float r, float g, float b, float u, float v, int light, int overlay) {
         consumer.vertex(matrix, x, y, z).color(r, g, b, 1.0f).texture(u, v).overlay(overlay).light(light).normal(0, 1, 0);
-    }
-
-    private Sprite getFluidSprite(Identifier metalTypeId) {
-        Identifier textureId = SmelterData.getTexture(metalTypeId);
-        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(textureId);
     }
 
 }

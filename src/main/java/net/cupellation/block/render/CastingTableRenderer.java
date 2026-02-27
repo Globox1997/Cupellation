@@ -222,9 +222,9 @@ package net.cupellation.block.render;
 import net.cupellation.block.SmelterFaucet;
 import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.data.SmelterData;
+import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -236,7 +236,6 @@ import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -281,7 +280,7 @@ public class CastingTableRenderer implements BlockEntityRenderer<CastingTableEnt
 
         if (blockEntity.getCooldownTicks() > 0) {
             float coolProgress = 1f - ((float) blockEntity.getCooldownTicks() / CastingTableEntity.COOL_TIME);
-            renderColor = lerpColor(moltenColor, cooledColor, coolProgress);
+            renderColor = MoltenHelper.lerpColor(moltenColor, cooledColor, coolProgress);
         } else {
             renderColor = moltenColor;
         }
@@ -293,7 +292,7 @@ public class CastingTableRenderer implements BlockEntityRenderer<CastingTableEnt
         float fillPercent = (float) blockEntity.getMoltenAmount() / CastingTableEntity.CAPACITY;
         float topY = SURFACE_Y + FILL_RANGE * fillPercent;
 
-        Sprite sprite = getFluidSprite(metalTypeId);
+        Sprite sprite = MoltenHelper.getFluidSprite(metalTypeId);
         float minU = sprite.getMinU(), maxU = sprite.getMaxU();
         float minV = sprite.getMinV(), maxV = sprite.getMaxV();
 
@@ -360,20 +359,6 @@ public class CastingTableRenderer implements BlockEntityRenderer<CastingTableEnt
 
     private void vertex(VertexConsumer c, Matrix4f m, float x, float y, float z, float r, float g, float b, float u, float v, int light, int overlay) {
         c.vertex(m, x, y, z).color(r, g, b, 1f).texture(u, v).overlay(overlay).light(light).normal(0, 1, 0);
-    }
-
-    private Sprite getFluidSprite(Identifier metalTypeId) {
-        Identifier textureId = SmelterData.getTexture(metalTypeId);
-        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(textureId);
-    }
-
-    private int lerpColor(int a, int b, float t) {
-        int ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;
-        int br = (b >> 16) & 0xFF, bg = (b >> 8) & 0xFF, bb = b & 0xFF;
-        int rr = (int) (ar + (br - ar) * t);
-        int rg = (int) (ag + (bg - ag) * t);
-        int rb = (int) (ab + (bb - ab) * t);
-        return (rr << 16) | (rg << 8) | rb;
     }
 
     private Direction getFaucetDirection(World world, BlockPos pos) {

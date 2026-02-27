@@ -4,10 +4,10 @@ import net.cupellation.block.SmelterFaucet;
 import net.cupellation.block.entity.SmelterFaucetEntity;
 import net.cupellation.data.SmelterData;
 import net.cupellation.misc.CastingEntity;
+import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -15,7 +15,6 @@ import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -56,7 +55,7 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;
 
-        Sprite sprite = getFluidSprite(metalTypeId);
+        Sprite sprite = MoltenHelper.getFluidSprite(metalTypeId);
         int lightFull = 15 << 4 | 15 << 20;
 
         float minU = sprite.getMinU();
@@ -240,10 +239,5 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
             }
         }
         return -1;
-    }
-
-    private Sprite getFluidSprite(Identifier metalTypeId) {
-        Identifier textureId = SmelterData.getTexture(metalTypeId);
-        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(textureId);
     }
 }

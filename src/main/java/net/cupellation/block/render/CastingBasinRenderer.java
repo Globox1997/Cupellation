@@ -2,10 +2,10 @@ package net.cupellation.block.render;
 
 import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.data.SmelterData;
+import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -18,7 +18,6 @@ import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
-import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -62,7 +61,7 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
 
         if (basin.getCooldownTicks() > 0) {
             float coolProgress = 1f - ((float) basin.getCooldownTicks() / CastingBasinEntity.COOL_TIME);
-            renderColor = lerpColor(moltenColor, cooledColor, coolProgress);
+            renderColor = MoltenHelper.lerpColor(moltenColor, cooledColor, coolProgress);
         }
 
         float r = ((renderColor >> 16) & 0xFF) / 255f;
@@ -72,7 +71,7 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
         float fillPercent = (float) basin.getMoltenAmount() / CastingBasinEntity.CAPACITY;
         float topY = FLOOR_Y + FILL_RANGE * fillPercent;
 
-        Sprite sprite = getFluidSprite(metalTypeId);
+        Sprite sprite = MoltenHelper.getFluidSprite(metalTypeId);
         float minU = sprite.getMinU(), maxU = sprite.getMaxU();
         float minV = sprite.getMinV(), maxV = sprite.getMaxV();
 
@@ -115,33 +114,6 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
         } else {
             renderBlock(basin, matrices, vertexConsumers, light, overlay);
         }
-//        int color = COOLED_COLOR;
-//        float r = ((color >> 16) & 0xFF) / 255f;
-//        float g = ((color >> 8) & 0xFF) / 255f;
-//        float b = (color & 0xFF) / 255f;
-//
-//        Sprite sprite = getFluidSprite(metalTypeId);
-//        float minU = sprite.getMinU(), maxU = sprite.getMaxU();
-//        float minV = sprite.getMinV(), maxV = sprite.getMaxV();
-//
-//        int lightFull = 15 << 4 | 15 << 20;
-//
-//        matrices.push();
-//        Matrix4f matrix = matrices.peek().getPositionMatrix();
-//        VertexConsumer consumer = vertexConsumers.getBuffer(RenderLayer.getTranslucent());
-//
-//        float x0 = INNER_MIN, x1 = INNER_MAX;
-//        float z0 = INNER_MIN, z1 = INNER_MAX;
-//        float y0 = FLOOR_Y, y1 = CEILING_Y;
-//        float e = 0.001f;
-//
-//        renderQuad(consumer, matrix, x0, y1, z0, x1, y1, z1, true, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-//        renderQuadNorth(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e, false, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-//        renderQuadFlipped(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-//        renderQuadWest(consumer, matrix, x0 + e, y0, z0, x0 + e, y1, z1, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-//        renderQuadEast(consumer, matrix, x1 - e, y0, z0, x1 - e, y1, z1, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-//
-//        matrices.pop();
     }
 
     private void renderBlock(CastingBasinEntity basin, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
@@ -202,17 +174,4 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
         c.vertex(m, x, y, z).color(r, g, b, 1f).texture(u, v).overlay(overlay).light(light).normal(0, 1, 0);
     }
 
-    private Sprite getFluidSprite(Identifier metalTypeId) {
-        Identifier textureId = SmelterData.getTexture(metalTypeId);
-        return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(textureId);
-    }
-
-    private int lerpColor(int a, int b, float t) {
-        int ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;
-        int br = (b >> 16) & 0xFF, bg = (b >> 8) & 0xFF, bb = b & 0xFF;
-        int rr = (int) (ar + (br - ar) * t);
-        int rg = (int) (ag + (bg - ag) * t);
-        int rb = (int) (ab + (bb - ab) * t);
-        return (rr << 16) | (rg << 8) | rb;
-    }
 }
