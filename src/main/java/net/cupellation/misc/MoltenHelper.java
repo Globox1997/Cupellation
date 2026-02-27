@@ -1,5 +1,6 @@
 package net.cupellation.misc;
 
+import net.cupellation.CupellationMain;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
@@ -11,6 +12,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class MoltenHelper {
+
+    public static final Identifier SLAG_TEXTURE = CupellationMain.identifierOf("fluid/slag");
+    public static final float SLAG_R = 0.55f;
+    public static final float SLAG_G = 0.52f;
+    public static final float SLAG_B = 0.50f;
 
     public static int lerpColor(int a, int b, float t) {
         int ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;

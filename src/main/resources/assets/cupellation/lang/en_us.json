@@ -9,6 +9,8 @@
   "item.cupellation.ingot_mold": "Ingot Mold",
 
   "block.cupellation.smelter": "Smelter",
+  "block.cupellation.smelter.slag": "Slag",
+  "block.cupellation.smelter.capacity": "Capacity",
   "block.cupellation.deepslate_brick_glass": "Deepslate Brick Glass",
   "block.cupellation.deepslate_brick_drain": "Deepslate Brick Drain",
   "block.cupellation.deepslate_brick_faucet": "Deepslate Brick Faucet",
@@ -27,10 +29,15 @@
   "text.autoconfig.cupellation.option.lowGradeDurability": "Low Grade Durability",
   "text.autoconfig.cupellation.option.midGradeDurability": "Mid Grade Durability",
   "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability",
+  "text.autoconfig.cupellation.option.slagRatio": "Slag Ratio",
 
   "block.cupellation.smelter.incorrect": "Smelter is not built correctly!",
   "block.cupellation.smelter.degree": "°C",
   "block.cupellation.smelter.degree.info": "%s°C",
   "block.cupellation.smelter.grades": "Grades",
-  "block.cupellation.smelter.grade.info": "%s°C - %s°C"
+  "block.cupellation.smelter.grade.info": "%s°C - %s°C",
+
+  "tag.cupellation.cooling_items": "Cooling Items",
+  "tag.cupellation.flux_items": "Flux Items",
+  "tag.cupellation.smelter_blocks": "Smelter Blocks"
 }

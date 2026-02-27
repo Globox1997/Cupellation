@@ -5,6 +5,7 @@ import net.cupellation.CupellationMain;
 import net.cupellation.data.FuelData;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
+import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -28,6 +29,8 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
 
     private static final Identifier TEXTURE = CupellationMain.identifierOf("textures/gui/smelter.png");
     private static final Identifier BURN_PROGRESS_SPRITE = Identifier.ofVanilla("container/furnace/burn_progress");
+
+    private static final int SLAG_COLOR = 0x8C857F;
 
     private static final int GUI_WIDTH = 176;
     private static final int GUI_HEIGHT = 166;
@@ -79,6 +82,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         context.drawTexture(TEXTURE, x, y, 0, 0, GUI_WIDTH, GUI_HEIGHT);
 
         drawFluidFill(context, x, y);
+        drawSlagFill(context, x, y);
 
         drawBarFromBottom(context, x + TEMP_BAR_X, y + TEMP_BAR_Y, TEMP_BAR_W, TEMP_BAR_H, TEMP_U, TEMP_V, handler.getTemperature(), Math.max(1, handler.getMaxTemperature()));
 
@@ -112,6 +116,41 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
                 int drawW = Math.min(16, FLUID_W - tileX);
                 int drawH = Math.min(16, filledH - tileY);
                 context.drawSprite(x + FLUID_X + tileX, topY + tileY, 0, drawW, drawH, sprite);
+            }
+        }
+
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+    }
+
+    private void drawSlagFill(DrawContext context, int x, int y) {
+        float slagFill = handler.getSlagFillPercent();
+        if (slagFill <= 0f) {
+            return;
+        }
+        float totalFill = handler.getTotalFillPercent();
+        int totalFilledH = MathHelper.ceil(FLUID_H * totalFill);
+        int slagFilledH = MathHelper.ceil(FLUID_H * slagFill);
+
+        int maxSlagH = Math.min(slagFilledH, FLUID_H);
+        if (maxSlagH <= 0) {
+            return;
+        }
+        int slagTopY = y + FLUID_Y + (FLUID_H - totalFilledH);
+
+        Sprite slagSprite = MinecraftClient.getInstance().getSpriteAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE).apply(MoltenHelper.SLAG_TEXTURE);
+
+        float sr = ((SLAG_COLOR >> 16) & 0xFF) / 255f;
+        float sg = ((SLAG_COLOR >> 8) & 0xFF) / 255f;
+        float sb = (SLAG_COLOR & 0xFF) / 255f;
+
+        RenderSystem.setShaderColor(sr, sg, sb, 1f);
+        RenderSystem.setShaderTexture(0, SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE);
+
+        for (int tileX = 0; tileX < FLUID_W; tileX += 16) {
+            for (int tileY = 0; tileY < maxSlagH; tileY += 16) {
+                int drawW = Math.min(16, FLUID_W - tileX);
+                int drawH = Math.min(16, maxSlagH - tileY);
+                context.drawSprite(x + FLUID_X + tileX, slagTopY + tileY, 0, drawW, drawH, slagSprite);
             }
         }
 
@@ -199,8 +238,15 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     private void drawFluidTooltip(DrawContext context, int relX, int relY) {
         if (relX >= FLUID_X && relX <= FLUID_X + FLUID_W && relY >= FLUID_Y && relY <= FLUID_Y + FLUID_H) {
             int mb = handler.getMoltenMetal();
+            int slagMb = handler.getSlag();
             int cap = handler.getMaxCapacity();
-            context.drawTooltip(textRenderer, Text.literal(handler.getMetalName() + ": " + mb + " / " + cap + " mB"), relX, relY);
+            List<Text> tooltip = new ArrayList<>();
+            tooltip.add(Text.literal(handler.getMetalName() + ": " + mb + " mB"));
+            if (slagMb > 0) {
+                tooltip.add(Text.translatable("block.cupellation.smelter.slag").append(Text.literal(": " + slagMb + " mB")).formatted(Formatting.GRAY));
+            }
+            tooltip.add(Text.translatable("block.cupellation.smelter.capacity").copyContentOnly().append(Text.literal(": " + (mb + slagMb) + " / " + cap + " mB")).formatted(Formatting.DARK_GRAY));
+            context.drawTooltip(textRenderer, tooltip, relX, relY);
         }
     }
 

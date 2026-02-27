@@ -29,7 +29,7 @@ public class SmelterScreenHandler extends ScreenHandler {
 
     private final BlockPos pos;
 
-    private static final int PROP_COUNT = 15;
+    private static final int PROP_COUNT = 17;
 
     private static final int PROP_MOLTEN_METAL_LOW = 0;
     private static final int PROP_MOLTEN_METAL_HIGH = 1;
@@ -46,7 +46,8 @@ public class SmelterScreenHandler extends ScreenHandler {
     private static final int PROP_SMELT_TOTAL_0 = 12;
     private static final int PROP_SMELT_TOTAL_1 = 13;
     private static final int PROP_SMELT_TOTAL_2 = 14;
-
+    private static final int PROP_SLAG_LOW = 15;
+    private static final int PROP_SLAG_HIGH = 16;
 
     public SmelterScreenHandler(int syncId, PlayerInventory playerInventory, SmelterScreenPacket packet) {
         this(syncId, playerInventory, new SimpleInventory(4), new ArrayPropertyDelegate(PROP_COUNT), packet.pos());
@@ -133,6 +134,12 @@ public class SmelterScreenHandler extends ScreenHandler {
         return low | (high << 16);
     }
 
+    public int getSlag() {
+        int low = propertyDelegate.get(PROP_SLAG_LOW) & 0xFFFF;
+        int high = propertyDelegate.get(PROP_SLAG_HIGH) & 0xFFFF;
+        return low | (high << 16);
+    }
+
     public boolean isFormed() {
         return propertyDelegate.get(PROP_IS_FORMED) == 1;
     }
@@ -164,6 +171,16 @@ public class SmelterScreenHandler extends ScreenHandler {
     public float getFillPercent() {
         int cap = getMaxCapacity();
         return cap > 0 ? (float) getMoltenMetal() / cap : 0f;
+    }
+
+    public float getSlagFillPercent() {
+        int cap = getMaxCapacity();
+        return cap > 0 ? (float) getSlag() / cap : 0f;
+    }
+
+    public float getTotalFillPercent() {
+        int cap = getMaxCapacity();
+        return cap > 0 ? (float) (getMoltenMetal() + getSlag()) / cap : 0f;
     }
 
     public float getFuelPercent() {

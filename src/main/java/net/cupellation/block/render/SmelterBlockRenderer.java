@@ -18,6 +18,8 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 
+import static net.cupellation.misc.MoltenHelper.*;
+
 @Environment(EnvType.CLIENT)
 public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEntity> {
 
@@ -28,17 +30,27 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
     @Override
     public void render(SmelterBlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
-        if (!blockEntity.isFormed() || blockEntity.getMoltenMetal() <= 0) return;
-
+        if (!blockEntity.isFormed()) {
+            return;
+        }
+        int molten = blockEntity.getMoltenMetal();
+        int slag = blockEntity.getSlag();
+        if (molten <= 0 && slag <= 0) {
+            return;
+        }
         Identifier metalTypeId = blockEntity.getMetalTypeId();
-        Sprite sprite = MoltenHelper.getFluidSprite(metalTypeId);
+        Sprite moltenSprite = MoltenHelper.getFluidSprite(metalTypeId);
         Direction facing = blockEntity.getCachedState().get(SmelterBlock.FACING);
 
         int lightFull = 15 << 4 | 15 << 20;
 
         float innerW = blockEntity.getStructureWidth() - 2f;
         float innerD = blockEntity.getStructureDepth() - 2f;
-        float fillHeight = blockEntity.getFillPercent() * blockEntity.getStructureHeight() * 0.8f + 0.05f;
+        float structureH = blockEntity.getStructureHeight();
+
+        float moltenFillHeight = blockEntity.getFillPercent() * structureH * 0.8f + 0.05f;
+        float slagFillHeight = blockEntity.getSlagFillPercent() * structureH * 0.8f;
+        float totalFillHeight = moltenFillHeight + slagFillHeight;
 
         int color = SmelterData.getColor(metalTypeId);
         float r = ((color >> 16) & 0xFF) / 255f;
@@ -46,7 +58,6 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float b = (color & 0xFF) / 255f;
 
         matrices.push();
-
         matrices.translate(0.5, 0.0, 0.5);
         matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-facing.asRotation()));
         matrices.translate(-0.5, 0, -(blockEntity.getStructureDepth() - 0.5f));
@@ -56,21 +67,45 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float z0 = 1.0f;
         float z1 = z0 + innerD;
         float y0 = 0.0f;
-        float y1 = fillHeight;
 
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         VertexConsumer consumer = vertexConsumers.getBuffer(RenderLayer.getTranslucent());
 
-        float minU = sprite.getMinU(), maxU = sprite.getMaxU();
-        float minV = sprite.getMinV(), maxV = sprite.getMaxV();
-
+        float minU = moltenSprite.getMinU(), maxU = moltenSprite.getMaxU();
+        float minV = moltenSprite.getMinV(), maxV = moltenSprite.getMaxV();
         float e = 0.001f;
-        renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-        renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-        renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e, FaceDirection.NORTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-        renderTiledFace(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e, FaceDirection.SOUTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-        renderTiledFace(consumer, matrix, x0 + e, y0, z0, x0 + e, y1, z1, FaceDirection.WEST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-        renderTiledFace(consumer, matrix, x1 - e, y0, z0, x1 - e, y1, z1, FaceDirection.EAST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+
+        if (molten > 0) {
+            float y1 = moltenFillHeight;
+            renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e, FaceDirection.NORTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e, FaceDirection.SOUTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0 + e, y0, z0, x0 + e, y1, z1, FaceDirection.WEST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x1 - e, y0, z0, x1 - e, y1, z1, FaceDirection.EAST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        }
+
+        if (slag > 0) {
+            Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
+            float slagMinU = slagSprite.getMinU(), slagMaxU = slagSprite.getMaxU();
+            float slagMinV = slagSprite.getMinV(), slagMaxV = slagSprite.getMaxV();
+
+            float slagY0 = moltenFillHeight;
+            float slagY1 = totalFillHeight;
+
+            if (slagY1 - slagY0 < 0.05f) {
+                slagY1 = slagY0 + 0.05f;
+            }
+            renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.TOP, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            if (molten <= 0) {
+                renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.BOTTOM, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            }
+            renderTiledFace(consumer, matrix, x0, slagY0, z0 + e, x1, slagY1, z0 + e, FaceDirection.NORTH, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, slagY0, z1 - e, x1, slagY1, z1 - e, FaceDirection.SOUTH, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0 + e, slagY0, z0, x0 + e, slagY1, z1, FaceDirection.WEST, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x1 - e, slagY0, z0, x1 - e, slagY1, z1, FaceDirection.EAST, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+        }
+
         matrices.pop();
     }
 
@@ -167,5 +202,4 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
     private void vertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, float r, float g, float b, float u, float v, int light, int overlay) {
         consumer.vertex(matrix, x, y, z).color(r, g, b, 1.0f).texture(u, v).overlay(overlay).light(light).normal(0, 1, 0);
     }
-
 }

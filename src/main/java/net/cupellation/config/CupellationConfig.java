@@ -12,6 +12,10 @@ public class CupellationConfig implements ConfigData {
     public int smelterMaxWidth = 7;
     public int smelterMaxHeight = 8;
 
+    @Comment("Slag ratio in X%")
+    @ConfigEntry.BoundedDiscrete(min = 0, max = 100)
+    public int slagRatio = 15;
+
     @Comment("Reduces durability by X%")
     @ConfigEntry.BoundedDiscrete(min = 0, max = 100)
     public int lowGradeDurability = 50;
