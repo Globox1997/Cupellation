@@ -26,6 +26,9 @@ import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
@@ -37,7 +40,7 @@ import net.minecraft.world.World;
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
     // TODO:
-    // Cooling mechanic + calcite mechanic
+    // calcite mechanic
 
     private DefaultedList<ItemStack> inventory;
 
@@ -61,6 +64,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private int maxTemperature = 0;
     private static final float TEMP_RISE_RATE = 1.5f;
     private static final float TEMP_DECAY_RATE = 0.5f;
+
+    private static final int MINIMUM_TEMPERATURE = 400;
+    private static final int ITEM_COOLING_TEMPERATURE = 20;
 
     private final int[] smeltProgress = new int[3];
     private final int[] smeltTotal = new int[3];
@@ -241,7 +247,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             tickSmeltSlot(i);
         }
 
-        if (moltenMetal > 0) tickFluidDamage();
+        if (moltenMetal > 0) {
+            tickFluidDamage();
+        }
     }
 
     private void tickTemperature() {
@@ -349,10 +357,20 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             entity.damage(world.getDamageSources().lava(), 4.0f);
             entity.setOnFireFor(5);
         }
+        int temperatureDecrease = 0;
         for (ItemEntity item : world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), e -> true)) {
             if (!item.isFireImmune()) {
+                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, this.getWorld().getRandom().nextLong());
+                if (item.getStack().isIn(TagInit.COOLING_ITEMS)) {
+                    temperatureDecrease += ITEM_COOLING_TEMPERATURE;
+                }
                 item.discard();
             }
+        }
+        if (this.temperature > MINIMUM_TEMPERATURE && temperatureDecrease > 0) {
+            this.temperature -= temperatureDecrease;
+            this.temperature = Math.max(this.temperature, MINIMUM_TEMPERATURE);
+            markDirty();
         }
     }
 
@@ -482,6 +500,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
         markDirty();
     }
+
     @Override
     public boolean canPlayerUse(PlayerEntity player) {
         return true;
@@ -598,12 +617,11 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     public void drainMoltenMetal(int amount) {
-        return; // TODO ONLY FOR TESTING RETURN HERE
-//        moltenMetal = Math.max(0, moltenMetal - amount);
-//        if (moltenMetal <= 0) {
-//            moltenMetal = 0;
-//            metalTypeId = null;
-//        }
-//        markDirty();
+        moltenMetal = Math.max(0, moltenMetal - amount);
+        if (moltenMetal <= 0) {
+            moltenMetal = 0;
+            metalTypeId = null;
+        }
+        markDirty();
     }
 }
