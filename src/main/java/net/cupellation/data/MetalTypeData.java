@@ -33,14 +33,14 @@ public record MetalTypeData(Identifier id, String name, int requiredTemp, int co
     }
 
     public int getMinGradeTemperature() {
-        if (highGrade != null) {
-            return highGrade.min();
+        if (lowGrade != null) {
+            return lowGrade.min();
         }
         if (midGrade != null) {
             return midGrade.min();
         }
-        if (lowGrade != null) {
-            return lowGrade.min();
+        if (highGrade != null) {
+            return highGrade.min();
         }
         return 0;
     }

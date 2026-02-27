@@ -131,6 +131,17 @@ public class SmelterBlock extends BlockWithEntity {
         }
     }
 
+    @Override
+    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        super.onStateReplaced(state, world, pos, newState, moved);
+        if (!state.isOf(newState.getBlock())) {
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity) {
+                smelterBlockEntity.onStructureDestroyed();
+            }
+        }
+    }
+
     private boolean isNeighborPowered(World world, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             BlockPos neighborPos = pos.offset(direction);

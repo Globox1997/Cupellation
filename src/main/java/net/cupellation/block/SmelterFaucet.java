@@ -7,10 +7,7 @@ import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.misc.CastingEntity;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ai.pathing.NavigationType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -122,6 +119,7 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
         }
         boolean nowOpen = !state.get(OPEN);
 
+
         if (nowOpen) {
             CastingEntity castingEntityBelow = findCastingEntityBelow(world, pos);
             if (castingEntityBelow == null) {
@@ -133,13 +131,11 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             if (!(drainState.getBlock() instanceof SmelterDrain)) {
                 return ActionResult.FAIL;
             }
-
             SmelterBlockEntity smelter = findSmelter(world, drainPos, state);
 
             if (smelter == null) {
                 return ActionResult.FAIL;
             }
-
             if (!isMoltenHighEnough(smelter, drainPos)) {
                 return ActionResult.FAIL;
             }
@@ -191,7 +187,7 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
         Direction inward = faucetState.get(FACING).getOpposite();
         BlockPos startAir = drainPos.offset(inward);
 
-        if (!world.isAir(startAir)) {
+        if (!isAirOrLight(world, startAir)) {
             return null;
         }
         int minX = startAir.getX(), maxX = startAir.getX();
@@ -201,7 +197,7 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
         for (Direction dir : Direction.values()) {
             for (int i = 1; i <= ConfigInit.CONFIG.smelterMaxWidth + 1; i++) {
                 BlockPos check = startAir.offset(dir, i);
-                if (!world.isAir(check)) {
+                if (!isAirOrLight(world, check)) {
                     if (!world.getBlockState(check).isIn(TagInit.SMELTER_BLOCKS) && !world.getBlockState(check).isOf(BlockInit.SMELTER)) {
                         return null;
                     }
@@ -231,6 +227,11 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             }
         }
         return null;
+    }
+
+    private boolean isAirOrLight(World world, BlockPos pos) {
+        BlockState state = world.getBlockState(pos);
+        return state.isAir() || state.isOf(Blocks.LIGHT);
     }
 
     private boolean isMoltenHighEnough(SmelterBlockEntity smelter, BlockPos drainPos) {

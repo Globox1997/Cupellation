@@ -11,7 +11,10 @@ import net.cupellation.init.ItemInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.LightBlock;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
@@ -52,6 +55,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private int validateCooldown = 0;
     private static final int VALIDATE_INTERVAL = 40;
+
+    private int lastFilledLayers = -1;
 
     private int moltenMetal = 0;
     private int slag = 0;
@@ -264,8 +269,12 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             validateCooldown = VALIDATE_INTERVAL;
             boolean wasFormed = isFormed;
             isFormed = validateStructure();
-            if (wasFormed && !isFormed) onStructureDestroyed();
-            if (!wasFormed && isFormed) onStructureFormed();
+            if (wasFormed && !isFormed) {
+                onStructureDestroyed();
+            }
+            if (!wasFormed && isFormed) {
+                onStructureFormed();
+            }
         }
 
         if (!isFormed) {
@@ -293,6 +302,12 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
         if (moltenMetal > 0 || slag > 0) {
             tickFluidDamage();
+        }
+
+        int newFilledLayers = calcFilledLayers();
+        if (newFilledLayers != lastFilledLayers) {
+            lastFilledLayers = newFilledLayers;
+            updateLightBlocks();
         }
     }
 
@@ -502,7 +517,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                     if (isWall && !state.isIn(TagInit.SMELTER_BLOCKS)) {
                         return false;
                     }
-                    if (!isWall && !state.isAir()) {
+                    if (!isWall && !state.isAir() && !state.isOf(Blocks.LIGHT)) {
                         return false;
                     }
                 }
@@ -513,7 +528,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         markDirty();
     }
 
-    private void onStructureDestroyed() {
+    public void onStructureDestroyed() {
+        clearLightBlocks();
         for (int i = 0; i < 3; i++) {
             smeltProgress[i] = 0;
             smeltTotal[i] = 0;
@@ -716,6 +732,65 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     public boolean isRedstonePowered() {
         return redstonePowered;
+    }
+
+    private void updateLightBlocks() {
+        if (world == null || world.isClient()) {
+            return;
+        }
+        Direction facing = getCachedState().get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
+
+        int filledLayers = calcFilledLayers();
+        int innerW = structureWidth - 2;
+        int innerD = structureDepth - 2;
+
+        for (int y = 0; y < structureHeight; y++) {
+            for (int x = 0; x < innerW; x++) {
+                for (int z = 0; z < innerD; z++) {
+                    BlockPos lightPos = cornerMin.offset(right, 1 + x).offset(facing.getOpposite(), 1 + z).up(y);
+
+                    BlockState current = world.getBlockState(lightPos);
+                    boolean shouldHaveLight = y < filledLayers;
+
+                    if (shouldHaveLight && (current.isAir() || current.isOf(Blocks.LIGHT))) {
+                        world.setBlockState(lightPos, Blocks.LIGHT.getDefaultState().with(LightBlock.LEVEL_15, 15), Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
+                    } else if (!shouldHaveLight && current.isOf(Blocks.LIGHT)) {
+                        world.setBlockState(lightPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_LISTENERS);
+                    }
+                }
+            }
+        }
+    }
+
+    private int calcFilledLayers() {
+        if ((moltenMetal + slag) <= 0) {
+            return 0;
+        }
+        return Math.max(1, Math.round(getTotalFillPercent() * maxFillHeight()));
+    }
+
+    private void clearLightBlocks() {
+        if (world == null || world.isClient()) {
+            return;
+        }
+        Direction facing = getCachedState().get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
+
+        int innerW = Math.max(1, structureWidth - 2);
+        int innerD = Math.max(1, structureDepth - 2);
+
+        for (int y = 0; y < structureHeight; y++) {
+            for (int x = 0; x < innerW; x++) {
+                for (int z = 0; z < innerD; z++) {
+                    BlockPos lightPos = cornerMin.offset(right, 1 + x).offset(facing.getOpposite(), 1 + z).up(y);
+
+                    if (world.getBlockState(lightPos).isOf(Blocks.LIGHT)) {
+                        world.setBlockState(lightPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_LISTENERS);
+                    }
+                }
+            }
+        }
     }
 
     public void drainMoltenMetal(int amount) {
