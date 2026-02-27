@@ -2,6 +2,7 @@ package net.cupellation.block;
 
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
+import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
@@ -144,6 +145,9 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             }
             Identifier metalType = smelter.getMetalTypeId();
             if (metalType == null || smelter.getMoltenMetal() <= 0) {
+                return ActionResult.FAIL;
+            }
+            if (SmelterData.getMetalType(metalType) != null && SmelterData.getMetalType(metalType).getMinGradeTemperature() > smelter.getTemperature()) {
                 return ActionResult.FAIL;
             }
 
