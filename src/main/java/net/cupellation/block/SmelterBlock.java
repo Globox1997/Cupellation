@@ -120,4 +120,25 @@ public class SmelterBlock extends BlockWithEntity {
         }
     }
 
+    @Override
+    public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+        if (!world.isClient()) {
+            boolean powered = world.isReceivingRedstonePower(pos) || isNeighborPowered(world, pos);
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity) {
+                smelterBlockEntity.setRedstonePowered(powered);
+            }
+        }
+    }
+
+    private boolean isNeighborPowered(World world, BlockPos pos) {
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = pos.offset(direction);
+            if (world.isReceivingRedstonePower(neighborPos)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

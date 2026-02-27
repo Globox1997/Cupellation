@@ -59,6 +59,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     @Nullable
     private Identifier metalTypeId = null;
 
+    private boolean redstonePowered = false;
     private int fuelTime = 0;
     private int maxFuelTime = 0;
 
@@ -163,6 +164,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         maxFuelTime = nbt.getInt("maxFuelTime");
         temperature = nbt.getInt("temperature");
         maxTemperature = nbt.getInt("maxTemperature");
+        redstonePowered = nbt.getBoolean("redstonePowered");
 
         for (int i = 0; i < 3; i++) {
             smeltProgress[i] = nbt.getInt("smeltProgress" + i);
@@ -189,6 +191,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         nbt.putInt("maxFuelTime", maxFuelTime);
         nbt.putInt("temperature", temperature);
         nbt.putInt("maxTemperature", maxTemperature);
+        nbt.putBoolean("redstonePowered", redstonePowered);
 
         for (int i = 0; i < 3; i++) {
             nbt.putInt("smeltProgress" + i, smeltProgress[i]);
@@ -227,9 +230,10 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             if (!wasFormed && isFormed) onStructureFormed();
         }
 
-        if (!isFormed) return;
-
-        if (hasAnyInput() && moltenMetal < getMaxCapacity()) {
+        if (!isFormed) {
+            return;
+        }
+        if ((redstonePowered || hasAnyInput()) && moltenMetal < getMaxCapacity()) {
             if (fuelTime <= 0) {
                 tryConsumeFuel();
             }
@@ -616,6 +620,15 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             }
         }
         return false;
+    }
+
+    public void setRedstonePowered(boolean powered) {
+        this.redstonePowered = powered;
+        markDirty();
+    }
+
+    public boolean isRedstonePowered() {
+        return redstonePowered;
     }
 
     public void drainMoltenMetal(int amount) {
