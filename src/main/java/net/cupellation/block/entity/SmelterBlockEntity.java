@@ -217,6 +217,34 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private void clientTick() {
+        if (!isFormed || moltenMetal <= 0) {
+            return;
+        }
+        if (world == null || !world.isRaining()) {
+            return;
+        }
+        Direction facing = getCachedState().get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
+
+        int innerW = structureWidth - 2;
+        int innerD = structureDepth - 2;
+
+        int rx = world.getRandom().nextInt(innerW);
+        int rz = world.getRandom().nextInt(innerD);
+
+        BlockPos innerPos = cornerMin.offset(right, 1 + rx).offset(facing.getOpposite(), 1 + rz).up(structureHeight);
+
+        if (!world.isSkyVisible(innerPos)) {
+            return;
+        }
+        if (world.getRandom().nextInt(10) == 0) {
+            double px = innerPos.getX() + world.getRandom().nextDouble();
+            double py = cornerMin.getY() + getFillPercent() * structureHeight;
+            double pz = innerPos.getZ() + world.getRandom().nextDouble();
+
+            world.playSound(px, py, pz, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE,
+                    SoundCategory.BLOCKS, 0.3f, 0.8f + world.getRandom().nextFloat() * 0.4f, false);
+        }
     }
 
     private void serverTick() {
@@ -279,7 +307,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (fuelData == null) {
             return;
         }
-        int burnTime = fuelData.burnTime() >= 0 ? fuelData.burnTime() : AbstractFurnaceBlockEntity.createFuelTimeMap().getOrDefault(fuel.getItem(), 0);
+        int burnTime = fuelData.burnTime();
         if (burnTime <= 0) {
             return;
         }
