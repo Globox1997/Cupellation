@@ -46,10 +46,10 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
         float innerW = blockEntity.getStructureWidth() - 2f;
         float innerD = blockEntity.getStructureDepth() - 2f;
-        float structureH = blockEntity.getStructureHeight();
 
-        float moltenFillHeight = blockEntity.getFillPercent() * structureH * 0.8f + 0.05f;
-        float slagFillHeight = blockEntity.getSlagFillPercent() * structureH * 0.8f;
+        float maxH = blockEntity.maxFillHeight();
+        float moltenFillHeight = blockEntity.getFillPercent() * maxH;
+        float slagFillHeight = blockEntity.getSlagFillPercent() * maxH;
         float totalFillHeight = moltenFillHeight + slagFillHeight;
 
         int color = SmelterData.getColor(metalTypeId);

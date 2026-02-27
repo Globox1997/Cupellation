@@ -249,7 +249,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
         if (world.getRandom().nextInt(10) == 0) {
             double px = innerPos.getX() + world.getRandom().nextDouble();
-            double py = cornerMin.getY() + getTotalFillPercent() * structureHeight;
+            double py = cornerMin.getY() + getTotalFillPercent() * maxFillHeight();
             double pz = innerPos.getZ() + world.getRandom().nextDouble();
 
             world.playSound(px, py, pz, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE,
@@ -395,7 +395,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         BlockPos p1 = cornerMin.offset(right, 1).offset(facing.getOpposite(), 1);
         BlockPos p2 = cornerMin.offset(right, structureWidth - 2).offset(facing.getOpposite(), structureDepth - 2);
 
-        float fluidHeight = getTotalFillPercent() * (structureHeight * 0.8f);
+        float fluidHeight = getTotalFillPercent() * maxFillHeight();
 
         Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()),
                 Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
@@ -684,6 +684,10 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     public float getFillPercent() {
         int cap = getMaxCapacity();
         return cap > 0 ? (float) moltenMetal / cap : 0f;
+    }
+
+    public float maxFillHeight() {
+        return (structureHeight - 1) + 0.8f;
     }
 
     public float getTotalFillPercent() {
