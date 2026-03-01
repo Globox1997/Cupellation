@@ -89,34 +89,40 @@ public class SmelterBlock extends BlockWithEntity {
     @Override
     public void randomDisplayTick(BlockState state, World world, BlockPos pos, Random random) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity && smelterBlockEntity.isFormed() && smelterBlockEntity.getTotalMoltenMetal() > 0) {
+        if (!(blockEntity instanceof SmelterBlockEntity smelter)) {
+            return;
+        }
+        if (!smelter.isFormed() || smelter.getTotalMoltenMetal() <= 0) {
+            return;
+        }
+        BlockPos corner = smelter.getCornerMin();
+        if (corner == null) {
+            return;
+        }
+        Direction facing = state.get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
 
-            BlockPos corner = smelterBlockEntity.getCornerMin();
-            if (corner == null) {
-                return;
-            }
-            int innerW = smelterBlockEntity.getStructureWidth() - 2;
-            int innerD = smelterBlockEntity.getStructureDepth() - 2;
-            int innerH = smelterBlockEntity.getStructureHeight();
+        int innerW = smelter.getStructureWidth() - 2;
+        int innerD = smelter.getStructureDepth() - 2;
 
-            float fillHeight = smelterBlockEntity.getFillPercent() * innerH;
+        int rx = random.nextInt(innerW);
+        int rz = random.nextInt(innerD);
 
-            double px = corner.getX() + 1 + random.nextDouble() * innerW;
-            double pz = corner.getZ() + 1 + random.nextDouble() * innerD;
-            double py = corner.getY() + fillHeight;
+        BlockPos innerPos = corner.offset(right, 1 + rx).offset(facing.getOpposite(), 1 + rz);
 
-            BlockPos surfacePos = BlockPos.ofFloored(px, py, pz);
-            BlockPos aboveSurface = surfacePos.up();
-            if (!world.getBlockState(aboveSurface).isAir()) {
-                return;
-            }
+        double px = innerPos.getX() + random.nextDouble();
+        double pz = innerPos.getZ() + random.nextDouble();
+        double py = corner.getY() + smelter.getTotalFillPercent() * smelter.maxFillHeight();
 
-            world.addParticle(ParticleTypes.LAVA, px, py, pz, 0.0, 0.0, 0.0);
+        BlockPos surfacePos = BlockPos.ofFloored(px, py, pz);
+        if (!world.getBlockState(surfacePos.up()).isAir()) {
+            return;
+        }
+        world.addParticle(ParticleTypes.LAVA, px, py, pz, 0.0, 0.0, 0.0);
 
-            if (random.nextInt(50) == 0) {
-                world.playSound(px, py, pz, SoundInit.MOLTEN_EVENT, SoundCategory.BLOCKS,
-                        0.2F + random.nextFloat() * 0.2F, 0.9F + random.nextFloat() * 0.15F, false);
-            }
+        if (random.nextInt(50) == 0) {
+            world.playSound(px, py, pz, SoundInit.MOLTEN_EVENT, SoundCategory.BLOCKS,
+                    0.2F + random.nextFloat() * 0.2F, 0.9F + random.nextFloat() * 0.15F, false);
         }
     }
 
