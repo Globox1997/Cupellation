@@ -7,7 +7,7 @@
   "texture": "cupellation:fluid/molten_netherite",
   "ingot": "minecraft:netherite_ingot",
   "block": "minecraft:netherite_block",
-  "flux_item": "cupellation:calcite_powder",
+  "flux_item": "cupellation:quartz_powder",
   "density": 250,
   "alloy_from": [
     {

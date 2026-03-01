@@ -5,7 +5,7 @@
   "color": "331810",
   "cooled_color": "5D342C",
   "texture": "cupellation:fluid/molten_debris",
-  "flux_item": "cupellation:calcite_powder",
+  "flux_item": "cupellation:quartz_powder",
   "density": 220,
   "grades": {
     "low": {
