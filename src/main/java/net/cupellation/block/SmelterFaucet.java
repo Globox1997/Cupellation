@@ -1,7 +1,10 @@
 package net.cupellation.block;
 
+import net.cupellation.block.entity.CastingBasinEntity;
+import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
+import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
@@ -139,14 +142,26 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             if (!isMoltenHighEnough(smelter, drainPos)) {
                 return ActionResult.FAIL;
             }
-            Identifier metalType = smelter.getMetalTypeId();
-            if (metalType == null || smelter.getMoltenMetal() <= 0) {
+            Identifier metalType = smelter.getPourableMetalType();
+            if (metalType == null || smelter.getTotalMoltenMetal() <= 0) {
                 return ActionResult.FAIL;
             }
-            if (SmelterData.getMetalType(metalType) != null && SmelterData.getMetalType(metalType).getMinGradeTemperature() > smelter.getTemperature()) {
+            MetalTypeData metalTypeData = SmelterData.getMetalType(metalType);
+            if (metalTypeData == null) {
                 return ActionResult.FAIL;
             }
-
+            if (castingEntityBelow instanceof CastingBasinEntity) {
+                if (metalTypeData.blockId() == null) {
+                    return ActionResult.FAIL;
+                }
+            } else if (castingEntityBelow instanceof CastingTableEntity) {
+                if (metalTypeData.ingotId() == null) {
+                    return ActionResult.FAIL;
+                }
+            }
+            if (metalTypeData.getMinGradeTemperature() > smelter.getTemperature()) {
+                return ActionResult.FAIL;
+            }
             boolean started = castingEntityBelow.startFilling(smelter.getPos(), metalType);
             if (!started) {
                 return ActionResult.FAIL;
@@ -234,14 +249,13 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
         return state.isAir() || state.isOf(Blocks.LIGHT);
     }
 
+    // TODO: CHECK WHICH MOLTEN IS USEABLE FOR THE FAUCET AND USE THIS INSTEAD OF THE HEAVIEST
     private boolean isMoltenHighEnough(SmelterBlockEntity smelter, BlockPos drainPos) {
         BlockPos corner = smelter.getCornerMin();
         if (corner == null) {
             return false;
         }
-        float fillHeight = smelter.getFillPercent() * smelter.getStructureHeight() * 1f; // 1.0f instead of 0.8 makes sense here
-
-
+        float fillHeight = smelter.getFillPercent() * smelter.getStructureHeight(); // 1.0f instead of 0.8 makes sense here
         float drainRelativeY = drainPos.getY() - corner.getY();
 
         return drainRelativeY <= fillHeight;

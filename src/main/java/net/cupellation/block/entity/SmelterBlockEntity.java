@@ -3,13 +3,16 @@ package net.cupellation.block.entity;
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.screen.SmelterScreenHandler;
 import net.cupellation.data.FuelData;
+import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.data.SmelterItemData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.ItemInit;
 import net.cupellation.init.TagInit;
+import net.cupellation.network.packet.SmelterFluidSyncPacket;
 import net.cupellation.network.packet.SmelterScreenPacket;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -27,6 +30,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper.WrapperLookup;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
@@ -43,6 +47,12 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
+
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
     private DefaultedList<ItemStack> inventory;
@@ -56,13 +66,19 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private int validateCooldown = 0;
     private static final int VALIDATE_INTERVAL = 40;
 
+    private static final int ALLOY_MAX_FUSING = 144;
+
     private int lastFilledLayers = -1;
 
-    private int moltenMetal = 0;
-    private int slag = 0;
+    public static final int MAX_METALS = 3;
+    private final int[] metalAmounts = new int[MAX_METALS];
+    private final int[] slagAmounts = new int[MAX_METALS];
+    private final Identifier[] metalTypeIds = new Identifier[MAX_METALS];
 
-    @Nullable
-    private Identifier metalTypeId = null;
+    private static final int ALLOY_TICK_INTERVAL = 20;
+    private int alloyTickCooldown = 0;
+
+    private boolean fluidDirty = false;
 
     private boolean redstonePowered = false;
     private int fuelTime = 0;
@@ -81,34 +97,24 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private final int[] smeltProgress = new int[3];
     private final int[] smeltTotal = new int[3];
 
-    private static final int PROP_MOLTEN_METAL_LOW = 0;
-    private static final int PROP_MOLTEN_METAL_HIGH = 1;
-    private static final int PROP_MAX_CAP_LOW = 2;
-    private static final int PROP_MAX_CAP_HIGH = 3;
-    private static final int PROP_IS_FORMED = 4;
-    private static final int PROP_FUEL_TIME = 5;
-    private static final int PROP_MAX_FUEL_TIME = 6;
-    private static final int PROP_TEMPERATURE = 7;
-    private static final int PROP_MAX_TEMPERATURE = 8;
-    private static final int PROP_SMELT_PROGRESS_0 = 9;
-    private static final int PROP_SMELT_PROGRESS_1 = 10;
-    private static final int PROP_SMELT_PROGRESS_2 = 11;
-    private static final int PROP_SMELT_TOTAL_0 = 12;
-    private static final int PROP_SMELT_TOTAL_1 = 13;
-    private static final int PROP_SMELT_TOTAL_2 = 14;
-    private static final int PROP_SLAG_LOW = 15;
-    private static final int PROP_SLAG_HIGH = 16;
-    private static final int PROP_COUNT = 17;
+    private static final int PROP_IS_FORMED = 0;
+    private static final int PROP_FUEL_TIME = 1;
+    private static final int PROP_MAX_FUEL_TIME = 2;
+    private static final int PROP_TEMPERATURE = 3;
+    private static final int PROP_MAX_TEMPERATURE = 4;
+    private static final int PROP_SMELT_PROGRESS_0 = 5;
+    private static final int PROP_SMELT_PROGRESS_1 = 6;
+    private static final int PROP_SMELT_PROGRESS_2 = 7;
+    private static final int PROP_SMELT_TOTAL_0 = 8;
+    private static final int PROP_SMELT_TOTAL_1 = 9;
+    private static final int PROP_SMELT_TOTAL_2 = 10;
+    private static final int PROP_COUNT = 11;
 
     public final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
         public int get(int index) {
             int cap = getMaxCapacity();
             return switch (index) {
-                case PROP_MOLTEN_METAL_LOW -> moltenMetal & 0xFFFF;
-                case PROP_MOLTEN_METAL_HIGH -> (moltenMetal >> 16) & 0xFFFF;
-                case PROP_MAX_CAP_LOW -> cap & 0xFFFF;
-                case PROP_MAX_CAP_HIGH -> (cap >> 16) & 0xFFFF;
                 case PROP_IS_FORMED -> isFormed ? 1 : 0;
                 case PROP_FUEL_TIME -> fuelTime;
                 case PROP_MAX_FUEL_TIME -> maxFuelTime;
@@ -120,8 +126,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                 case PROP_SMELT_TOTAL_0 -> smeltTotal[0];
                 case PROP_SMELT_TOTAL_1 -> smeltTotal[1];
                 case PROP_SMELT_TOTAL_2 -> smeltTotal[2];
-                case PROP_SLAG_LOW -> slag & 0xFFFF;
-                case PROP_SLAG_HIGH -> (slag >> 16) & 0xFFFF;
                 default -> 0;
             };
         }
@@ -129,8 +133,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         @Override
         public void set(int index, int value) {
             switch (index) {
-                case PROP_MOLTEN_METAL_LOW -> moltenMetal = (moltenMetal & 0xFFFF0000) | (value & 0xFFFF);
-                case PROP_MOLTEN_METAL_HIGH -> moltenMetal = (moltenMetal & 0x0000FFFF) | ((value & 0xFFFF) << 16);
                 case PROP_IS_FORMED -> isFormed = (value == 1);
                 case PROP_FUEL_TIME -> fuelTime = value;
                 case PROP_MAX_FUEL_TIME -> maxFuelTime = value;
@@ -142,8 +144,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                 case PROP_SMELT_TOTAL_0 -> smeltTotal[0] = value;
                 case PROP_SMELT_TOTAL_1 -> smeltTotal[1] = value;
                 case PROP_SMELT_TOTAL_2 -> smeltTotal[2] = value;
-                case PROP_SLAG_LOW -> slag = (slag & 0xFFFF0000) | (value & 0xFFFF);
-                case PROP_SLAG_HIGH -> slag = (slag & 0x0000FFFF) | ((value & 0xFFFF) << 16);
             }
         }
 
@@ -165,13 +165,11 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         Inventories.readNbt(nbt, inventory, registryLookup);
 
         isFormed = nbt.getBoolean("isFormed");
-        moltenMetal = nbt.getInt("moltenMetal");
-        slag = nbt.getInt("slag");
-
-        if (nbt.contains("metalTypeId") && !nbt.getString("metalTypeId").isEmpty()) {
-            metalTypeId = Identifier.of(nbt.getString("metalTypeId"));
-        } else {
-            metalTypeId = null;
+        for (int i = 0; i < MAX_METALS; i++) {
+            metalAmounts[i] = nbt.getInt("metalAmount" + i);
+            slagAmounts[i] = nbt.getInt("slagAmount" + i);
+            String idStr = nbt.getString("metalTypeId" + i);
+            metalTypeIds[i] = idStr.isEmpty() ? null : Identifier.of(idStr);
         }
 
         fuelTime = nbt.getInt("fuelTime");
@@ -199,9 +197,11 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         Inventories.writeNbt(nbt, inventory, registryLookup);
 
         nbt.putBoolean("isFormed", isFormed);
-        nbt.putInt("moltenMetal", moltenMetal);
-        nbt.putInt("slag", slag);
-        nbt.putString("metalTypeId", metalTypeId != null ? metalTypeId.toString() : "");
+        for (int i = 0; i < MAX_METALS; i++) {
+            nbt.putInt("metalAmount" + i, metalAmounts[i]);
+            nbt.putInt("slagAmount" + i, slagAmounts[i]);
+            nbt.putString("metalTypeId" + i, metalTypeIds[i] != null ? metalTypeIds[i].toString() : "");
+        }
         nbt.putInt("fuelTime", fuelTime);
         nbt.putInt("maxFuelTime", maxFuelTime);
         nbt.putInt("temperature", temperature);
@@ -232,7 +232,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private void clientTick() {
-        if (!isFormed || (moltenMetal <= 0 && slag <= 0)) {
+        if (!isFormed || getTotalFluid() <= 0) {
             return;
         }
         if (world == null || !world.isRaining()) {
@@ -280,7 +280,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (!isFormed) {
             return;
         }
-        if ((redstonePowered || hasAnyInput()) && (moltenMetal + slag) < getMaxCapacity()) {
+        if ((redstonePowered || hasAnyInput()) && getTotalFluid() < getMaxCapacity()) {
             if (fuelTime <= 0) {
                 tryConsumeFuel();
             }
@@ -300,7 +300,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             tickSmeltSlot(i);
         }
 
-        if (moltenMetal > 0 || slag > 0) {
+        tickAlloy();
+
+        if (getTotalFluid() > 0) {
             tickFluidDamage();
         }
 
@@ -308,6 +310,13 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (newFilledLayers != lastFilledLayers) {
             lastFilledLayers = newFilledLayers;
             updateLightBlocks();
+        }
+        if (fluidDirty) {
+            fluidDirty = false;
+            if (world instanceof ServerWorld serverWorld) {
+                SmelterFluidSyncPacket packet = SmelterFluidSyncPacket.from(this);
+                serverWorld.getPlayers().forEach(player -> ServerPlayNetworking.send(player, packet));
+            }
         }
     }
 
@@ -362,18 +371,23 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
         Identifier itemMetalType = data.metalTypeId();
 
-        if (metalTypeId != null && !metalTypeId.equals(itemMetalType)) {
-            smeltProgress[slotIndex] = 0;
-            return;
+        Set<Identifier> present = getPresentMetals();
+        if (!present.contains(itemMetalType)) {
+            if (!SmelterData.canAddMetal(present, itemMetalType)) {
+                smeltProgress[slotIndex] = 0;
+                return;
+            }
         }
 
         int requiredTemp = SmelterData.getRequiredTemp(itemMetalType);
         if (temperature < requiredTemp) {
-            if (smeltProgress[slotIndex] > 0) smeltProgress[slotIndex]--;
+            if (smeltProgress[slotIndex] > 0) {
+                smeltProgress[slotIndex]--;
+            }
             return;
         }
 
-        if ((moltenMetal + slag) + data.yield() > getMaxCapacity()) {
+        if (getTotalFluid() + data.yield() > getMaxCapacity()) {
             smeltProgress[slotIndex] = 0;
             return;
         }
@@ -389,18 +403,110 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             int slagYield = Math.max(0, totalYield * ConfigInit.CONFIG.slagRatio / 100);
             int metalYield = totalYield - slagYield;
 
-            moltenMetal += metalYield;
-            slag += slagYield;
+            int slot = getSlotForMetal(itemMetalType);
+            if (slot == -1) {
+                slot = getFirstFreeSlot();
+                if (slot == -1) {
+                    smeltProgress[slotIndex] = 0;
+                    return;
+                }
+                metalTypeIds[slot] = itemMetalType;
+            }
 
-            metalTypeId = itemMetalType;
+            metalAmounts[slot] += metalYield;
+            slagAmounts[slot] += slagYield;
+
             stack.decrement(1);
             smeltProgress[slotIndex] = 0;
             smeltTotal[slotIndex] = 0;
-            if (moltenMetal <= 0 && slag <= 0) {
-                metalTypeId = null;
-            }
-            markDirty();
+            markFluidDirty();
         }
+    }
+
+    private void tickAlloy() {
+        if (alloyTickCooldown > 0) {
+            alloyTickCooldown--;
+            return;
+        }
+        alloyTickCooldown = ALLOY_TICK_INTERVAL;
+
+        Set<Identifier> present = getPresentMetals();
+
+        if (present.size() < 2) {
+            return;
+        }
+        MetalTypeData alloy = SmelterData.findAlloyFor(present);
+
+        if (alloy == null) {
+            return;
+        }
+        Map<Identifier, Integer> amounts = new HashMap<>();
+        for (int i = 0; i < MAX_METALS; i++) {
+            if (metalTypeIds[i] != null) {
+                amounts.put(metalTypeIds[i], metalAmounts[i]);
+            }
+        }
+
+        int multiplier = alloy.calcAlloyMultiplier(amounts);
+        if (multiplier <= 0) {
+            return;
+        }
+        int totalPartsPerUnit = 0;
+        for (MetalTypeData.AlloyIngredient ingredient : alloy.alloyFrom()) {
+            totalPartsPerUnit += ingredient.parts();
+        }
+        int maxMultiplier = Math.max(1, ALLOY_MAX_FUSING / totalPartsPerUnit);
+        multiplier = Math.min(multiplier, maxMultiplier);
+
+        int totalConsumed = 0;
+        for (MetalTypeData.AlloyIngredient ingredient : alloy.alloyFrom()) {
+            totalConsumed += ingredient.parts() * multiplier;
+        }
+
+        int totalSlagConsumed = 0;
+        for (MetalTypeData.AlloyIngredient ingredient : alloy.alloyFrom()) {
+            int slot = getSlotForMetal(ingredient.metalId());
+            if (slot == -1) {
+                return;
+            }
+            int consumed = ingredient.parts() * multiplier;
+            if (metalAmounts[slot] > 0) {
+                totalSlagConsumed += (int) ((float) slagAmounts[slot] / metalAmounts[slot] * consumed);
+            }
+        }
+
+        for (MetalTypeData.AlloyIngredient ingredient : alloy.alloyFrom()) {
+            int slot = getSlotForMetal(ingredient.metalId());
+            if (slot == -1) {
+                return;
+            }
+            int consume = ingredient.parts() * multiplier;
+            metalAmounts[slot] -= consume;
+            if (metalAmounts[slot] + consume > 0) {
+                int slagRemove = (int) ((float) consume / (metalAmounts[slot] + consume) * slagAmounts[slot]);
+                slagAmounts[slot] = Math.max(0, slagAmounts[slot] - slagRemove);
+            }
+            if (metalAmounts[slot] <= 0 && slagAmounts[slot] <= 0) {
+                metalTypeIds[slot] = null;
+                metalAmounts[slot] = 0;
+                slagAmounts[slot] = 0;
+            }
+        }
+
+        int alloySlot = getSlotForMetal(alloy.id());
+        if (alloySlot == -1) alloySlot = getFirstFreeSlot();
+        if (alloySlot == -1) {
+            compactSlots();
+            markFluidDirty();
+            return;
+        }
+
+        metalTypeIds[alloySlot] = alloy.id();
+        metalAmounts[alloySlot] += totalConsumed;
+        slagAmounts[alloySlot] += totalSlagConsumed;
+
+        compactSlots();
+        markFluidDirty();
     }
 
     private void tickFluidDamage() {
@@ -424,16 +530,27 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
 
         int temperatureDecrease = 0;
-        int fluxCount = 0;
+        int[] fluxPerSlot = new int[MAX_METALS];
 
         for (ItemEntity item : world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), e -> true)) {
-            if (item.getStack().isIn(TagInit.FLUX_ITEMS) && slag > 0) {
-                fluxCount += item.getStack().getCount();
-                item.discard();
-                continue;
+            boolean wasFlux = false;
+
+            if (getTotalSlag() > 0) {
+                Identifier itemId = Registries.ITEM.getId(item.getStack().getItem());
+                for (int i = 0; i < MAX_METALS; i++) {
+                    if (metalTypeIds[i] == null || slagAmounts[i] <= 0) continue;
+                    Identifier fluxId = SmelterData.getFluxItemId(metalTypeIds[i]);
+                    if (fluxId != null && fluxId.equals(itemId)) {
+                        fluxPerSlot[i] += item.getStack().getCount();
+                        item.discard();
+                        wasFlux = true;
+                        break;
+                    }
+                }
             }
-            if (!item.isFireImmune()) {
-                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, this.getWorld().getRandom().nextLong());
+            if (!wasFlux && !item.isFireImmune()) {
+                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f,
+                        0.9F + world.getRandom().nextFloat() * 0.15F, this.getWorld().getRandom().nextLong());
                 if (item.getStack().isIn(TagInit.COOLING_ITEMS)) {
                     temperatureDecrease += ITEM_COOLING_TEMPERATURE;
                 }
@@ -441,19 +558,16 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             }
         }
 
-        if (fluxCount > 0 && slag > 0) {
-            int convert = Math.min(slag, fluxCount * FLUX_CONVERSION_RATE);
-            slag -= convert;
-            moltenMetal += convert;
-            if (slag < 0) {
-                slag = 0;
-            }
-            if (moltenMetal <= 0 && slag <= 0) {
-                metalTypeId = null;
-            }
-            markDirty();
+        for (int i = 0; i < MAX_METALS; i++) {
+            if (fluxPerSlot[i] > 0 && slagAmounts[i] > 0) {
+                int convert = Math.min(slagAmounts[i], fluxPerSlot[i] * FLUX_CONVERSION_RATE);
+                slagAmounts[i] -= convert;
+                metalAmounts[i] += convert;
+                markFluidDirty();
+                markFluidDirty();
 
-            ((ServerWorld) world).playSound(null, cornerMin.getX() + structureWidth / 2.0, cornerMin.getY() + 0.5, cornerMin.getZ() + structureDepth / 2.0, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.BLOCKS, 1.0f, 0.8f + world.getRandom().nextFloat() * 0.4f, world.getRandom().nextLong());
+                ((ServerWorld) world).playSound(null, cornerMin.getX() + structureWidth / 2.0, cornerMin.getY() + 0.5, cornerMin.getZ() + structureDepth / 2.0, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.BLOCKS, 1.0f, 0.8f + world.getRandom().nextFloat() * 0.4f, world.getRandom().nextLong());
+            }
         }
 
         if (this.temperature > MINIMUM_TEMPERATURE && temperatureDecrease > 0) {
@@ -530,6 +644,11 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     public void onStructureDestroyed() {
         clearLightBlocks();
+        for (int i = 0; i < MAX_METALS; i++) {
+            metalAmounts[i] = 0;
+            slagAmounts[i] = 0;
+            metalTypeIds[i] = null;
+        }
         for (int i = 0; i < 3; i++) {
             smeltProgress[i] = 0;
             smeltTotal[i] = 0;
@@ -634,17 +753,67 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         return isFormed;
     }
 
-    public int getMoltenMetal() {
-        return moltenMetal;
+    public int getTotalMoltenMetal() {
+        int total = 0;
+        for (int amount : metalAmounts) total += amount;
+        return total;
     }
 
-    public int getSlag() {
-        return slag;
+    public int getTotalSlag() {
+        int total = 0;
+        for (int amount : slagAmounts) total += amount;
+        return total;
     }
 
-    @Nullable
-    public Identifier getMetalTypeId() {
-        return metalTypeId;
+    public int getMoltenMetal(int slot) {
+        return metalAmounts[slot];
+    }
+
+    public int getSlag(int slot) {
+        return slagAmounts[slot];
+    }
+
+    public Identifier getMetalTypeId(int slot) {
+        return metalTypeIds[slot];
+    }
+
+    public int getSlotForMetal(Identifier metalTypeId) {
+        for (int i = 0; i < MAX_METALS; i++) {
+            if (metalTypeId.equals(metalTypeIds[i])) return i;
+        }
+        return -1;
+    }
+
+    public int getFirstFreeSlot() {
+        for (int i = 0; i < MAX_METALS; i++) {
+            if (metalTypeIds[i] == null) return i;
+        }
+        return -1;
+    }
+
+    public Set<Identifier> getPresentMetals() {
+        Set<Identifier> result = new HashSet<>();
+        for (Identifier id : metalTypeIds) {
+            if (id != null) result.add(id);
+        }
+        return result;
+    }
+
+    private void compactSlots() {
+        int write = 0;
+        for (int read = 0; read < MAX_METALS; read++) {
+            if (metalTypeIds[read] != null) {
+                metalTypeIds[write] = metalTypeIds[read];
+                metalAmounts[write] = metalAmounts[read];
+                slagAmounts[write] = slagAmounts[read];
+                write++;
+            }
+        }
+        for (int i = write; i < MAX_METALS; i++) {
+            metalTypeIds[i] = null;
+            metalAmounts[i] = 0;
+            slagAmounts[i] = 0;
+        }
     }
 
     public int getFuelTime() {
@@ -697,9 +866,13 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         return innerW * innerD * structureHeight * 1000;
     }
 
+    public int getTotalFluid() {
+        return getTotalMoltenMetal() + getTotalSlag();
+    }
+
     public float getFillPercent() {
         int cap = getMaxCapacity();
-        return cap > 0 ? (float) moltenMetal / cap : 0f;
+        return cap > 0 ? (float) getTotalMoltenMetal() / cap : 0f;
     }
 
     public float maxFillHeight() {
@@ -708,12 +881,22 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     public float getTotalFillPercent() {
         int cap = getMaxCapacity();
-        return cap > 0 ? (float) (moltenMetal + slag) / cap : 0f;
+        return cap > 0 ? (float) getTotalFluid() / cap : 0f;
     }
 
     public float getSlagFillPercent() {
         int cap = getMaxCapacity();
-        return cap > 0 ? (float) slag / cap : 0f;
+        return cap > 0 ? (float) getTotalSlag() / cap : 0f;
+    }
+
+    public float getMetalFillPercent(int slot) {
+        int cap = getMaxCapacity();
+        return cap > 0 ? (float) metalAmounts[slot] / cap : 0f;
+    }
+
+    public float getSlagFillPercent(int slot) {
+        int cap = getMaxCapacity();
+        return cap > 0 ? (float) slagAmounts[slot] / cap : 0f;
     }
 
     private boolean hasAnyInput() {
@@ -764,7 +947,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private int calcFilledLayers() {
-        if ((moltenMetal + slag) <= 0) {
+        if (getTotalFluid() <= 0) {
             return 0;
         }
         return Math.max(1, Math.round(getTotalFillPercent() * maxFillHeight()));
@@ -793,12 +976,67 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
     }
 
-    public void drainMoltenMetal(int amount) {
-        moltenMetal = Math.max(0, moltenMetal - amount);
-        if (moltenMetal <= 0 && slag <= 0) {
-            moltenMetal = 0;
-            metalTypeId = null;
-        }
+    public void markFluidDirty() {
+        fluidDirty = true;
         markDirty();
+    }
+
+    public void applyFluidSync(SmelterFluidSyncPacket packet) {
+        for (int i = 0; i < MAX_METALS; i++) {
+            SmelterFluidSyncPacket.FluidEntry entry = packet.entries().get(i);
+            metalTypeIds[i] = entry.metalTypeId();
+            metalAmounts[i] = entry.metalAmount();
+            slagAmounts[i] = entry.slagAmount();
+        }
+    }
+
+    public int getDensestMetalSlot() {
+        int best = -1;
+        int bestDensity = -1;
+        for (int i = 0; i < MAX_METALS; i++) {
+            if (metalTypeIds[i] != null && metalAmounts[i] > 0) {
+                int density = SmelterData.getDensity(metalTypeIds[i]);
+                if (density > bestDensity) {
+                    bestDensity = density;
+                    best = i;
+                }
+            }
+        }
+        return best;
+    }
+
+    @Nullable
+    public Identifier getPourableMetalType() {
+        int slot = getDensestMetalSlot();
+        return slot >= 0 ? metalTypeIds[slot] : null;
+    }
+
+    public DrainResult drainMoltenMetal(int amount) {
+        int slot = getDensestMetalSlot();
+        if (slot == -1) {
+            return new DrainResult(0, null);
+        }
+        Identifier drainedType = metalTypeIds[slot];
+        int actual = Math.min(amount, metalAmounts[slot]);
+        metalAmounts[slot] -= actual;
+
+        if (metalAmounts[slot] <= 0 && slagAmounts[slot] <= 0) {
+            metalTypeIds[slot] = null;
+            metalAmounts[slot] = 0;
+            compactSlots();
+        }
+        markFluidDirty();
+        return new DrainResult(actual, drainedType);
+    }
+
+    public int[] getSlotsSortedByDensity() {
+        return IntStream.range(0, MAX_METALS).filter(i -> metalTypeIds[i] != null && (metalAmounts[i] > 0 || slagAmounts[i] > 0)).boxed().sorted((a, b) -> {
+            int da = SmelterData.getDensity(metalTypeIds[a]);
+            int db = SmelterData.getDensity(metalTypeIds[b]);
+            return Integer.compare(db, da);
+        }).mapToInt(Integer::intValue).toArray();
+    }
+
+    public record DrainResult(int amount, @Nullable Identifier metalTypeId) {
     }
 }

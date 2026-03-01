@@ -41,8 +41,30 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             buf.writeInt(metal.color());
             buf.writeInt(metal.cooledColor());
             buf.writeIdentifier(metal.texture());
-            buf.writeIdentifier(metal.ingotId());
-            buf.writeIdentifier(metal.blockId());
+            buf.writeBoolean(metal.ingotId() != null);
+            if (metal.ingotId() != null) {
+                buf.writeIdentifier(metal.ingotId());
+            }
+            buf.writeBoolean(metal.blockId() != null);
+            if (metal.blockId() != null) {
+                buf.writeIdentifier(metal.blockId());
+            }
+            buf.writeInt(metal.density());
+
+            List<MetalTypeData.AlloyIngredient> alloyFrom = metal.alloyFrom();
+            buf.writeInt(alloyFrom != null ? alloyFrom.size() : 0);
+            if (alloyFrom != null) {
+                for (MetalTypeData.AlloyIngredient ingredient : alloyFrom) {
+                    buf.writeIdentifier(ingredient.metalId());
+                    buf.writeInt(ingredient.parts());
+                }
+            }
+
+            buf.writeBoolean(metal.fluxItemId() != null);
+            if (metal.fluxItemId() != null) {
+                buf.writeIdentifier(metal.fluxItemId());
+            }
+
             writeNullableGradeRange(buf, metal.lowGrade());
             writeNullableGradeRange(buf, metal.midGrade());
             writeNullableGradeRange(buf, metal.highGrade());
@@ -66,8 +88,32 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         int metalCount = buf.readInt();
         List<MetalTypeData> metals = new ArrayList<>(metalCount);
         for (int i = 0; i < metalCount; i++) {
-            metals.add(new MetalTypeData(buf.readIdentifier(), buf.readString(), buf.readInt(), buf.readInt(), buf.readInt(), buf.readIdentifier(), buf.readIdentifier(), buf.readIdentifier(),
-                    readNullableGradeRange(buf), readNullableGradeRange(buf), readNullableGradeRange(buf)));
+            var id = buf.readIdentifier();
+            var name = buf.readString();
+            int requiredTemp = buf.readInt();
+            int color = buf.readInt();
+            int cooledColor = buf.readInt();
+            var texture = buf.readIdentifier();
+            boolean hasIngot = buf.readBoolean();
+            var ingotId = hasIngot ? buf.readIdentifier() : null;
+            boolean hasBlock = buf.readBoolean();
+            var blockId = hasBlock ? buf.readIdentifier() : null;
+            int density = buf.readInt();
+
+            int alloyCount = buf.readInt();
+            List<MetalTypeData.AlloyIngredient> alloyFrom = new ArrayList<>(alloyCount);
+            for (int j = 0; j < alloyCount; j++) {
+                alloyFrom.add(new MetalTypeData.AlloyIngredient(buf.readIdentifier(), buf.readInt()));
+            }
+
+            boolean hasFlux = buf.readBoolean();
+            var fluxItemId = hasFlux ? buf.readIdentifier() : null;
+
+            var lowGrade = readNullableGradeRange(buf);
+            var midGrade = readNullableGradeRange(buf);
+            var highGrade = readNullableGradeRange(buf);
+
+            metals.add(new MetalTypeData(id, name, requiredTemp, color, cooledColor, texture, ingotId, blockId, density, alloyFrom, fluxItemId, lowGrade, midGrade, highGrade));
         }
 
         int fuelCount = buf.readInt();

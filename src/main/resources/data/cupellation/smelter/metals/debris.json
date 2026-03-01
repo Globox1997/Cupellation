@@ -1,0 +1,16 @@
+{
+  "id": "cupellation:debris",
+  "name": "metal.cupellation.debris",
+  "required_temp": 1200,
+  "color": "331810",
+  "cooled_color": "5D342C",
+  "texture": "cupellation:fluid/molten_debris",
+  "flux_item": "cupellation:calcite_powder",
+  "density": 220,
+  "grades": {
+    "low": {
+      "min": 1300,
+      "max": 1400
+    }
+  }
+}

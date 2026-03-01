@@ -2,11 +2,13 @@
   "id": "cupellation:copper",
   "name": "metal.cupellation.copper",
   "required_temp": 700,
-  "color": "FF4500",
+  "color": "4FAB90",
   "cooled_color": "D67B5B",
   "texture": "cupellation:fluid/molten_copper",
   "ingot": "minecraft:copper_ingot",
   "block": "minecraft:copper_block",
+  "flux_item": "cupellation:calcite_powder",
+  "density": 90,
   "grades": {
     "low": {
       "min": 700,

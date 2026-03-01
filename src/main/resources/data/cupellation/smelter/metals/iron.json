@@ -7,6 +7,8 @@
   "texture": "cupellation:fluid/molten_iron",
   "ingot": "minecraft:iron_ingot",
   "block": "minecraft:iron_block",
+  "flux_item": "cupellation:calcite_powder",
+  "density": 79,
   "grades": {
     "low": {
       "min": 900,

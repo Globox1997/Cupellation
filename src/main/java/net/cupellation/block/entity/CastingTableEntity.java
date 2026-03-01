@@ -106,7 +106,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            if (smelter.getMoltenMetal() <= 0) {
+            if (smelter.getTotalMoltenMetal() <= 0) {
                 stopFilling(world);
                 if (moltenAmount > 0) {
                     startCooling();
@@ -114,7 +114,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            Identifier smelterMetal = smelter.getMetalTypeId();
+            Identifier smelterMetal = smelter.getPourableMetalType();
             if (smelterMetal == null) {
                 stopFilling(world);
                 return;
@@ -127,10 +127,15 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             }
 
             int toFill = Math.min(FILL_RATE, CAPACITY - moltenAmount);
-            int available = smelter.getMoltenMetal();
-            int actual = Math.min(toFill, available);
+            SmelterBlockEntity.DrainResult drain = smelter.drainMoltenMetal(toFill);
+            int actual = drain.amount();
 
-            smelter.drainMoltenMetal(actual);
+            if (actual <= 0) {
+                stopFilling(world);
+                if (moltenAmount > 0) startCooling();
+                return;
+            }
+
             int smelterTemp = smelter.getTemperature();
             MetalTypeData metalData = SmelterData.getMetalType(metalTypeId);
             if (metalData != null && smelterTemp > metalData.getMaxGradeTemperature()) {
@@ -152,11 +157,19 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             cooldownTicks--;
             if (cooldownTicks == 0) {
                 if (result.isEmpty() && !mold.isEmpty()) {
-                    ItemStack stack = new ItemStack(Registries.ITEM.get(SmelterData.getIngotId(metalTypeId)));
+                    Identifier ingotId = SmelterData.getIngotId(metalTypeId);
+                    if (ingotId == null) {
+                        moltenAmount = 0;
+                        metalTypeId = null;
+                        cachedGrade = 1;
+                        markDirty();
+                        return;
+                    }
+                    ItemStack stack = new ItemStack(Registries.ITEM.get(ingotId));
                     stack.set(ItemInit.QUALITY_GRADE, cachedGrade);
                     result = stack;
                 } else if (!result.isEmpty() && mold.isEmpty()) {
-                    if (ItemInit.MOLDS.containsKey(metalTypeId)) {
+                    if (metalTypeId != null && ItemInit.MOLDS.containsKey(metalTypeId)) {
                         mold = new ItemStack(ItemInit.MOLDS.get(metalTypeId));
                     }
                 }

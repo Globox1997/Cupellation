@@ -2,6 +2,7 @@ package net.cupellation.block.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.cupellation.CupellationMain;
+import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.data.FuelData;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
@@ -28,6 +29,7 @@ import net.minecraft.util.math.MathHelper;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Environment(EnvType.CLIENT)
@@ -87,7 +89,6 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         context.drawTexture(TEXTURE, x, y, 0, 0, GUI_WIDTH, GUI_HEIGHT);
 
         drawFluidFill(context, x, y);
-        drawSlagFill(context, x, y);
 
         drawBarFromBottom(context, x + TEMP_BAR_X, y + TEMP_BAR_Y, TEMP_BAR_W, TEMP_BAR_H, TEMP_U, TEMP_V,
                 handler.getTemperature(), Math.max(1, handler.getMaxTemperature()));
@@ -147,43 +148,56 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     }
 
     private void drawFluidFill(DrawContext context, int x, int y) {
-        float fill = handler.getFillPercent();
-        if (fill <= 0f) {
-            return;
+        Identifier[] metalTypeIds = handler.getMetalTypeIds();
+        int[] metalAmounts = handler.getMetalAmounts();
+        int[] slagAmounts = handler.getSlagAmounts();
+        int cap = handler.getMaxCapacity();
+        if (cap <= 0) return;
+
+        Integer[] slots = new Integer[SmelterBlockEntity.MAX_METALS];
+        for (int i = 0; i < slots.length; i++) slots[i] = i;
+        Arrays.sort(slots, (a, b) -> {
+            int da = metalTypeIds[a] != null ? SmelterData.getDensity(metalTypeIds[a]) : -1;
+            int db = metalTypeIds[b] != null ? SmelterData.getDensity(metalTypeIds[b]) : -1;
+            return Integer.compare(db, da);
+        });
+
+        float currentFill = 0f;
+
+        for (int slot : slots) {
+            if (metalTypeIds[slot] == null) {
+                continue;
+            }
+            float metalFill = (float) metalAmounts[slot] / cap;
+            if (metalFill <= 0) {
+                continue;
+            }
+            int filledH = MathHelper.ceil(FLUID_H * metalFill);
+            int topY = y + FLUID_Y + FLUID_H - MathHelper.ceil(FLUID_H * (currentFill + metalFill));
+
+            Sprite sprite = MoltenHelper.getFluidSprite(SmelterData.getTexture(metalTypeIds[slot]));
+            int color = SmelterData.getColor(metalTypeIds[slot]);
+            float r = ((color >> 16) & 0xFF) / 255f;
+            float g = ((color >> 8) & 0xFF) / 255f;
+            float b = (color & 0xFF) / 255f;
+
+            drawTiledSprite(context, x + FLUID_X, topY, FLUID_W, filledH, sprite, r, g, b);
+            currentFill += metalFill;
         }
-        int filledH = MathHelper.ceil(FLUID_H * fill);
-        int topY = y + FLUID_Y + (FLUID_H - filledH);
 
-        Sprite sprite = MoltenHelper.getFluidSprite(handler.getMetalTexture());
+        int totalSlag = handler.getTotalSlag();
+        if (totalSlag > 0) {
+            float slagFill = (float) totalSlag / cap;
+            int slagFilledH = Math.max(1, MathHelper.ceil(FLUID_H * slagFill));
+            int slagTopY = y + FLUID_Y + FLUID_H - MathHelper.ceil(FLUID_H * (currentFill + slagFill));
 
-        int color = handler.getMetalColor();
-        float r = ((color >> 16) & 0xFF) / 255f;
-        float g = ((color >> 8) & 0xFF) / 255f;
-        float b = (color & 0xFF) / 255f;
+            Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
+            float sr = ((SLAG_COLOR >> 16) & 0xFF) / 255f;
+            float sg = ((SLAG_COLOR >> 8) & 0xFF) / 255f;
+            float sb = (SLAG_COLOR & 0xFF) / 255f;
 
-        drawTiledSprite(context, x + FLUID_X, topY, FLUID_W, filledH, sprite, r, g, b);
-    }
-
-    private void drawSlagFill(DrawContext context, int x, int y) {
-        float slagFill = handler.getSlagFillPercent();
-        if (slagFill <= 0f) {
-            return;
+            drawTiledSprite(context, x + FLUID_X, slagTopY, FLUID_W, slagFilledH, slagSprite, sr, sg, sb);
         }
-        float totalFill = handler.getTotalFillPercent();
-        int totalFilledH = Math.min(MathHelper.ceil(FLUID_H * totalFill), FLUID_H);
-        int slagFilledH = Math.min(MathHelper.ceil(FLUID_H * slagFill), totalFilledH);
-        if (slagFilledH <= 0) {
-            return;
-        }
-        int columnTopY = y + FLUID_Y + (FLUID_H - totalFilledH);
-
-        Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
-
-        float sr = ((SLAG_COLOR >> 16) & 0xFF) / 255f;
-        float sg = ((SLAG_COLOR >> 8) & 0xFF) / 255f;
-        float sb = (SLAG_COLOR & 0xFF) / 255f;
-
-        drawTiledSprite(context, x + FLUID_X, columnTopY, FLUID_W, slagFilledH, slagSprite, sr, sg, sb);
     }
 
     private void drawBarFromBottom(DrawContext context, int screenX, int screenY, int barW, int barH,
@@ -240,49 +254,85 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     }
 
     private void drawGradeInfo(DrawContext context, int relX, int relY) {
-        if (relX >= 131 && relX <= 131 + 11 && relY >= 18 && relY <= 18 + 8) {
-            List<Text> tooltip = new ArrayList<>();
-            if (handler.getMetalTypeId() != null) {
-                MetalTypeData metalTypeData = SmelterData.getMetalType(handler.getMetalTypeId());
-                if (metalTypeData != null && metalTypeData.hasGrades()) {
-                    tooltip.add(Text.translatable("block.cupellation.smelter.grades"));
-                    if (metalTypeData.highGrade() != null) {
-                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED)
-                                .append(Text.literal(": "))
-                                .append(Text.translatable("block.cupellation.smelter.grade.info",
-                                        metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
-                    }
-                    if (metalTypeData.midGrade() != null) {
-                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD)
-                                .append(Text.literal(": "))
-                                .append(Text.translatable("block.cupellation.smelter.grade.info",
-                                        metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
-                    }
-                    if (metalTypeData.lowGrade() != null) {
-                        tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW)
-                                .append(Text.literal(": "))
-                                .append(Text.translatable("block.cupellation.smelter.grade.info",
-                                        metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
-                    }
-                }
+        if (relX < 131 || relX > 131 + 11 || relY < 18 || relY > 18 + 8) return;
+
+        List<Text> tooltip = new ArrayList<>();
+        Identifier[] metalTypeIds = handler.getMetalTypeIds();
+
+        for (Identifier metalTypeId : metalTypeIds) {
+            if (metalTypeId == null) {
+                continue;
             }
-            if (!tooltip.isEmpty()) {
-                context.drawTooltip(textRenderer, tooltip, relX, relY);
+            MetalTypeData metalTypeData = SmelterData.getMetalType(metalTypeId);
+            if (metalTypeData == null || !metalTypeData.hasGrades()) {
+                continue;
             }
+            tooltip.add(Text.literal(SmelterData.getName(metalTypeId))
+                    .formatted(Formatting.WHITE));
+            tooltip.add(Text.translatable("block.cupellation.smelter.grades"));
+
+            if (metalTypeData.highGrade() != null) {
+                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED)
+                        .append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.grade.info",
+                                metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
+            }
+            if (metalTypeData.midGrade() != null) {
+                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD)
+                        .append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.grade.info",
+                                metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
+            }
+            if (metalTypeData.lowGrade() != null) {
+                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW)
+                        .append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.grade.info",
+                                metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
+            }
+        }
+
+        if (!tooltip.isEmpty()) {
+            context.drawTooltip(textRenderer, tooltip, relX, relY);
         }
     }
 
     private void drawFluidTooltip(DrawContext context, int relX, int relY) {
-        if (relX >= FLUID_X && relX <= FLUID_X + FLUID_W && relY >= FLUID_Y && relY <= FLUID_Y + FLUID_H) {
-            int mb = handler.getMoltenMetal();
-            int slagMb = handler.getSlag();
-            int cap = handler.getMaxCapacity();
-            List<Text> tooltip = new ArrayList<>();
-            tooltip.add(Text.literal(handler.getMetalName() + ": " + mb + " mB"));
-            if (slagMb > 0) {
-                tooltip.add(Text.translatable("block.cupellation.smelter.slag").append(Text.literal(": " + slagMb + " mB")).formatted(Formatting.GRAY));
+        if (relX < FLUID_X || relX > FLUID_X + FLUID_W || relY < FLUID_Y || relY > FLUID_Y + FLUID_H) {
+            return;
+        }
+        Identifier[] metalTypeIds = handler.getMetalTypeIds();
+        int[] metalAmounts = handler.getMetalAmounts();
+        int[] slagAmounts = handler.getSlagAmounts();
+        int cap = handler.getMaxCapacity();
+
+        List<Text> tooltip = new ArrayList<>();
+        int totalFluid = 0;
+
+        for (int i = 0; i < SmelterBlockEntity.MAX_METALS; i++) {
+            if (metalTypeIds[i] == null) continue;
+            if (metalAmounts[i] > 0) {
+                int density = SmelterData.getDensity(metalTypeIds[i]);
+                tooltip.add(Text.literal(SmelterData.getName(metalTypeIds[i]) + ": "
+                                + metalAmounts[i] + " mB")
+                        .append(Text.literal(" (")
+                                .append(Text.translatable("block.cupellation.smelter.density"))
+                                .append(Text.literal(": " + density + ")"))
+                                .formatted(Formatting.GRAY)));
+                totalFluid += metalAmounts[i];
             }
-            tooltip.add(Text.translatable("block.cupellation.smelter.capacity").copyContentOnly().append(Text.literal(": " + (mb + slagMb) + " / " + cap + " mB")).formatted(Formatting.DARK_GRAY));
+            if (slagAmounts[i] > 0) {
+                tooltip.add(Text.translatable("block.cupellation.smelter.slag")
+                        .append(Text.literal(" (" + SmelterData.getName(metalTypeIds[i])
+                                + "): " + slagAmounts[i] + " mB"))
+                        .formatted(Formatting.GRAY));
+                totalFluid += slagAmounts[i];
+            }
+        }
+
+        tooltip.add(Text.translatable("block.cupellation.smelter.capacity").copyContentOnly().append(Text.literal(": " + totalFluid + " / " + cap + " mB"))
+                .formatted(Formatting.DARK_GRAY));
+
+        if (!tooltip.isEmpty()) {
             context.drawTooltip(textRenderer, tooltip, relX, relY);
         }
     }

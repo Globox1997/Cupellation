@@ -35,6 +35,9 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
     private final ItemRenderer itemRenderer;
     @Nullable
     private ItemStack stack = null;
+    @Nullable
+    private Identifier cachedMetalTypeId = null;
+
 
     public CastingBasinRenderer(BlockEntityRendererFactory.Context ctx) {
         this.itemRenderer = ctx.getItemRenderer();
@@ -104,14 +107,20 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
         if (metalTypeId == null) {
             return;
         }
-        if (stack == null) {
-            Block block = Registries.BLOCK.get(SmelterData.getBlockId(metalTypeId));
+        Identifier blockId = SmelterData.getBlockId(metalTypeId);
+        if (blockId == null) {
+            return;
+        }
+        if (!metalTypeId.equals(cachedMetalTypeId)) {
+            cachedMetalTypeId = metalTypeId;
+            Block block = Registries.BLOCK.get(blockId);
             if (block.getDefaultState().isAir()) {
+                stack = null;
                 return;
             }
             stack = new ItemStack(block.asItem());
-            renderBlock(basin, matrices, vertexConsumers, light, overlay);
-        } else {
+        }
+        if (stack != null) {
             renderBlock(basin, matrices, vertexConsumers, light, overlay);
         }
     }

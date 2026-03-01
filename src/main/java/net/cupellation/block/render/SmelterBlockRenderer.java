@@ -33,29 +33,15 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         if (!blockEntity.isFormed()) {
             return;
         }
-        int molten = blockEntity.getMoltenMetal();
-        int slag = blockEntity.getSlag();
-        if (molten <= 0 && slag <= 0) {
+        if (blockEntity.getTotalFluid() <= 0) {
             return;
         }
-        Identifier metalTypeId = blockEntity.getMetalTypeId();
-        Sprite moltenSprite = MoltenHelper.getFluidSprite(metalTypeId);
         Direction facing = blockEntity.getCachedState().get(SmelterBlock.FACING);
-
         int lightFull = 15 << 4 | 15 << 20;
 
         float innerW = blockEntity.getStructureWidth() - 2f;
         float innerD = blockEntity.getStructureDepth() - 2f;
-
         float maxH = blockEntity.maxFillHeight();
-        float moltenFillHeight = blockEntity.getFillPercent() * maxH;
-        float slagFillHeight = blockEntity.getSlagFillPercent() * maxH;
-        float totalFillHeight = moltenFillHeight + slagFillHeight;
-
-        int color = SmelterData.getColor(metalTypeId);
-        float r = ((color >> 16) & 0xFF) / 255f;
-        float g = ((color >> 8) & 0xFF) / 255f;
-        float b = (color & 0xFF) / 255f;
 
         matrices.push();
         matrices.translate(0.5, 0.0, 0.5);
@@ -66,48 +52,87 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         float x1 = x0 + innerW;
         float z0 = 1.0f;
         float z1 = z0 + innerD;
-        float y0 = 0.0f;
+        float e = 0.001f;
 
         Matrix4f matrix = matrices.peek().getPositionMatrix();
         VertexConsumer consumer = vertexConsumers.getBuffer(RenderLayer.getTranslucent());
 
-        float minU = moltenSprite.getMinU(), maxU = moltenSprite.getMaxU();
-        float minV = moltenSprite.getMinV(), maxV = moltenSprite.getMaxV();
-        float e = 0.001f;
+        int[] sortedSlots = blockEntity.getSlotsSortedByDensity();
+        int cap = blockEntity.getMaxCapacity();
 
-        if (molten > 0) {
-            float y1 = moltenFillHeight;
-            renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.TOP_INNER, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1, FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e, FaceDirection.NORTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e, FaceDirection.SOUTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0 + e, y0, z0, x0 + e, y1, z1, FaceDirection.WEST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x1 - e, y0, z0, x1 - e, y1, z1, FaceDirection.EAST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+        float currentY = 0f;
+
+// Erst alle Metalle rendern
+        for (int slot : sortedSlots) {
+            Identifier metalTypeId = blockEntity.getMetalTypeId(slot);
+            int metalAmount = blockEntity.getMoltenMetal(slot);
+
+            if (metalAmount > 0) {
+                float metalH = ((float) metalAmount / cap) * maxH;
+                float y0 = currentY;
+                float y1 = currentY + metalH;
+
+                Sprite sprite = MoltenHelper.getFluidSprite(metalTypeId);
+                float minU = sprite.getMinU(), maxU = sprite.getMaxU();
+                float minV = sprite.getMinV(), maxV = sprite.getMaxV();
+
+                int color = SmelterData.getColor(metalTypeId);
+                float r = ((color >> 16) & 0xFF) / 255f;
+                float g = ((color >> 8) & 0xFF) / 255f;
+                float b = (color & 0xFF) / 255f;
+
+                renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1,
+                        FaceDirection.TOP, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+                renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1,
+                        FaceDirection.TOP_INNER, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+
+                if (slot == sortedSlots[0]) {
+                    renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1,
+                            FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+                }
+
+                renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e,
+                        FaceDirection.NORTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+                renderTiledFace(consumer, matrix, x0, y0, z1 - e, x1, y1, z1 - e,
+                        FaceDirection.SOUTH, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+                renderTiledFace(consumer, matrix, x0 + e, y0, z0, x0 + e, y1, z1,
+                        FaceDirection.WEST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+                renderTiledFace(consumer, matrix, x1 - e, y0, z0, x1 - e, y1, z1,
+                        FaceDirection.EAST, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+
+                currentY = y1;
+            }
         }
 
-        if (slag > 0) {
+        int totalSlag = blockEntity.getTotalSlag();
+        if (totalSlag > 0) {
             Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
             float slagMinU = slagSprite.getMinU(), slagMaxU = slagSprite.getMaxU();
             float slagMinV = slagSprite.getMinV(), slagMaxV = slagSprite.getMaxV();
 
-            float slagY0 = moltenFillHeight;
-            float slagY1 = totalFillHeight;
-            if (slagY1 - slagY0 < 0.05f) {
-                slagY1 = slagY0 + 0.05f;
-            }
+            float slagH = ((float) totalSlag / cap) * maxH;
+            float slagY0 = currentY;
+            float slagY1 = Math.max(slagY0 + 0.05f, slagY0 + slagH);
 
-            renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.TOP, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.TOP_INNER, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
-            if (molten <= 0) {
-                renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1, FaceDirection.BOTTOM, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
-            }
-            renderTiledFace(consumer, matrix, x0, slagY0, z0 + e, x1, slagY1, z0 + e, FaceDirection.NORTH, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0, slagY0, z1 - e, x1, slagY1, z1 - e, FaceDirection.SOUTH, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x0 + e, slagY0, z0, x0 + e, slagY1, z1, FaceDirection.WEST, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
-            renderTiledFace(consumer, matrix, x1 - e, slagY0, z0, x1 - e, slagY1, z1, FaceDirection.EAST, SLAG_R, SLAG_G, SLAG_B, slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1,
+                    FaceDirection.TOP, SLAG_R, SLAG_G, SLAG_B,
+                    slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1,
+                    FaceDirection.TOP_INNER, SLAG_R, SLAG_G, SLAG_B,
+                    slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, slagY0, z0 + e, x1, slagY1, z0 + e,
+                    FaceDirection.NORTH, SLAG_R, SLAG_G, SLAG_B,
+                    slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0, slagY0, z1 - e, x1, slagY1, z1 - e,
+                    FaceDirection.SOUTH, SLAG_R, SLAG_G, SLAG_B,
+                    slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x0 + e, slagY0, z0, x0 + e, slagY1, z1,
+                    FaceDirection.WEST, SLAG_R, SLAG_G, SLAG_B,
+                    slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            renderTiledFace(consumer, matrix, x1 - e, slagY0, z0, x1 - e, slagY1, z1,
+                    FaceDirection.EAST, SLAG_R, SLAG_G, SLAG_B,
+                    slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
         }
-
         matrices.pop();
     }
 

@@ -6,10 +6,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public final class SmelterData {
 
@@ -70,14 +67,16 @@ public final class SmelterData {
         return metal != null ? metal.texture() : Identifier.of("cupellation", "fluid/molten_iron");
     }
 
+    @Nullable
     public static Identifier getIngotId(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
-        return metal != null ? metal.ingotId() : Identifier.of("minecraft", "iron_ingot");
+        return metal != null ? metal.ingotId() : null;
     }
 
+    @Nullable
     public static Identifier getBlockId(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
-        return metal != null ? metal.blockId() : Identifier.of("minecraft", "iron_block");
+        return metal != null ? metal.blockId() : null;
     }
 
     public static String getName(Identifier metalTypeId) {
@@ -88,6 +87,59 @@ public final class SmelterData {
     public static MetalTypeData.Grade getGradeAt(Identifier metalTypeId, int temperature) {
         MetalTypeData metal = METALS.get(metalTypeId);
         return metal != null ? metal.getGradeAt(temperature) : MetalTypeData.Grade.LOW;
+    }
+
+    @Nullable
+    public static MetalTypeData findAlloyFor(Set<Identifier> metalIds) {
+        if (metalIds.isEmpty()) {
+            return null;
+        }
+        Set<Identifier> rawMetals = metalIds.stream().filter(id -> {
+            MetalTypeData metal = METALS.get(id);
+            return metal != null && !metal.isAlloy();
+        }).collect(java.util.stream.Collectors.toSet());
+
+        if (rawMetals.isEmpty()) {
+            return null;
+        }
+        for (MetalTypeData metal : METALS.values()) {
+            if (metal.isAlloy() && metal.alloyComponents().equals(rawMetals)) {
+                return metal;
+            }
+        }
+        return null;
+    }
+
+    public static boolean canAddMetal(Set<Identifier> existing, Identifier newMetal) {
+        if (existing.isEmpty()) {
+            return true;
+        }
+        MetalTypeData newMetalData = METALS.get(newMetal);
+        if (newMetalData == null) {
+            return false;
+        }
+        if (newMetalData.isAlloy()) {
+            return false;
+        }
+        Set<Identifier> rawExisting = existing.stream().filter(id -> {
+            MetalTypeData m = METALS.get(id);
+            return m != null && !m.isAlloy();
+        }).collect(java.util.stream.Collectors.toSet());
+
+        Set<Identifier> combined = new java.util.HashSet<>(rawExisting);
+        combined.add(newMetal);
+        return findAlloyFor(combined) != null;
+    }
+
+    public static int getDensity(Identifier metalTypeId) {
+        MetalTypeData metal = METALS.get(metalTypeId);
+        return metal != null ? metal.density() : 1;
+    }
+
+    @Nullable
+    public static Identifier getFluxItemId(Identifier metalTypeId) {
+        MetalTypeData metal = METALS.get(metalTypeId);
+        return metal != null ? metal.fluxItemId() : null;
     }
 
     @Nullable

@@ -4,6 +4,7 @@ import net.cupellation.data.FuelData;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.data.SmelterItemData;
+import net.cupellation.network.packet.SmelterFluidSyncPacket;
 import net.cupellation.network.packet.SmelterPacket;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -18,6 +19,7 @@ public class CupellationServerPacket {
     public static void init() {
         PayloadTypeRegistry.playS2C().register(SmelterPacket.PACKET_ID, SmelterPacket.CODEC);
         PayloadTypeRegistry.playS2C().register(SmelterScreenPacket.PACKET_ID, SmelterScreenPacket.CODEC);
+        PayloadTypeRegistry.playS2C().register(SmelterFluidSyncPacket.PACKET_ID, SmelterFluidSyncPacket.CODEC);
     }
 
     public static void syncSmelterData(ServerPlayerEntity player) {

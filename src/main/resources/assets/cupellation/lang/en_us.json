@@ -13,6 +13,7 @@
   "block.cupellation.smelter.capacity": "Capacity",
   "block.cupellation.smelter.temperature": "Temperature",
   "block.cupellation.smelter.smelting": "Smelting",
+  "block.cupellation.smelter.density": "Density",
   "block.cupellation.deepslate_brick_glass": "Deepslate Brick Glass",
   "block.cupellation.deepslate_brick_drain": "Deepslate Brick Drain",
   "block.cupellation.deepslate_brick_faucet": "Deepslate Brick Faucet",
@@ -24,6 +25,7 @@
   "metal.cupellation.gold": "Molten Gold",
   "metal.cupellation.iron": "Molten Iron",
   "metal.cupellation.netherite": "Molten Netherite",
+  "metal.cupellation.debris": "Molten Debris",
 
   "text.autoconfig.cupellation.title": "Cupellation Config",
   "text.autoconfig.cupellation.option.smelterMaxWidth": "Smelter Max Width",
@@ -40,6 +42,5 @@
   "block.cupellation.smelter.grade.info": "%s°C - %s°C",
 
   "tag.item.cupellation.cooling_items": "Cooling Items",
-  "tag.item.cupellation.flux_items": "Flux Items",
   "tag.block.cupellation.smelter_blocks": "Smelter Blocks"
 }

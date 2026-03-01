@@ -160,15 +160,55 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             LOGGER.warn("[Smelter] Item JSON missing required fields, skipping.");
             return null;
         }
+        if (!Registries.ITEM.containsId(Identifier.of(json.get("item").getAsString()))) {
+            LOGGER.warn("[Smelter] Item JSON references unknown item: {}, skipping.", json.get("item").getAsString());
+            return null;
+        }
         return new SmelterItemData(Identifier.of(json.get("item").getAsString()),
                 Identifier.of(json.get("metal_type").getAsString()), json.get("smelt_time").getAsInt(), json.get("yield").getAsInt());
     }
 
     private MetalTypeData parseMetal(JsonObject json) {
-        if (!json.has("id") || !json.has("name") || !json.has("required_temp") || !json.has("color") || !json.has("cooled_color")
-                || !json.has("texture") || !json.has("ingot") || !json.has("block")) {
+        if (!json.has("id") || !json.has("name") || !json.has("required_temp") || !json.has("color")
+                || !json.has("cooled_color") || !json.has("texture")) {
             LOGGER.warn("[Smelter] Metal JSON missing required fields, skipping.");
             return null;
+        }
+
+        int density = json.has("density") ? json.get("density").getAsInt() : 1;
+
+        List<MetalTypeData.AlloyIngredient> alloyFrom = new ArrayList<>();
+        if (json.has("alloy_from")) {
+            for (JsonElement jsonElement : json.getAsJsonArray("alloy_from")) {
+                JsonObject entry = jsonElement.getAsJsonObject();
+                alloyFrom.add(new MetalTypeData.AlloyIngredient(Identifier.of(entry.get("metal").getAsString()), entry.get("parts").getAsInt()));
+            }
+        }
+        Identifier ingotId = null;
+        if (json.has("ingot")) {
+            ingotId = Identifier.of(json.get("ingot").getAsString());
+            if (!Registries.ITEM.containsId(ingotId)) {
+                LOGGER.warn("[Smelter] Metal JSON references unknown item: {}, skipping.", json.get("ingot").getAsString());
+                ingotId = null;
+            }
+        }
+
+        Identifier blockId = null;
+        if (json.has("block")) {
+            blockId = Identifier.of(json.get("block").getAsString());
+            if (!Registries.ITEM.containsId(blockId)) {
+                LOGGER.warn("[Smelter] Metal JSON references unknown block: {}, skipping.", json.get("block").getAsString());
+                blockId = null;
+            }
+        }
+
+        Identifier fluxItemId = null;
+        if (json.has("flux_item")) {
+            fluxItemId = Identifier.of(json.get("flux_item").getAsString());
+            if (!Registries.ITEM.containsId(fluxItemId)) {
+                LOGGER.warn("[Smelter] Metal JSON references unknown flux item: {}, skipping.", json.get("flux_item").getAsString());
+                fluxItemId = null;
+            }
         }
 
         GradeRange low = null, mid = null, high = null;
@@ -186,8 +226,8 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         }
 
         return new MetalTypeData(Identifier.of(json.get("id").getAsString()), json.get("name").getAsString(), json.get("required_temp").getAsInt(),
-                parseColor(json.get("color").getAsString()), parseColor(json.get("cooled_color").getAsString()), Identifier.of(json.get("texture").getAsString()), Identifier.of(json.get("ingot").getAsString()),
-                Identifier.of(json.get("block").getAsString()), low, mid, high);
+                parseColor(json.get("color").getAsString()), parseColor(json.get("cooled_color").getAsString()), Identifier.of(json.get("texture").getAsString()),
+                ingotId, blockId, density, alloyFrom, fluxItemId, low, mid, high);
     }
 
     private GradeRange parseGradeRange(JsonObject json) {

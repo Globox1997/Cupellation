@@ -2,11 +2,23 @@
   "id": "cupellation:netherite",
   "name": "metal.cupellation.netherite",
   "required_temp": 1300,
-  "color": "FF4500",
+  "color": "8E8A8E",
   "cooled_color": "484548",
   "texture": "cupellation:fluid/molten_netherite",
   "ingot": "minecraft:netherite_ingot",
   "block": "minecraft:netherite_block",
+  "flux_item": "cupellation:calcite_powder",
+  "density": 250,
+  "alloy_from": [
+    {
+      "metal": "cupellation:gold",
+      "parts": 1
+    },
+    {
+      "metal": "cupellation:debris",
+      "parts": 1
+    }
+  ],
   "grades": {
     "low": {
       "min": 1300,

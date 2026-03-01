@@ -89,7 +89,7 @@ public class SmelterBlock extends BlockWithEntity {
     @Override
     public void randomDisplayTick(BlockState state, World world, BlockPos pos, Random random) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity && smelterBlockEntity.isFormed() && smelterBlockEntity.getMoltenMetal() > 0) {
+        if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity && smelterBlockEntity.isFormed() && smelterBlockEntity.getTotalMoltenMetal() > 0) {
 
             BlockPos corner = smelterBlockEntity.getCornerMin();
             if (corner == null) {

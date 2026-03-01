@@ -4,10 +4,48 @@ import net.cupellation.misc.GradeRange;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-public record MetalTypeData(Identifier id, String name, int requiredTemp, int color, int cooledColor, Identifier texture, Identifier ingotId, Identifier blockId, @Nullable GradeRange lowGrade,
-                            @Nullable GradeRange midGrade, @Nullable GradeRange highGrade) {
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public record MetalTypeData(Identifier id, String name, int requiredTemp, int color, int cooledColor, Identifier texture, @Nullable Identifier ingotId, @Nullable Identifier blockId, int density,
+                            List<AlloyIngredient> alloyFrom, @Nullable Identifier fluxItemId, @Nullable GradeRange lowGrade, @Nullable GradeRange midGrade, @Nullable GradeRange highGrade) {
+
+    public record AlloyIngredient(Identifier metalId, int parts) {
+    }
 
     public enum Grade {LOW, MID, HIGH}
+
+    public boolean isAlloy() {
+        return alloyFrom != null && !alloyFrom.isEmpty();
+    }
+
+    public Set<Identifier> alloyComponents() {
+        if (!isAlloy()) {
+            return Set.of();
+        }
+        return alloyFrom.stream().map(AlloyIngredient::metalId).collect(Collectors.toSet());
+    }
+
+    public int calcAlloyMultiplier(Map<Identifier, Integer> amounts) {
+        if (!isAlloy()) {
+            return -1;
+        }
+        int minMultiplier = Integer.MAX_VALUE;
+        for (AlloyIngredient ingredient : alloyFrom) {
+            Integer available = amounts.get(ingredient.metalId());
+            if (available == null || available <= 0) {
+                return -1;
+            }
+            int multiplier = available / ingredient.parts();
+            if (multiplier <= 0) {
+                return -1;
+            }
+            minMultiplier = Math.min(minMultiplier, multiplier);
+        }
+        return minMultiplier == Integer.MAX_VALUE ? -1 : minMultiplier;
+    }
 
     public Grade getGradeAt(int temperature) {
         if (highGrade != null && highGrade.contains(temperature)) {

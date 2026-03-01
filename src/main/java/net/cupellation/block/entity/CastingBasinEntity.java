@@ -86,8 +86,8 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            BlockEntity be = world.getBlockEntity(linkedSmelterPos);
-            if (!(be instanceof SmelterBlockEntity smelter)) {
+            BlockEntity blockEntity = world.getBlockEntity(linkedSmelterPos);
+            if (!(blockEntity instanceof SmelterBlockEntity smelter)) {
                 stopFilling(world);
                 if (moltenAmount > 0) {
                     startCooling();
@@ -95,7 +95,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            if (smelter.getMoltenMetal() <= 0) {
+            if (smelter.getTotalMoltenMetal() <= 0) {
                 stopFilling(world);
                 if (moltenAmount > 0) {
                     startCooling();
@@ -103,7 +103,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            Identifier smelterMetal = smelter.getMetalTypeId();
+            Identifier smelterMetal = smelter.getPourableMetalType();
             if (smelterMetal == null) {
                 stopFilling(world);
                 return;
@@ -116,10 +116,14 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             }
 
             int toFill = Math.min(FILL_RATE, CAPACITY - moltenAmount);
-            int available = smelter.getMoltenMetal();
-            int actual = Math.min(toFill, available);
+            SmelterBlockEntity.DrainResult drain = smelter.drainMoltenMetal(toFill);
+            int actual = drain.amount();
 
-            smelter.drainMoltenMetal(actual);
+            if (actual <= 0) {
+                stopFilling(world);
+                if (moltenAmount > 0) startCooling();
+                return;
+            }
 
             int smelterTemp = smelter.getTemperature();
             MetalTypeData metalData = SmelterData.getMetalType(metalTypeId);
@@ -205,7 +209,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             return ItemStack.EMPTY;
         }
         MetalTypeData metal = SmelterData.getMetalType(metalTypeId);
-        if (metal == null) {
+        if (metal == null || metal.blockId() == null) {
             return ItemStack.EMPTY;
         }
         ItemStack result = new ItemStack(Registries.BLOCK.get(metal.blockId()).asItem());
