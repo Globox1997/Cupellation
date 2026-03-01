@@ -32,7 +32,7 @@ public class ItemInit {
 
     // Items
     public static final Item CALCITE_POWDER = register("calcite_powder", new Item(new Item.Settings()));
-    public static final Item INGOT_MOLD = register("ingot_mold", new MoldItem(CupellationMain.identifierOf("gold"), new Item.Settings()));
+    public static final Item INGOT_MOLD = register("ingot_mold", new MoldItem(CupellationMain.identifierOf("gold"), 144, new Item.Settings()));
 
     private static <T> ComponentType<T> registerComponent(String id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
         return Registry.register(Registries.DATA_COMPONENT_TYPE, id, builderOperator.apply(ComponentType.builder()).build());

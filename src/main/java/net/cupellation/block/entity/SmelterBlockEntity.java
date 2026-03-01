@@ -8,7 +8,6 @@ import net.cupellation.data.SmelterData;
 import net.cupellation.data.SmelterItemData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
-import net.cupellation.init.ItemInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.network.packet.SmelterFluidSyncPacket;
 import net.cupellation.network.packet.SmelterScreenPacket;
@@ -18,7 +17,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.LightBlock;
-import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
@@ -27,7 +25,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.Registries;
@@ -66,7 +63,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private int validateCooldown = 0;
     private static final int VALIDATE_INTERVAL = 40;
 
-    private static final int ALLOY_MAX_FUSING = 144;
+    private static final int ALLOY_MB_PER_TICK = 144;
 
     private int lastFilledLayers = -1;
 
@@ -455,7 +452,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         for (MetalTypeData.AlloyIngredient ingredient : alloy.alloyFrom()) {
             totalPartsPerUnit += ingredient.parts();
         }
-        int maxMultiplier = Math.max(1, ALLOY_MAX_FUSING / totalPartsPerUnit);
+        int maxMultiplier = Math.max(1, ALLOY_MB_PER_TICK / totalPartsPerUnit);
         multiplier = Math.min(multiplier, maxMultiplier);
 
         int totalConsumed = 0;

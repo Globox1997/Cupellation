@@ -1,11 +1,13 @@
 package net.cupellation.block.entity;
 
+import net.cupellation.block.SmelterDrain;
 import net.cupellation.block.SmelterFaucet;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
 import net.cupellation.init.SoundInit;
+import net.cupellation.item.MoldItem;
 import net.cupellation.misc.CastingEntity;
 import net.cupellation.misc.MoltenHelper;
 import net.minecraft.block.BlockState;
@@ -91,7 +93,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         }
 
         if (filling && linkedSmelterPos != null) {
-            if (moltenAmount >= CAPACITY) {
+            if (moltenAmount >= getCapacity()) {
                 startCooling();
                 stopFilling(world);
                 return;
@@ -126,7 +128,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            int toFill = Math.min(FILL_RATE, CAPACITY - moltenAmount);
+            int toFill = Math.min(FILL_RATE, getCapacity() - moltenAmount);
             SmelterBlockEntity.DrainResult drain = smelter.drainMoltenMetal(toFill);
             int actual = drain.amount();
 
@@ -193,7 +195,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         if (cooldownTicks > 0) {
             return false;
         }
-        if (moltenAmount >= CAPACITY) {
+        if (moltenAmount >= getCapacity()) {
             return false;
         }
         if (metalTypeId != null && !metalTypeId.equals(metalType)) {
@@ -309,7 +311,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     }
 
     public float getFillPercent() {
-        return (float) moltenAmount / CAPACITY;
+        return (float) moltenAmount / getCapacity();
     }
 
     public ItemStack getResult() {
@@ -326,6 +328,13 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
     public boolean hasMold() {
         return !mold.isEmpty();
+    }
+
+    public int getCapacity() {
+        if (mold.getItem() instanceof MoldItem moldItem) {
+            return moldItem.getMb();
+        }
+        return CAPACITY;
     }
 
     @Override
