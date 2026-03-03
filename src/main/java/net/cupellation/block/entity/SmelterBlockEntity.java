@@ -321,6 +321,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (fuelTime > 0) {
             if (temperature < maxTemperature) {
                 temperature = Math.min(maxTemperature, (int) (temperature + TEMP_RISE_RATE));
+            } else if (temperature > maxTemperature) {
+                temperature = Math.max(maxTemperature, (int) (temperature - TEMP_DECAY_RATE));
             }
         } else {
             if (temperature > 0) {
@@ -345,7 +347,20 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         maxFuelTime = burnTime;
         fuelTime = burnTime;
         maxTemperature = fuelData.maxTemperature();
+
+        ItemStack remainder = fuel.getItem().getRecipeRemainder() != null ? new ItemStack(fuel.getItem().getRecipeRemainder()) : ItemStack.EMPTY;
+
         fuel.decrement(1);
+
+        if (!remainder.isEmpty()) {
+            if (fuel.isEmpty()) {
+                inventory.set(0, remainder);
+            } else {
+                if (world instanceof ServerWorld serverWorld) {
+                    serverWorld.spawnEntity(new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, remainder));
+                }
+            }
+        }
         markDirty();
     }
 
@@ -693,16 +708,6 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (slot >= 1 && slot <= 3) {
             smeltProgress[slot - 1] = 0;
             smeltTotal[slot - 1] = 0;
-        }
-        if (slot == 0) {
-            if (stack.isEmpty()) {
-                maxTemperature = 0;
-            } else {
-                FuelData fuelData = SmelterData.getFuelData(stack.getItem());
-                if (fuelData != null) {
-                    maxTemperature = fuelData.maxTemperature();
-                }
-            }
         }
         markDirty();
     }

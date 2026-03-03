@@ -200,10 +200,11 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         }
     }
 
-    private void drawBarFromBottom(DrawContext context, int screenX, int screenY, int barW, int barH,
-                                   int u, int v, int current, int max) {
-        if (current <= 0) return;
-        int filledH = MathHelper.ceil(barH * ((float) current / max));
+    private void drawBarFromBottom(DrawContext context, int screenX, int screenY, int barW, int barH, int u, int v, int current, int max) {
+        if (current <= 0) {
+            return;
+        }
+        int filledH = MathHelper.ceil(barH * (Math.min(1f, (float) current / max)));
         int offsetY = barH - filledH;
         context.drawTexture(TEXTURE, screenX, screenY + offsetY, u, v + offsetY, barW, filledH);
     }
