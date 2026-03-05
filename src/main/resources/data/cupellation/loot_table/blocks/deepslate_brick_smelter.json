@@ -20,11 +20,11 @@
               "source": "block_entity"
             }
           ],
-          "name": "cupellation:smelter"
+          "name": "cupellation:deepslate_brick_smelter"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "cupellation:blocks/smelter"
+  "random_sequence": "cupellation:blocks/deepslate_brick_smelter"
 }

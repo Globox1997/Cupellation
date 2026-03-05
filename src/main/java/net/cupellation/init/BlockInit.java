@@ -24,7 +24,7 @@ import net.minecraft.util.Identifier;
 
 public class BlockInit {
 
-    public static final Block SMELTER = register("smelter", new SmelterBlock(AbstractBlock.Settings.copy(Blocks.FURNACE)));
+    public static final Block DEEPSLATE_BRICK_SMELTER = register("deepslate_brick_smelter", new SmelterBlock(AbstractBlock.Settings.copy(Blocks.FURNACE)));
     public static final Block DEEPSLATE_BRICK_GLASS = register("deepslate_brick_glass", new TransparentBlock(
             AbstractBlock.Settings.create().instrument(NoteBlockInstrument.HAT).strength(0.6F).sounds(BlockSoundGroup.DEEPSLATE).nonOpaque().allowsSpawning(Blocks::never).requiresTool()
                     .solidBlock(Blocks::never).suffocates(Blocks::never).blockVision(Blocks::never)));
@@ -70,7 +70,7 @@ public class BlockInit {
 
     public static void init() {
         SMELTER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter"),
-                BlockEntityType.Builder.create(SmelterBlockEntity::new, SMELTER).build(null));
+                BlockEntityType.Builder.create(SmelterBlockEntity::new, DEEPSLATE_BRICK_SMELTER).build(null));
         CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"),
                 BlockEntityType.Builder.create(CastingBasinEntity::new, DEEPSLATE_BRICK_CASTING_BASIN).build(null));
         SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"),

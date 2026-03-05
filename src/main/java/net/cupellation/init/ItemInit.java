@@ -53,6 +53,6 @@ public class ItemInit {
 
     public static void init() {
         Registry.register(Registries.ITEM_GROUP, CUPELLATION_ITEM_GROUP,
-                FabricItemGroup.builder().icon(() -> new ItemStack(BlockInit.SMELTER)).displayName(Text.translatable("item.cupellation.item_group")).build());
+                FabricItemGroup.builder().icon(() -> new ItemStack(BlockInit.DEEPSLATE_BRICK_SMELTER)).displayName(Text.translatable("item.cupellation.item_group")).build());
     }
 }

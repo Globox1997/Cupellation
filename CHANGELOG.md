@@ -1,7 +1,7 @@
 ### Added:
 - 
 ### Fixed:
-- Fixed lava bucket bug
-- Fixed smelter temperature bug
-### Changed:
 - 
+### Changed:
+- ### CAUTION!!! Old smelters will get deleted with this version!!!
+- Changed smelter to deepslate brick smelter

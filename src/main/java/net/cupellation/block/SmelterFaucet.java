@@ -213,7 +213,7 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             for (int i = 1; i <= ConfigInit.CONFIG.smelterMaxWidth + 1; i++) {
                 BlockPos check = startAir.offset(dir, i);
                 if (!isAirOrLight(world, check)) {
-                    if (!world.getBlockState(check).isIn(TagInit.SMELTER_BLOCKS) && !world.getBlockState(check).isOf(BlockInit.SMELTER)) {
+                    if (!world.getBlockState(check).isIn(TagInit.SMELTER_BLOCKS) && !(world.getBlockState(check).getBlock() instanceof SmelterBlock)) {
                         return null;
                     }
                     break;
