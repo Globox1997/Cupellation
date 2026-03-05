@@ -2,7 +2,6 @@ package net.cupellation.block;
 
 import com.mojang.serialization.MapCodec;
 import net.cupellation.block.entity.CastingBasinEntity;
-import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.init.BlockInit;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cupellation:block/red_nether_brick_lever"
+  }
+}

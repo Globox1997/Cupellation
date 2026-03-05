@@ -3,7 +3,10 @@
     "minecraft:deepslate_bricks",
     "minecraft:deepslate_tiles",
     "minecraft:polished_deepslate",
+    "minecraft:red_nether_bricks",
     "cupellation:deepslate_brick_glass",
-    "cupellation:deepslate_brick_drain"
+    "cupellation:deepslate_brick_drain",
+    "cupellation:red_nether_brick_glass",
+    "cupellation:red_nether_brick_drain"
   ]
 }

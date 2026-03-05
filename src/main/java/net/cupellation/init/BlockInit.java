@@ -24,7 +24,8 @@ import net.minecraft.util.Identifier;
 
 public class BlockInit {
 
-    public static final Block DEEPSLATE_BRICK_SMELTER = register("deepslate_brick_smelter", new SmelterBlock(AbstractBlock.Settings.copy(Blocks.FURNACE)));
+    public static final Block DEEPSLATE_BRICK_SMELTER = register("deepslate_brick_smelter", new SmelterBlock(AbstractBlock.Settings.create().mapColor(MapColor.DEEPSLATE_GRAY)
+            .sounds(BlockSoundGroup.DEEPSLATE).requiresTool().strength(3.0f, 6.0f).luminance(Blocks.createLightLevelFromLitBlockState(13))));
     public static final Block DEEPSLATE_BRICK_GLASS = register("deepslate_brick_glass", new TransparentBlock(
             AbstractBlock.Settings.create().instrument(NoteBlockInstrument.HAT).strength(0.6F).sounds(BlockSoundGroup.DEEPSLATE).nonOpaque().allowsSpawning(Blocks::never).requiresTool()
                     .solidBlock(Blocks::never).suffocates(Blocks::never).blockVision(Blocks::never)));
@@ -48,6 +49,31 @@ public class BlockInit {
             "deepslate_brick_lever", new LeverBlock(AbstractBlock.Settings.create().noCollision().strength(1.0F).sounds(BlockSoundGroup.DEEPSLATE).pistonBehavior(PistonBehavior.DESTROY))
     );
 
+    public static final Block RED_NETHER_BRICK_SMELTER = register("red_nether_brick_smelter", new SmelterBlock(AbstractBlock.Settings.create().mapColor(MapColor.DARK_RED)
+            .sounds(BlockSoundGroup.NETHER_BRICKS).requiresTool().strength(2.0f, 6.0f).luminance(Blocks.createLightLevelFromLitBlockState(13))));
+    public static final Block RED_NETHER_BRICK_GLASS = register("red_nether_brick_glass", new TransparentBlock(
+            AbstractBlock.Settings.create().instrument(NoteBlockInstrument.HAT).strength(0.6F).sounds(BlockSoundGroup.NETHER_BRICKS).nonOpaque().allowsSpawning(Blocks::never).requiresTool()
+                    .solidBlock(Blocks::never).suffocates(Blocks::never).blockVision(Blocks::never)));
+    public static final Block RED_NETHER_BRICK_DRAIN = register(
+            "red_nether_brick_drain",
+            new SmelterDrain(AbstractBlock.Settings.create().mapColor(MapColor.DARK_RED).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
+                    .strength(2.0F, 6.0F).sounds(BlockSoundGroup.NETHER_BRICKS)));
+    public static final Block RED_NETHER_BRICK_FAUCET = register(
+            "red_nether_brick_faucet",
+            new SmelterFaucet(AbstractBlock.Settings.create().mapColor(MapColor.DARK_RED).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
+                    .strength(2.0F, 6.0F).sounds(BlockSoundGroup.NETHER_BRICKS).nonOpaque()));
+    public static final Block RED_NETHER_BRICK_CASTING_BASIN = register(
+            "red_nether_brick_casting_basin",
+            new CastingBasin(AbstractBlock.Settings.create().mapColor(MapColor.DARK_RED).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
+                    .strength(2.0F, 6.0F).sounds(BlockSoundGroup.NETHER_BRICKS)));
+    public static final Block RED_NETHER_BRICK_CASTING_TABLE = register(
+            "red_nether_brick_casting_table",
+            new CastingTable(AbstractBlock.Settings.create().mapColor(MapColor.DARK_RED).instrument(NoteBlockInstrument.BASEDRUM).requiresTool()
+                    .strength(2.0F, 6.0F).sounds(BlockSoundGroup.NETHER_BRICKS)));
+    public static final Block RED_NETHER_BRICK_LEVER = register(
+            "red_nether_brick_lever", new LeverBlock(AbstractBlock.Settings.create().noCollision().strength(1.0F).sounds(BlockSoundGroup.NETHER_BRICKS).pistonBehavior(PistonBehavior.DESTROY))
+    );
+
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
     public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY;
     public static BlockEntityType<SmelterFaucetEntity> SMELTER_FAUCET_ENTITY;
@@ -69,13 +95,9 @@ public class BlockInit {
     }
 
     public static void init() {
-        SMELTER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter"),
-                BlockEntityType.Builder.create(SmelterBlockEntity::new, DEEPSLATE_BRICK_SMELTER).build(null));
-        CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"),
-                BlockEntityType.Builder.create(CastingBasinEntity::new, DEEPSLATE_BRICK_CASTING_BASIN).build(null));
-        SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"),
-                BlockEntityType.Builder.create(SmelterFaucetEntity::new, DEEPSLATE_BRICK_FAUCET).build(null));
-        CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"),
-                BlockEntityType.Builder.create(CastingTableEntity::new, DEEPSLATE_BRICK_CASTING_TABLE).build(null));
+        SMELTER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter"), BlockEntityType.Builder.create(SmelterBlockEntity::new, DEEPSLATE_BRICK_SMELTER, RED_NETHER_BRICK_SMELTER).build(null));
+        CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"), BlockEntityType.Builder.create(CastingBasinEntity::new, DEEPSLATE_BRICK_CASTING_BASIN, RED_NETHER_BRICK_CASTING_BASIN).build(null));
+        SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"), BlockEntityType.Builder.create(SmelterFaucetEntity::new, DEEPSLATE_BRICK_FAUCET, RED_NETHER_BRICK_FAUCET).build(null));
+        CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"), BlockEntityType.Builder.create(CastingTableEntity::new, DEEPSLATE_BRICK_CASTING_TABLE, RED_NETHER_BRICK_CASTING_TABLE).build(null));
     }
 }

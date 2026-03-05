@@ -1,5 +1,5 @@
 ### Added:
-- 
+- Added red nether smelter variant
 ### Fixed:
 - 
 ### Changed:

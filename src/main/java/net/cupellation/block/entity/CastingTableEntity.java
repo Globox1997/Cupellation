@@ -1,6 +1,5 @@
 package net.cupellation.block.entity;
 
-import net.cupellation.block.SmelterDrain;
 import net.cupellation.block.SmelterFaucet;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;

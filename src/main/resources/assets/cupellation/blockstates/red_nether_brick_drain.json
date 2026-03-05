@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "cupellation:block/red_nether_brick_drain",
+      "y": 90
+    },
+    "axis=z": {
+      "model": "cupellation:block/red_nether_brick_drain"
+    }
+  }
+}

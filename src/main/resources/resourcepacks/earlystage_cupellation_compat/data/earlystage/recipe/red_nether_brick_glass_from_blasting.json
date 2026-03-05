@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:blasting_extra",
+  "category": "misc",
+  "cookingtime": 600,
+  "experience": 0.5,
+  "ingredient": {
+    "item": "minecraft:red_nether_bricks",
+    "count": 1
+  },
+  "extraingredient": {
+    "item": "minecraft:quartz",
+    "count": 1
+  },
+  "result": {
+    "id": "cupellation:red_nether_brick_glass",
+    "count": 1
+  }
+}

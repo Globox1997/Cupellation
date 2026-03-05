@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "d": {
+      "item": "minecraft:red_nether_bricks"
+    }
+  },
+  "pattern": [
+    "ddd",
+    "d d",
+    "d d"
+  ],
+  "result": {
+    "count": 1,
+    "id": "cupellation:red_nether_brick_casting_table"
+  }
+}
