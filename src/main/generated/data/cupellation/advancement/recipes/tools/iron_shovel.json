@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_iron_shovel_head": {
+      "conditions": {
+        "items": [
+          {
+            "items": "cupellation:iron_shovel_head"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "cupellation:iron_shovel"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_iron_shovel_head"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "cupellation:iron_shovel"
+    ]
+  }
+}

@@ -22,6 +22,9 @@
 		"client": [
 			"net.cupellation.CupellationClient"
 		],
+		"fabric-datagen": [
+			"net.cupellation.CupellationDataGenerator"
+		],
 		"modmenu": [
 			"net.cupellation.config.ModMenuIntegration"
 		]

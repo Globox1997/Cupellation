@@ -75,9 +75,12 @@ public class BlockInit {
     );
 
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
-    public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY;
     public static BlockEntityType<SmelterFaucetEntity> SMELTER_FAUCET_ENTITY;
-    public static BlockEntityType<CastingTableEntity> CASTING_TABLE_ENTITY;
+
+    public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"),
+            BlockEntityType.Builder.create(CastingBasinEntity::new, DEEPSLATE_BRICK_CASTING_BASIN, RED_NETHER_BRICK_CASTING_BASIN).build(null));
+    public static BlockEntityType<CastingTableEntity> CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"),
+            BlockEntityType.Builder.create(CastingTableEntity::new, DEEPSLATE_BRICK_CASTING_TABLE, RED_NETHER_BRICK_CASTING_TABLE).build(null));
 
     public static final ScreenHandlerType<SmelterScreenHandler> SMELTER_SCREEN_HANDLER =
             Registry.register(Registries.SCREEN_HANDLER, CupellationMain.identifierOf("smelter"),
@@ -96,8 +99,6 @@ public class BlockInit {
 
     public static void init() {
         SMELTER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter"), BlockEntityType.Builder.create(SmelterBlockEntity::new, DEEPSLATE_BRICK_SMELTER, RED_NETHER_BRICK_SMELTER).build(null));
-        CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"), BlockEntityType.Builder.create(CastingBasinEntity::new, DEEPSLATE_BRICK_CASTING_BASIN, RED_NETHER_BRICK_CASTING_BASIN).build(null));
         SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"), BlockEntityType.Builder.create(SmelterFaucetEntity::new, DEEPSLATE_BRICK_FAUCET, RED_NETHER_BRICK_FAUCET).build(null));
-        CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"), BlockEntityType.Builder.create(CastingTableEntity::new, DEEPSLATE_BRICK_CASTING_TABLE, RED_NETHER_BRICK_CASTING_TABLE).build(null));
     }
 }

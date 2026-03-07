@@ -8,6 +8,8 @@ import net.cupellation.init.ItemInit;
 import net.cupellation.init.SoundInit;
 import net.cupellation.misc.CastingEntity;
 import net.cupellation.misc.MoltenHelper;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -59,6 +61,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         blockEntity.serverTick(world);
     }
 
+    @Environment(EnvType.CLIENT)
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;

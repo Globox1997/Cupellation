@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "H": {
+      "item": "cupellation:netherite_hoe_head"
+    },
+    "|": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    " H ",
+    " | ",
+    " | "
+  ],
+  "result": {
+    "count": 1,
+    "id": "minecraft:netherite_hoe"
+  }
+}

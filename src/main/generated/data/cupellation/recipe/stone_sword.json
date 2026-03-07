@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "H": {
+      "item": "cupellation:stone_sword_blade"
+    },
+    "|": {
+      "item": "minecraft:stick"
+    }
+  },
+  "pattern": [
+    " H ",
+    " | "
+  ],
+  "result": {
+    "count": 1,
+    "id": "minecraft:stone_sword"
+  }
+}

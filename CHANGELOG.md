@@ -1,5 +1,7 @@
 ### Added:
 - Added red nether smelter variant
+- Added molds
+- Added tool heads
 ### Fixed:
 - 
 ### Changed:

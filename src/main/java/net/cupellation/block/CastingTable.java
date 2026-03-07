@@ -4,7 +4,6 @@ import com.mojang.serialization.MapCodec;
 import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.init.BlockInit;
 import net.cupellation.item.MoldItem;
-import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
@@ -80,28 +79,28 @@ public class CastingTable extends BlockWithEntity {
 
         if (!table.isFilling() && table.getMoltenAmount() <= 0) {
             if (!heldItem.isEmpty()) {
-                if (heldItem.isIn(ConventionalItemTags.INGOTS) && table.tryInsertResult(heldItem)) {
-                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
-                    return ActionResult.SUCCESS;
-                } else if (heldItem.getItem() instanceof MoldItem && table.tryInsertMold(heldItem)) {
+                if (heldItem.getItem() instanceof MoldItem && table.tryInsertMold(heldItem)) {
                     world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
                     return ActionResult.SUCCESS;
                 }
-
-                ItemStack ingot = table.tryExtractResult();
-                if (!ingot.isEmpty()) {
+                if (table.tryInsertResult(heldItem)) {
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
+                    return ActionResult.SUCCESS;
+                }
+                ItemStack result = table.tryExtractResult();
+                if (!result.isEmpty()) {
                     world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
-                    if (!player.getInventory().insertStack(ingot)) {
-                        player.dropItem(ingot, false);
+                    if (!player.getInventory().insertStack(result)) {
+                        player.dropItem(result, false);
                     }
                     return ActionResult.SUCCESS;
                 }
             } else {
-                ItemStack ingot = table.tryExtractResult();
-                if (!ingot.isEmpty()) {
+                ItemStack result = table.tryExtractResult();
+                if (!result.isEmpty()) {
                     world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
-                    if (!player.getInventory().insertStack(ingot)) {
-                        player.dropItem(ingot, false);
+                    if (!player.getInventory().insertStack(result)) {
+                        player.dropItem(result, false);
                     }
                     return ActionResult.SUCCESS;
                 }

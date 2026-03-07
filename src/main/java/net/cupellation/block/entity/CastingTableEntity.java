@@ -9,6 +9,8 @@ import net.cupellation.init.SoundInit;
 import net.cupellation.item.MoldItem;
 import net.cupellation.misc.CastingEntity;
 import net.cupellation.misc.MoltenHelper;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -63,6 +65,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         blockEntity.serverTick(world);
     }
 
+    @Environment(EnvType.CLIENT)
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;
@@ -157,21 +160,32 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         if (cooldownTicks > 0) {
             cooldownTicks--;
             if (cooldownTicks == 0) {
-                if (result.isEmpty() && !mold.isEmpty()) {
-                    Identifier ingotId = SmelterData.getIngotId(metalTypeId);
-                    if (ingotId == null) {
+                if (mold.isEmpty() && !result.isEmpty()) {
+                    Identifier resultId = Registries.ITEM.getId(result.getItem());
+                    MoldItem targetMold = MoldItem.findMoldForItem(resultId);
+                    if (targetMold == null) {
                         moltenAmount = 0;
                         metalTypeId = null;
                         cachedGrade = 1;
+                        result = ItemStack.EMPTY;
                         markDirty();
                         return;
                     }
-                    ItemStack stack = new ItemStack(Registries.ITEM.get(ingotId));
-                    stack.set(ItemInit.QUALITY_GRADE, cachedGrade);
-                    result = stack;
-                } else if (!result.isEmpty() && mold.isEmpty()) {
-                    if (metalTypeId != null && ItemInit.MOLDS.containsKey(metalTypeId)) {
-                        mold = new ItemStack(ItemInit.MOLDS.get(metalTypeId));
+                    result = ItemStack.EMPTY;
+                    mold = new ItemStack(targetMold);
+                } else if (!mold.isEmpty() && result.isEmpty()) {
+                    if (mold.getItem() instanceof MoldItem moldItem) {
+                        Identifier resultItemId = moldItem.resolveResultId(metalTypeId);
+                        if (resultItemId == null || !Registries.ITEM.containsId(resultItemId)) {
+                            moltenAmount = 0;
+                            metalTypeId = null;
+                            cachedGrade = 1;
+                            markDirty();
+                            return;
+                        }
+                        ItemStack stack = new ItemStack(Registries.ITEM.get(resultItemId));
+                        stack.set(ItemInit.QUALITY_GRADE, cachedGrade);
+                        result = stack;
                     }
                 }
                 moltenAmount = 0;
@@ -200,9 +214,30 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         if (metalTypeId != null && !metalTypeId.equals(metalType)) {
             return false;
         }
-        if (mold.isEmpty() && !ItemInit.MOLDS.containsKey(metalTypeId)) {
-            return false;
+
+        if (mold.isEmpty()) {
+            Identifier resultId = Registries.ITEM.getId(result.getItem());
+            MoldItem targetMold = MoldItem.findMoldForItem(resultId);
+            if (targetMold == null) {
+                return false;
+            }
+            if (!targetMold.canMoldGetCastWith(metalType)) {
+                return false;
+            }
+        } else {
+            if (mold.getItem() instanceof MoldItem moldItem) {
+                if (!moldItem.canCastWith(metalType)) {
+                    return false;
+                }
+                Identifier resultId = moldItem.resolveResultId(metalType);
+                if (resultId == null) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
+
         this.linkedSmelterPos = smelterPos;
         this.filling = true;
         markDirty();
@@ -242,10 +277,15 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     }
 
     public boolean tryInsertResult(ItemStack stack) {
-        if (!result.isEmpty() || filling) {
+        if (!result.isEmpty() || filling || moltenAmount > 0) {
             return false;
         }
-        if (moltenAmount > 0) {
+        Identifier itemId = Registries.ITEM.getId(stack.getItem());
+
+        if (MoldItem.findMoldForItem(itemId) == null) {
+            return false;
+        }
+        if (!this.mold.isEmpty() && !this.mold.isOf(MoldItem.findMoldForItem(itemId))) {
             return false;
         }
         result = stack.copyWithCount(1);

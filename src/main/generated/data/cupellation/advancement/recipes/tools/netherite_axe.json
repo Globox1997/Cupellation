@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_netherite_axe_head": {
+      "conditions": {
+        "items": [
+          {
+            "items": "cupellation:netherite_axe_head"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "cupellation:netherite_axe"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_netherite_axe_head"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "cupellation:netherite_axe"
+    ]
+  }
+}
