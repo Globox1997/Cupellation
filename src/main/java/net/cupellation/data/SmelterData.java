@@ -13,6 +13,7 @@ public final class SmelterData {
     private static final Map<Identifier, SmelterItemData> ITEMS = new HashMap<>();
     private static final Map<Identifier, MetalTypeData> METALS = new HashMap<>();
     private static final Map<Identifier, FuelData> FUELS = new HashMap<>();
+    private static final Map<Identifier, SmelterTypeData> TYPES = new HashMap<>();
 
     private SmelterData() {
     }
@@ -31,6 +32,12 @@ public final class SmelterData {
         FUELS.clear();
         FUELS.putAll(fuels);
     }
+
+    public static void setTypes(Map<Identifier, SmelterTypeData> types) {
+        TYPES.clear();
+        TYPES.putAll(types);
+    }
+
 
     public static boolean hasItem(Item item) {
         return getItemData(item) != null;
@@ -87,6 +94,20 @@ public final class SmelterData {
     public static MetalTypeData.Grade getGradeAt(Identifier metalTypeId, int temperature) {
         MetalTypeData metal = METALS.get(metalTypeId);
         return metal != null ? metal.getGradeAt(temperature) : MetalTypeData.Grade.LOW;
+    }
+
+    @Nullable
+    public static SmelterTypeData getSmelterTypeForBlock(Identifier blockId) {
+        for (SmelterTypeData type : TYPES.values()) {
+            if (type.matchesBlock(blockId)) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+    public static Collection<SmelterTypeData> getAllTypes() {
+        return TYPES.values();
     }
 
     @Nullable

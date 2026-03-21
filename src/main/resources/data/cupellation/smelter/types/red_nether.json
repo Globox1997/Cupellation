@@ -1,0 +1,9 @@
+{
+  "id": "cupellation:nether_smelter",
+  "blocks": [
+    "minecraft:red_nether_bricks",
+    "cupellation:red_nether_brick_smelter",
+    "cupellation:red_nether_brick_glass",
+    "cupellation:red_nether_brick_drain"
+  ]
+}

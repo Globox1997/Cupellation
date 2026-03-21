@@ -1,9 +1,6 @@
 ### Added:
-- Added red nether smelter variant
-- Added molds
-- Added tool heads
+- Smelter type data
 ### Fixed:
 - 
 ### Changed:
-- ### CAUTION!!! Old smelters will get deleted with this version!!!
-- Changed smelter to deepslate brick smelter
+- datapack tag system

@@ -13,6 +13,8 @@ Metals, their material and fuels are data driven.
 If you don't know how to create a datapack check out [Data Pack Wiki](https://minecraft.wiki/w/Data_Pack)
 website and try to create your first one for the vanilla game. Each existing file can be overriden by setting replace = true.
 
+#### Metal
+Folder: `data/modid/smelter/metals`  
 A metal requires the following:
 - id: basically an identifier for the metal
 - name: translation key, translate it then via lang file
@@ -69,8 +71,10 @@ Example:
 }
  ```
 
+#### Material
+Folder: `data/modid/smelter/items`  
 A material requires the following
-- item: item id
+- item: item id or tag (starting with #)
 - metal_type: metal id
 - smelt_time: time in ticks to get smelted
 - yield: how much metal is the output of this item
@@ -85,8 +89,10 @@ Example:
 }
 ```
 
+#### Fuel
+Folder: `data/modid/smelter/fuels`  
 A fuel requires the following
-- item: item id
+- item: item id or tag (starting with #)
 - max_temperature: the maximal temperature this item outputs as a fuel
 - burn_time: duration of the fuel
 
@@ -96,5 +102,32 @@ Example:
   "item": "minecraft:blaze_powder",
   "max_temperature": 1400,
   "burn_time": 1000
+}
+```
+
+#### Type
+Folder: `data/modid/smelter/types`  
+A smelter type requires the following
+- id: unique id
+- blocks: array of block ids or tags (starting with #)
+- allowed_metals: Optional array list of metal ids - if empty all metals can be smelted in this smelter type
+
+Example:
+```json
+{
+  "id": "cupellation:deepslate_smelter",
+  "blocks": [
+    "minecraft:deepslate_bricks",
+    "minecraft:deepslate_tiles",
+    "minecraft:polished_deepslate",
+    "cupellation:deepslate_brick_smelter",
+    "cupellation:deepslate_brick_glass",
+    "cupellation:deepslate_brick_drain"
+  ],
+  "allowed_metals": [
+    "cupellation:iron",
+    "cupellation:gold",
+    "cupellation:copper"
+  ]
 }
 ```

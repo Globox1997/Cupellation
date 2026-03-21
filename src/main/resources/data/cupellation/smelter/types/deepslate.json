@@ -1,0 +1,17 @@
+{
+  "id": "cupellation:deepslate_smelter",
+  "blocks": [
+    "minecraft:deepslate_bricks",
+    "minecraft:deepslate_tiles",
+    "minecraft:polished_deepslate",
+    "cupellation:deepslate_brick_smelter",
+    "cupellation:deepslate_brick_glass",
+    "cupellation:deepslate_brick_drain"
+  ],
+  "block_tag": "minecraft:deepslate_bricks",
+  "allowed_metals": [
+    "cupellation:iron",
+    "cupellation:gold",
+    "cupellation:copper"
+  ]
+}

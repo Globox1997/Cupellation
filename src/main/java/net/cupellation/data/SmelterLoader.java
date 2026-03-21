@@ -32,27 +32,23 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         Map<Identifier, SmelterItemData> items = new HashMap<>();
         Map<Identifier, MetalTypeData> metals = new HashMap<>();
         Map<Identifier, FuelData> fuels = new HashMap<>();
+        Map<Identifier, SmelterTypeData> types = new HashMap<>();
 
         resourceManager.findResources("smelter/items", id -> id.getPath().endsWith(".json"))
                 .forEach((id, resource) -> {
                     try (InputStream stream = resource.getInputStream()) {
                         JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
-                        SmelterItemData data = parseItem(json);
-                        if (data == null) {
+                        List<SmelterItemData> resolved = parseItem(json, resourceManager);
+                        if (resolved.isEmpty()) {
                             return;
                         }
                         boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
-
-                        if (items.containsKey(data.itemId())) {
-                            if (replace) {
-                                items.put(data.itemId(), data);
-                                // LOGGER.info("[Smelter] Replaced item: {} (from {})", data.itemId(), id);
+                        for (SmelterItemData data : resolved) {
+                            if (items.containsKey(data.itemId())) {
+                                if (replace) items.put(data.itemId(), data);
                             } else {
-                                // LOGGER.info("[Smelter] Skipped duplicate item: {} (from {}), use replace=true to override", data.itemId(), id);
+                                items.put(data.itemId(), data);
                             }
-                        } else {
-                            items.put(data.itemId(), data);
-                            // LOGGER.info("[Smelter] Loaded item: {} (from {})", data.itemId(), id);
                         }
                     } catch (Exception e) {
                         LOGGER.error("[Smelter] Failed to load item file {}: {}", id, e.toString());
@@ -112,9 +108,28 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     }
                 });
 
+        resourceManager.findResources("smelter/types", id -> id.getPath().endsWith(".json"))
+                .forEach((id, resource) -> {
+                    try (InputStream stream = resource.getInputStream()) {
+                        JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                        SmelterTypeData data = parseSmelterType(json, resourceManager);
+                        if (data == null) {
+                            return;
+                        }
+                        boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
+                        if (types.containsKey(data.id())) {
+                            if (replace) types.put(data.id(), data);
+                        } else {
+                            types.put(data.id(), data);
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("[Smelter] Failed to load type file {}: {}", id, e.toString());
+                    }
+                });
         SmelterData.setFuels(fuels);
         SmelterData.setItems(items);
         SmelterData.setMetals(metals);
+        SmelterData.setTypes(types);
 
         LOGGER.info("[Smelter] Loaded {} item(s), {} metal type(s).", items.size(), metals.size());
     }
@@ -124,48 +139,58 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             LOGGER.warn("[Smelter] Fuel JSON missing 'max_temperature', skipping.");
             return List.of();
         }
+        if (!json.has("item")) {
+            LOGGER.warn("[Smelter] Fuel JSON missing 'item', skipping.");
+            return List.of();
+        }
 
         int maxTemp = json.get("max_temperature").getAsInt();
         int burnTime = json.has("burn_time") ? json.get("burn_time").getAsInt() : -1;
+        String entry = json.get("item").getAsString();
 
-        if (json.has("item")) {
-            Identifier itemId = Identifier.of(json.get("item").getAsString());
+        if (entry.startsWith("#")) {
+            List<Identifier> resolved = resolveItemTag(Identifier.of(entry.substring(1)), resourceManager);
+            if (resolved.isEmpty()) {
+                LOGGER.warn("[Smelter] Fuel tag {} could not be resolved or is empty.", entry);
+                return List.of();
+            }
+            return resolved.stream().map(itemId -> new FuelData(itemId, maxTemp, burnTime)).toList();
+        } else {
+            Identifier itemId = Identifier.of(entry);
             if (!Registries.ITEM.containsId(itemId)) {
                 LOGGER.warn("[Smelter] Fuel references unknown item: {}, skipping.", itemId);
                 return List.of();
             }
             return List.of(new FuelData(itemId, maxTemp, burnTime));
-
-        } else if (json.has("tag")) {
-            Identifier tagId = Identifier.of(json.get("tag").getAsString());
-            List<Identifier> resolved = resolveItemTag(tagId, resourceManager);
-            if (resolved.isEmpty()) {
-                LOGGER.warn("[Smelter] Fuel tag {} could not be resolved or is empty.", tagId);
-                return List.of();
-            }
-            List<FuelData> result = new ArrayList<>();
-            for (Identifier itemId : resolved) {
-                result.add(new FuelData(itemId, maxTemp, burnTime));
-            }
-            return result;
-
-        } else {
-            LOGGER.warn("[Smelter] Fuel JSON missing 'item' or 'tag', skipping.");
-            return List.of();
         }
     }
 
-    private SmelterItemData parseItem(JsonObject json) {
+    private List<SmelterItemData> parseItem(JsonObject json, ResourceManager resourceManager) {
         if (!json.has("item") || !json.has("metal_type") || !json.has("smelt_time") || !json.has("yield")) {
             LOGGER.warn("[Smelter] Item JSON missing required fields, skipping.");
-            return null;
+            return List.of();
         }
-        if (!Registries.ITEM.containsId(Identifier.of(json.get("item").getAsString()))) {
-            LOGGER.warn("[Smelter] Item JSON references unknown item: {}, skipping.", json.get("item").getAsString());
-            return null;
+
+        Identifier metalType = Identifier.of(json.get("metal_type").getAsString());
+        int smeltTime = json.get("smelt_time").getAsInt();
+        int yield = json.get("yield").getAsInt();
+        String entry = json.get("item").getAsString();
+
+        if (entry.startsWith("#")) {
+            List<Identifier> resolved = resolveItemTag(Identifier.of(entry.substring(1)), resourceManager);
+            if (resolved.isEmpty()) {
+                LOGGER.warn("[Smelter] Item tag {} could not be resolved or is empty.", entry);
+                return List.of();
+            }
+            return resolved.stream().map(itemId -> new SmelterItemData(itemId, metalType, smeltTime, yield)).toList();
+        } else {
+            Identifier itemId = Identifier.of(entry);
+            if (!Registries.ITEM.containsId(itemId)) {
+                LOGGER.warn("[Smelter] Item JSON references unknown item: {}, skipping.", entry);
+                return List.of();
+            }
+            return List.of(new SmelterItemData(itemId, metalType, smeltTime, yield));
         }
-        return new SmelterItemData(Identifier.of(json.get("item").getAsString()),
-                Identifier.of(json.get("metal_type").getAsString()), json.get("smelt_time").getAsInt(), json.get("yield").getAsInt());
     }
 
     private MetalTypeData parseMetal(JsonObject json) {
@@ -230,6 +255,45 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                 ingotId, blockId, density, alloyFrom, fluxItemId, low, mid, high);
     }
 
+    private SmelterTypeData parseSmelterType(JsonObject json, ResourceManager resourceManager) {
+        if (!json.has("id")) {
+            LOGGER.warn("[Smelter] Type JSON missing 'id', skipping.");
+            return null;
+        }
+        Identifier id = Identifier.of(json.get("id").getAsString());
+
+        List<Identifier> blocks = new ArrayList<>();
+        if (json.has("blocks")) {
+            for (JsonElement el : json.getAsJsonArray("blocks")) {
+                String entry = el.getAsString();
+                if (entry.startsWith("#")) {
+                    blocks.addAll(resolveBlockTag(Identifier.of(entry.substring(1)), resourceManager));
+                } else {
+                    Identifier bid = Identifier.of(entry);
+                    if (!Registries.BLOCK.containsId(bid)) {
+                        LOGGER.warn("[Smelter] Type {} references unknown block {}, skipping block.", id, bid);
+                        continue;
+                    }
+                    blocks.add(bid);
+                }
+            }
+        }
+        if (blocks.isEmpty()) {
+            LOGGER.warn("[Smelter] Type {} has no valid blocks, skipping.", id);
+            return null;
+        }
+
+        Set<Identifier> allowedMetals = null;
+        if (json.has("allowed_metals")) {
+            allowedMetals = new HashSet<>();
+            for (JsonElement el : json.getAsJsonArray("allowed_metals")) {
+                allowedMetals.add(Identifier.of(el.getAsString()));
+            }
+        }
+
+        return new SmelterTypeData(id, List.copyOf(blocks), allowedMetals);
+    }
+
     private GradeRange parseGradeRange(JsonObject json) {
         return new GradeRange(json.get("min").getAsInt(), json.get("max").getAsInt());
     }
@@ -243,8 +307,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
     }
 
 
-    private List<Identifier> resolveItemTag(Identifier tagId, ResourceManager resourceManager,
-                                            Set<Identifier> visited) {
+    private List<Identifier> resolveItemTag(Identifier tagId, ResourceManager resourceManager, Set<Identifier> visited) {
         if (!visited.add(tagId)) {
             LOGGER.warn("[Smelter] Circular tag reference detected: {}", tagId);
             return List.of();
@@ -294,6 +357,49 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             }
         }
 
+        return result;
+    }
+
+    private List<Identifier> resolveBlockTag(Identifier tagId, ResourceManager resourceManager) {
+        return resolveBlockTag(tagId, resourceManager, new HashSet<>());
+    }
+
+    private List<Identifier> resolveBlockTag(Identifier tagId, ResourceManager resourceManager, Set<Identifier> visited) {
+        if (!visited.add(tagId)) {
+            LOGGER.warn("[Smelter] Circular block tag reference: {}", tagId);
+            return List.of();
+        }
+        Identifier fileId = Identifier.of(tagId.getNamespace(), "tags/block/" + tagId.getPath() + ".json");
+        List<Identifier> result = new ArrayList<>();
+        Collection<Resource> resources;
+        try {
+            resources = resourceManager.getAllResources(fileId);
+        } catch (Exception e) {
+            LOGGER.warn("[Smelter] Could not find block tag {}: {}", tagId, e.toString());
+            return List.of();
+        }
+        for (Resource resource : resources) {
+            try (InputStream stream = resource.getInputStream()) {
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                if (json.has("replace") && json.get("replace").getAsBoolean()) result.clear();
+                if (!json.has("values")) continue;
+                for (JsonElement el : json.getAsJsonArray("values")) {
+                    String entry = el.getAsString();
+                    if (entry.startsWith("#")) {
+                        result.addAll(resolveBlockTag(Identifier.of(entry.substring(1)), resourceManager, visited));
+                    } else {
+                        Identifier bid = Identifier.of(entry);
+                        if (Registries.BLOCK.containsId(bid)) {
+                            result.add(bid);
+                        } else {
+                            LOGGER.warn("[Smelter] Block tag {} references unknown block {}", tagId, bid);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.error("[Smelter] Error reading block tag file {}: {}", fileId, e.toString());
+            }
+        }
         return result;
     }
 }

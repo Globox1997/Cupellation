@@ -2,10 +2,7 @@ package net.cupellation.block.entity;
 
 import net.cupellation.block.SmelterBlock;
 import net.cupellation.block.screen.SmelterScreenHandler;
-import net.cupellation.data.FuelData;
-import net.cupellation.data.MetalTypeData;
-import net.cupellation.data.SmelterData;
-import net.cupellation.data.SmelterItemData;
+import net.cupellation.data.*;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
@@ -52,7 +49,7 @@ import java.util.stream.IntStream;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
-    private DefaultedList<ItemStack> inventory;
+    private final DefaultedList<ItemStack> inventory;
 
     private boolean isFormed = false;
     private BlockPos cornerMin = BlockPos.ORIGIN;
@@ -71,6 +68,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private final int[] metalAmounts = new int[MAX_METALS];
     private final int[] slagAmounts = new int[MAX_METALS];
     private final Identifier[] metalTypeIds = new Identifier[MAX_METALS];
+
+    @Nullable
+    private Identifier currentSmelterTypeId = null;
 
     private static final int ALLOY_TICK_INTERVAL = 20;
     private int alloyTickCooldown = 0;
@@ -186,6 +186,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         structureWidth = nbt.getInt("structureWidth");
         structureDepth = nbt.getInt("structureDepth");
         structureHeight = nbt.getInt("structureHeight");
+
+        String typeIdStr = nbt.getString("smelterTypeId");
+        currentSmelterTypeId = typeIdStr.isEmpty() ? null : Identifier.of(typeIdStr);
     }
 
     @Override
@@ -218,6 +221,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         nbt.putInt("structureWidth", structureWidth);
         nbt.putInt("structureDepth", structureDepth);
         nbt.putInt("structureHeight", structureHeight);
+
+        nbt.putString("smelterTypeId", currentSmelterTypeId != null ? currentSmelterTypeId.toString() : "");
     }
 
     public static void clientTick(World world, BlockPos pos, BlockState state, SmelterBlockEntity blockEntity) {
@@ -254,8 +259,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             double py = cornerMin.getY() + getTotalFillPercent() * maxFillHeight();
             double pz = innerPos.getZ() + world.getRandom().nextDouble();
 
-            world.playSound(px, py, pz, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE,
-                    SoundCategory.BLOCKS, 0.3f, 0.8f + world.getRandom().nextFloat() * 0.4f, false);
+            world.playSound(px, py, pz, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.BLOCKS, 0.3f, 0.8f + world.getRandom().nextFloat() * 0.4f, false);
         }
     }
 
@@ -399,6 +403,14 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             return;
         }
 
+        if (currentSmelterTypeId != null) {
+            SmelterTypeData smelterType = SmelterData.getAllTypes().stream().filter(type -> type.id().equals(currentSmelterTypeId)).findFirst().orElse(null);
+            if (smelterType != null && !smelterType.allowsMetal(itemMetalType)) {
+                smeltProgress[slotIndex] = 0;
+                return;
+            }
+        }
+
         if (getTotalFluid() + data.yield() > getMaxCapacity()) {
             smeltProgress[slotIndex] = 0;
             return;
@@ -530,8 +542,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
         float fluidHeight = getTotalFillPercent() * maxFillHeight();
 
-        Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()),
-                Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
+        Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()), Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
 
         World world = this.getWorld();
         assert world != null;
@@ -561,8 +572,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                 }
             }
             if (!wasFlux && !item.isFireImmune()) {
-                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f,
-                        0.9F + world.getRandom().nextFloat() * 0.15F, this.getWorld().getRandom().nextLong());
+                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, this.getWorld().getRandom().nextLong());
                 if (item.getStack().isIn(TagInit.COOLING_ITEMS)) {
                     temperatureDecrease += ITEM_COOLING_TEMPERATURE;
                 }
@@ -597,16 +607,23 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         Direction facing = world.getBlockState(this.pos).get(SmelterBlock.FACING);
         Direction left = facing.rotateYClockwise();
 
+        SmelterTypeData detectingType = null;
+        if (!SmelterData.getAllTypes().isEmpty()) {
+            Identifier blockId = Registries.BLOCK.getId(this.getCachedState().getBlock());
+            detectingType = SmelterData.getSmelterTypeForBlock(blockId);
+        }
+
         for (int w = ConfigInit.CONFIG.smelterMaxWidth; w >= 5; w -= 2) {
             for (int d = ConfigInit.CONFIG.smelterMaxWidth; d >= 5; d--) {
                 for (int h = ConfigInit.CONFIG.smelterMaxHeight; h >= 1; h--) {
                     int halfWidth = (w - 1) / 2;
                     BlockPos corner = this.pos.offset(left, halfWidth);
-                    if (tryValidate(world, corner, facing, w, d, h)) {
+                    if (tryValidate(world, corner, facing, w, d, h, detectingType)) {
                         this.cornerMin = corner;
                         this.structureWidth = w;
                         this.structureDepth = d;
                         this.structureHeight = h;
+                        this.currentSmelterTypeId = detectingType != null ? detectingType.id() : null;
                         return true;
                     }
                 }
@@ -615,30 +632,37 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         return false;
     }
 
-    private boolean tryValidate(World world, BlockPos corner, Direction facing, int w, int d, int h) {
-        return tryCheckBottom(world, corner, facing, w, d) && tryCheckWalls(world, corner, facing, w, d, h);
+    private boolean tryValidate(World world, BlockPos corner, Direction facing, int w, int d, int h, @Nullable SmelterTypeData detectingType) {
+        return tryCheckBottom(world, corner, facing, w, d, detectingType) && tryCheckWalls(world, corner, facing, w, d, h, detectingType);
     }
 
-    private boolean tryCheckBottom(World world, BlockPos corner, Direction facing, int w, int d) {
+    private boolean tryCheckBottom(World world, BlockPos corner, Direction facing, int w, int d, @Nullable SmelterTypeData detectingType) {
         Direction right = facing.rotateYCounterclockwise();
-        for (int x = 0; x < w; x++)
+        for (int x = 0; x < w; x++) {
             for (int z = 0; z < d; z++) {
                 BlockPos check = corner.down().offset(right, x).offset(facing.getOpposite(), z);
                 if (!world.getBlockState(check).isIn(TagInit.SMELTER_BLOCKS)) {
                     return false;
+                } else if (detectingType != null) {
+                    if (!detectingType.matchesBlock(Registries.BLOCK.getId(world.getBlockState(check).getBlock()))) {
+                        return false;
+                    }
                 }
             }
+        }
         return true;
     }
 
-    private boolean tryCheckWalls(World world, BlockPos corner, Direction facing, int w, int d, int h) {
+    private boolean tryCheckWalls(World world, BlockPos corner, Direction facing, int w, int d, int h, @Nullable SmelterTypeData detectingType) {
         Direction right = facing.rotateYCounterclockwise();
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
                 for (int z = 0; z < d; z++) {
                     BlockPos check = corner.offset(right, x).offset(facing.getOpposite(), z).up(y);
                     boolean isWall = (x == 0 || x == w - 1 || z == 0 || z == d - 1);
-                    if (check.equals(this.pos)) continue;
+                    if (check.equals(this.pos)) {
+                        continue;
+                    }
                     BlockState state = world.getBlockState(check);
                     if (isWall && !state.isIn(TagInit.SMELTER_BLOCKS)) {
                         return false;
@@ -646,7 +670,14 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                     if (!isWall && !state.isAir() && !state.isOf(Blocks.LIGHT)) {
                         return false;
                     }
+                    if (isWall && detectingType != null) {
+                        if (!detectingType.matchesBlock(Registries.BLOCK.getId(world.getBlockState(check).getBlock()))) {
+                            return false;
+                        }
+                    }
                 }
+            }
+        }
         return true;
     }
 
