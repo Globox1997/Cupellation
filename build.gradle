@@ -36,6 +36,10 @@ dependencies {
 	modCompileOnly modRuntimeOnly("com.terraformersmc:modmenu:${project.mod_menu_version}"),{
 		exclude(group: "net.fabricmc.fabric-api")
 	}
+	// EMI
+	modCompileOnly ('maven.modrinth:emi:1.1.22+1.21.1+fabric') {
+		exclude(group: "net.fabricmc.fabric-api")
+	}
 }
 
 processResources {

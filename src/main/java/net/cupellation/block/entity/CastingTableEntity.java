@@ -136,7 +136,9 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
             if (actual <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) startCooling();
+                if (moltenAmount > 0) {
+                    startCooling();
+                }
                 return;
             }
 

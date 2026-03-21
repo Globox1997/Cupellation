@@ -27,6 +27,9 @@
 		],
 		"modmenu": [
 			"net.cupellation.config.ModMenuIntegration"
+		],
+		"emi": [
+			"net.cupellation.compat.CupellationEmiPlugin"
 		]
 	},
 	"mixins": [

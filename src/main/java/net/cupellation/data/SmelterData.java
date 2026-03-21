@@ -49,9 +49,17 @@ public final class SmelterData {
         return ITEMS.get(id);
     }
 
+    public static Map<Identifier, SmelterItemData> getAllItems() {
+        return Collections.unmodifiableMap(ITEMS);
+    }
+
     @Nullable
     public static MetalTypeData getMetalType(Identifier metalTypeId) {
         return METALS.get(metalTypeId);
+    }
+
+    public static Map<Identifier, MetalTypeData> getAllMetals() {
+        return Collections.unmodifiableMap(METALS);
     }
 
     public static int getRequiredTemp(Identifier metalTypeId) {

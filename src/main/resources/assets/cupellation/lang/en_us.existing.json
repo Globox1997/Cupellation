@@ -51,5 +51,11 @@
   "block.cupellation.smelter.grade.info": "%s°C - %s°C",
 
   "tag.item.cupellation.cooling_items": "Cooling Items",
-  "tag.block.cupellation.smelter_blocks": "Smelter Blocks"
+  "tag.block.cupellation.smelter_blocks": "Smelter Blocks",
+
+  "emi.category.cupellation.smelter": "Smelter",
+  "emi.category.cupellation.table_casting": "Table Casting",
+  "emi.category.cupellation.basin_casting": "Basin Casting",
+  "emi.smelter.degree": "%s °C",
+  "emi.smelter.yield": "%s mB"
 }

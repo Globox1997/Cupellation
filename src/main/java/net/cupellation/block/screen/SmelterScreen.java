@@ -102,7 +102,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         drawBurnArrow(context, x, y);
     }
 
-    private void drawTiledSprite(DrawContext context, int destX, int destY, int destW, int destH, Sprite sprite, float r, float g, float b) {
+    public static void drawTiledSprite(DrawContext context, int destX, int destY, int destW, int destH, Sprite sprite, float r, float g, float b) {
         if (destW <= 0 || destH <= 0) {
             return;
         }
