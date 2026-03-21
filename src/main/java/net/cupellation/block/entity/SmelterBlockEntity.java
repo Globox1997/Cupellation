@@ -64,7 +64,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private int lastFilledLayers = -1;
 
-    public static final int MAX_METALS = 3;
+    public static final int MAX_METALS = 7;
     private final int[] metalAmounts = new int[MAX_METALS];
     private final int[] slagAmounts = new int[MAX_METALS];
     private final Identifier[] metalTypeIds = new Identifier[MAX_METALS];
@@ -812,14 +812,18 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     public int getSlotForMetal(Identifier metalTypeId) {
         for (int i = 0; i < MAX_METALS; i++) {
-            if (metalTypeId.equals(metalTypeIds[i])) return i;
+            if (metalTypeId.equals(metalTypeIds[i])) {
+                return i;
+            }
         }
         return -1;
     }
 
     public int getFirstFreeSlot() {
         for (int i = 0; i < MAX_METALS; i++) {
-            if (metalTypeIds[i] == null) return i;
+            if (metalTypeIds[i] == null) {
+                return i;
+            }
         }
         return -1;
     }
@@ -827,7 +831,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     public Set<Identifier> getPresentMetals() {
         Set<Identifier> result = new HashSet<>();
         for (Identifier id : metalTypeIds) {
-            if (id != null) result.add(id);
+            if (id != null) {
+                result.add(id);
+            }
         }
         return result;
     }
