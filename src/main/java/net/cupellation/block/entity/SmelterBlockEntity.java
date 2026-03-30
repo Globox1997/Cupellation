@@ -561,7 +561,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             if (getTotalSlag() > 0) {
                 Identifier itemId = Registries.ITEM.getId(item.getStack().getItem());
                 for (int i = 0; i < MAX_METALS; i++) {
-                    if (metalTypeIds[i] == null || slagAmounts[i] <= 0) continue;
+                    if (metalTypeIds[i] == null || slagAmounts[i] <= 0) {
+                        continue;
+                    }
                     Identifier fluxId = SmelterData.getFluxItemId(metalTypeIds[i]);
                     if (fluxId != null && fluxId.equals(itemId)) {
                         fluxPerSlot[i] += item.getStack().getCount();
