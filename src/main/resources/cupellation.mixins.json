@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractFurnaceBlockEntityMixin",
+    "LootTableMixin",
     "ShapedRecipeMixin",
     "ShapelessRecipeMixin"
   ],

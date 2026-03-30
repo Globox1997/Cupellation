@@ -79,6 +79,7 @@
   "tag.block.cupellation.smelter_blocks": "Smelter Blocks",
   "tag.item.cupellation.cooling_items": "Cooling Items",
   "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability",
+  "text.autoconfig.cupellation.option.lootItemGrade": "Loot Item Grade",
   "text.autoconfig.cupellation.option.lowGradeDurability": "Low Grade Durability",
   "text.autoconfig.cupellation.option.midGradeDurability": "Mid Grade Durability",
   "text.autoconfig.cupellation.option.slagRatio": "Slag Ratio",

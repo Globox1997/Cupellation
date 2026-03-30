@@ -27,4 +27,7 @@ public class CupellationConfig implements ConfigData {
     @Comment("Increases durability by X%")
     @ConfigEntry.BoundedDiscrete(min = 0, max = 100)
     public int highGradeDurability = 30;
+
+    @Comment("Looted items get grades")
+    public boolean lootItemGrade = true;
 }
