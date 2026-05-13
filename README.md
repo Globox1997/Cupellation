@@ -133,3 +133,79 @@ Example:
   ]
 }
 ```
+
+### Mod Integration API
+Since v1.0.3, Cupellation provides an API for other Fabric mods to register custom smelter blocks.
+
+#### Dependency
+Your mod must depend on Cupellation.  
+Example `fabric.mod.json` dependency:
+
+```json
+"depends": {
+  "cupellation": "*"
+}
+```
+
+---
+
+#### Registering a custom smelter
+Create a class implementing `CupellationEntrypoint`:
+
+```java
+package com.example.test;
+
+import net.cupellation.api.*;
+
+public class TestCupellationPlugin implements CupellationEntrypoint {
+
+    @Override
+    public void registerSmelterTypes() {
+
+        CupellationAPI.registerSmelterType(
+                new SmelterType(
+                        ModBlocks.TEST_SMELTER,
+                        ModBlocks.TEST_FAUCET,
+                        ModBlocks.TEST_BASIN,
+                        ModBlocks.TEST_TABLE
+                )
+        );
+    }
+}
+```
+
+---
+
+#### fabric.mod.json
+Register your plugin entrypoint inside your `fabric.mod.json`:
+
+```json
+{
+  "entrypoints": {
+    "cupellation": [
+      "com.example.test.TestCupellationPlugin"
+    ]
+  }
+}
+```
+
+---
+
+#### SmelterType
+A `SmelterType` contains the following blocks:
+
+- smelter
+- faucet
+- casting basin
+- casting table
+
+Example:
+
+```java
+new SmelterType(
+    MY_SMELTER,
+    MY_FAUCET,
+    MY_CASTING_BASIN,
+    MY_CASTING_TABLE
+)
+```

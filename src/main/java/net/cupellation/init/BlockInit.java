@@ -1,6 +1,9 @@
 package net.cupellation.init;
 
 import net.cupellation.CupellationMain;
+import net.cupellation.api.CupellationAPI;
+import net.cupellation.api.CupellationEntrypoint;
+import net.cupellation.api.SmelterType;
 import net.cupellation.block.*;
 import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.block.entity.CastingTableEntity;
@@ -10,6 +13,7 @@ import net.cupellation.block.screen.SmelterScreenHandler;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.enums.NoteBlockInstrument;
@@ -21,6 +25,8 @@ import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
+
+import java.util.List;
 
 public class BlockInit {
 
@@ -76,11 +82,8 @@ public class BlockInit {
 
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
     public static BlockEntityType<SmelterFaucetEntity> SMELTER_FAUCET_ENTITY;
-
-    public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"),
-            BlockEntityType.Builder.create(CastingBasinEntity::new, DEEPSLATE_BRICK_CASTING_BASIN, RED_NETHER_BRICK_CASTING_BASIN).build(null));
-    public static BlockEntityType<CastingTableEntity> CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"),
-            BlockEntityType.Builder.create(CastingTableEntity::new, DEEPSLATE_BRICK_CASTING_TABLE, RED_NETHER_BRICK_CASTING_TABLE).build(null));
+    public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY;
+    public static BlockEntityType<CastingTableEntity> CASTING_TABLE_ENTITY;
 
     public static final ScreenHandlerType<SmelterScreenHandler> SMELTER_SCREEN_HANDLER =
             Registry.register(Registries.SCREEN_HANDLER, CupellationMain.identifierOf("smelter"),
@@ -98,7 +101,19 @@ public class BlockInit {
     }
 
     public static void init() {
-        SMELTER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter"), BlockEntityType.Builder.create(SmelterBlockEntity::new, DEEPSLATE_BRICK_SMELTER, RED_NETHER_BRICK_SMELTER).build(null));
-        SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"), BlockEntityType.Builder.create(SmelterFaucetEntity::new, DEEPSLATE_BRICK_FAUCET, RED_NETHER_BRICK_FAUCET).build(null));
+        CupellationAPI.registerSmelterType(new SmelterType(DEEPSLATE_BRICK_SMELTER, DEEPSLATE_BRICK_FAUCET, DEEPSLATE_BRICK_CASTING_BASIN, DEEPSLATE_BRICK_CASTING_TABLE));
+        CupellationAPI.registerSmelterType(new SmelterType(RED_NETHER_BRICK_SMELTER, RED_NETHER_BRICK_FAUCET, RED_NETHER_BRICK_CASTING_BASIN, RED_NETHER_BRICK_CASTING_TABLE));
+
+        FabricLoader.getInstance().getEntrypoints("cupellation", CupellationEntrypoint.class).forEach(CupellationEntrypoint::registerCupellation);
+
+        List<Block> smelters = CupellationAPI.getSmelterTypes().stream().map(SmelterType::smelter).toList();
+        List<Block> faucets = CupellationAPI.getSmelterTypes().stream().map(SmelterType::faucet).toList();
+        List<Block> castingBasins = CupellationAPI.getSmelterTypes().stream().map(SmelterType::castingBasin).toList();
+        List<Block> castingTables = CupellationAPI.getSmelterTypes().stream().map(SmelterType::castingTable).toList();
+
+        SMELTER_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter"), BlockEntityType.Builder.create(SmelterBlockEntity::new, smelters.toArray(Block[]::new)).build(null));
+        SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"), BlockEntityType.Builder.create(SmelterFaucetEntity::new, faucets.toArray(Block[]::new)).build(null));
+        CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"), BlockEntityType.Builder.create(CastingBasinEntity::new, castingBasins.toArray(Block[]::new)).build(null));
+        CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"), BlockEntityType.Builder.create(CastingTableEntity::new, castingTables.toArray(Block[]::new)).build(null));
     }
 }
