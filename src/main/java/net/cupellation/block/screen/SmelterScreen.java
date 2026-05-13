@@ -243,9 +243,13 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     private void drawFuelTooltip(DrawContext context, int relX, int relY) {
         if (relX >= 153 && relX <= 153 + 13 && relY >= 19 && relY <= 19 + 13) {
             List<Text> tooltip = new ArrayList<>();
+            int typeMaxTemp = handler.getSmelterTypeMaxTemperature();
+            if (typeMaxTemp >= 0) {
+                tooltip.add(Text.translatable("block.cupellation.smelter.type_max_temp", typeMaxTemp).formatted(Formatting.AQUA));
+                tooltip.add(Text.literal(""));
+            }
             for (FuelData fuelData : SmelterData.allFuels()) {
-                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly()
-                        .append(Text.literal(": "))
+                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly().append(Text.literal(": "))
                         .append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
             }
             if (!tooltip.isEmpty()) {

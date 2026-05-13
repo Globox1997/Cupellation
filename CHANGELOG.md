@@ -1,5 +1,5 @@
 ### Added:
-- looted item grading
+- smelter type max temperature
 ### Fixed:
 - 
 ### Changed:

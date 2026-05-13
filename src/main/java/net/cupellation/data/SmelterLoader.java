@@ -287,7 +287,9 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             }
         }
 
-        return new SmelterTypeData(id, List.copyOf(blocks), allowedMetals);
+        int maxTemperature = json.has("max_temperature") ? json.get("max_temperature").getAsInt() : -1;
+
+        return new SmelterTypeData(id, List.copyOf(blocks), allowedMetals, maxTemperature);
     }
 
     private GradeRange parseGradeRange(JsonObject json) {

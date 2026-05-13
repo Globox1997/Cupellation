@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 
-public record SmelterTypeData(Identifier id, List<Identifier> blocks, Set<Identifier> allowedMetals) {
+public record SmelterTypeData(Identifier id, List<Identifier> blocks, Set<Identifier> allowedMetals, int maxTemperature) {
 
     public boolean allowsMetal(Identifier metalTypeId) {
         return allowedMetals == null || allowedMetals.contains(metalTypeId);

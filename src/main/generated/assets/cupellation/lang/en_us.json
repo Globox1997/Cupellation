@@ -24,6 +24,7 @@
   "block.cupellation.smelter.slag": "Slag",
   "block.cupellation.smelter.smelting": "Smelting",
   "block.cupellation.smelter.temperature": "Temperature",
+  "block.cupellation.smelter.type_max_temp": "Smelter Max °C: %s",
   "emi.category.cupellation.basin_casting": "Basin Casting",
   "emi.category.cupellation.smelter": "Smelter",
   "emi.category.cupellation.table_casting": "Table Casting",

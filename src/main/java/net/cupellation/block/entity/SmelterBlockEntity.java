@@ -83,6 +83,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private int temperature = 0;
     private int maxTemperature = 0;
+    private int typeMaxTemperature = -1;
     private static final float TEMP_RISE_RATE = 1.5f;
     private static final float TEMP_DECAY_RATE = 0.5f;
 
@@ -105,12 +106,12 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private static final int PROP_SMELT_TOTAL_0 = 8;
     private static final int PROP_SMELT_TOTAL_1 = 9;
     private static final int PROP_SMELT_TOTAL_2 = 10;
-    private static final int PROP_COUNT = 11;
+    private static final int PROP_TYPE_MAX_TEMPERATURE = 11;
+    private static final int PROP_COUNT = 12;
 
     public final PropertyDelegate propertyDelegate = new PropertyDelegate() {
         @Override
         public int get(int index) {
-            int cap = getMaxCapacity();
             return switch (index) {
                 case PROP_IS_FORMED -> isFormed ? 1 : 0;
                 case PROP_FUEL_TIME -> fuelTime;
@@ -123,6 +124,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                 case PROP_SMELT_TOTAL_0 -> smeltTotal[0];
                 case PROP_SMELT_TOTAL_1 -> smeltTotal[1];
                 case PROP_SMELT_TOTAL_2 -> smeltTotal[2];
+                case PROP_TYPE_MAX_TEMPERATURE -> typeMaxTemperature;
                 default -> 0;
             };
         }
@@ -141,6 +143,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                 case PROP_SMELT_TOTAL_0 -> smeltTotal[0] = value;
                 case PROP_SMELT_TOTAL_1 -> smeltTotal[1] = value;
                 case PROP_SMELT_TOTAL_2 -> smeltTotal[2] = value;
+                case PROP_TYPE_MAX_TEMPERATURE -> typeMaxTemperature = value;
             }
         }
 
@@ -173,6 +176,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         maxFuelTime = nbt.getInt("maxFuelTime");
         temperature = nbt.getInt("temperature");
         maxTemperature = nbt.getInt("maxTemperature");
+        typeMaxTemperature = nbt.getInt("typeMaxTemperature");
         redstonePowered = nbt.getBoolean("redstonePowered");
 
         for (int i = 0; i < 3; i++) {
@@ -204,6 +208,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
         nbt.putInt("fuelTime", fuelTime);
         nbt.putInt("maxFuelTime", maxFuelTime);
+        nbt.putInt("typeMaxTemperature", typeMaxTemperature);
         nbt.putInt("temperature", temperature);
         nbt.putInt("maxTemperature", maxTemperature);
         nbt.putBoolean("redstonePowered", redstonePowered);
@@ -351,6 +356,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         maxFuelTime = burnTime;
         fuelTime = burnTime;
         maxTemperature = fuelData.maxTemperature();
+        if (maxTemperature > this.typeMaxTemperature && this.typeMaxTemperature >= 0) {
+            maxTemperature = this.typeMaxTemperature;
+        }
 
         ItemStack remainder = fuel.getItem().getRecipeRemainder() != null ? new ItemStack(fuel.getItem().getRecipeRemainder()) : ItemStack.EMPTY;
 
@@ -684,6 +692,12 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private void onStructureFormed() {
+        if (currentSmelterTypeId != null) {
+            SmelterTypeData smelterType = SmelterData.getAllTypes().stream().filter(type -> type.id().equals(currentSmelterTypeId)).findFirst().orElse(null);
+            typeMaxTemperature = (smelterType != null) ? smelterType.maxTemperature() : -1;
+        } else {
+            typeMaxTemperature = -1;
+        }
         markDirty();
     }
 
@@ -698,6 +712,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             smeltProgress[i] = 0;
             smeltTotal[i] = 0;
         }
+        typeMaxTemperature = -1;
         markDirty();
     }
 
@@ -790,13 +805,17 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     public int getTotalMoltenMetal() {
         int total = 0;
-        for (int amount : metalAmounts) total += amount;
+        for (int amount : metalAmounts) {
+            total += amount;
+        }
         return total;
     }
 
     public int getTotalSlag() {
         int total = 0;
-        for (int amount : slagAmounts) total += amount;
+        for (int amount : slagAmounts) {
+            total += amount;
+        }
         return total;
     }
 

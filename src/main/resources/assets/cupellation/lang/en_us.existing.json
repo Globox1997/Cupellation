@@ -50,6 +50,7 @@
   "block.cupellation.smelter.degree.info": "%s°C",
   "block.cupellation.smelter.grades": "Grades",
   "block.cupellation.smelter.grade.info": "%s°C - %s°C",
+  "block.cupellation.smelter.type_max_temp": "Smelter Max °C: %s",
 
   "tag.item.cupellation.cooling_items": "Cooling Items",
   "tag.block.cupellation.smelter_blocks": "Smelter Blocks",

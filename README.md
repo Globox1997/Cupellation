@@ -109,6 +109,7 @@ Example:
 Folder: `data/modid/smelter/types`  
 A smelter type requires the following
 - id: unique id
+- max_temperature: max temperature the smelter type can have - optional!
 - blocks: array of block ids or tags (starting with #)
 - allowed_metals: Optional array list of metal ids - if empty all metals can be smelted in this smelter type
 
@@ -116,6 +117,7 @@ Example:
 ```json
 {
   "id": "cupellation:deepslate_smelter",
+  "max_temperature": 800,
   "blocks": [
     "minecraft:deepslate_bricks",
     "minecraft:deepslate_tiles",

@@ -41,7 +41,8 @@ public class SmelterScreenHandler extends ScreenHandler {
     private static final int PROP_SMELT_TOTAL_0 = 8;
     private static final int PROP_SMELT_TOTAL_1 = 9;
     private static final int PROP_SMELT_TOTAL_2 = 10;
-    private static final int PROP_COUNT = 11;
+    private static final int PROP_TYPE_MAX_TEMPERATURE = 11;
+    private static final int PROP_COUNT = 12;
 
     public SmelterScreenHandler(int syncId, PlayerInventory playerInventory, SmelterScreenPacket packet) {
         this(syncId, playerInventory, new SimpleInventory(4), new ArrayPropertyDelegate(PROP_COUNT), packet.pos());
@@ -142,6 +143,10 @@ public class SmelterScreenHandler extends ScreenHandler {
 
     public int getSmeltTotal(int slot) {
         return propertyDelegate.get(PROP_SMELT_TOTAL_0 + slot);
+    }
+
+    public int getSmelterTypeMaxTemperature() {
+        return propertyDelegate.get(PROP_TYPE_MAX_TEMPERATURE);
     }
 
     public float getFillPercent() {
