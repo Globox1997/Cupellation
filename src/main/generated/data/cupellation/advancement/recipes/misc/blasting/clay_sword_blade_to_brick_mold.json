@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_clay_sword_blade_mold": {
+      "conditions": {
+        "items": [
+          {
+            "items": "cupellation:clay_sword_blade_mold"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "cupellation:blasting/clay_sword_blade_to_brick_mold"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_clay_sword_blade_mold"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "cupellation:blasting/clay_sword_blade_to_brick_mold"
+    ]
+  }
+}

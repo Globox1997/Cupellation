@@ -23,6 +23,9 @@ public class LangLoader extends FabricLanguageProvider {
         for (Item moldable : ItemInit.MOLDABLES) {
             translationBuilder.add(moldable, getTranslation(moldable));
         }
+        for (Item mold : ItemInit.CLAY_MOLDS) {
+            translationBuilder.add(mold, getTranslation(mold));
+        }
         try {
             Path existingFilePath = dataOutput.getModContainer().findPath("assets/cupellation/lang/en_us.existing.json").get();
             translationBuilder.add(existingFilePath);

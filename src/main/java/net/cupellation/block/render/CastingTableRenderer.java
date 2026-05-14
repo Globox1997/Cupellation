@@ -99,7 +99,7 @@ public class CastingTableRenderer implements BlockEntityRenderer<CastingTableEnt
         if (!blockEntity.hasMold()) {
             return;
         }
-        renderItem(blockEntity, blockEntity.getMold(), matrices, vertexConsumers, light, overlay);
+        renderItem(blockEntity, blockEntity.getMold().isEmpty() ? blockEntity.getClayMold() : blockEntity.getMold(), matrices, vertexConsumers, light, overlay);
     }
 
     private void renderItem(CastingTableEntity blockEntity, ItemStack stack, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {

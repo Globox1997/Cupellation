@@ -26,6 +26,9 @@ public class ModelLoader extends FabricModelProvider {
         for (Item moldable : ItemInit.MOLDABLES) {
             itemModelGenerator.register(moldable, Models.GENERATED);
         }
+        for (Item clayMold : ItemInit.CLAY_MOLDS) {
+            itemModelGenerator.register(clayMold, Models.GENERATED);
+        }
     }
 
 }

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "d": {
+      "item": "minecraft:clay_ball"
+    }
+  },
+  "pattern": [
+    "dd"
+  ],
+  "result": {
+    "count": 1,
+    "id": "cupellation:clay_mold"
+  }
+}

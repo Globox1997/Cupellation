@@ -3,16 +3,17 @@ package net.cupellation.data;
 import net.cupellation.CupellationMain;
 import net.cupellation.api.CupellationAPI;
 import net.cupellation.api.MoldType;
-import net.cupellation.init.ItemInit;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
 import net.minecraft.block.Blocks;
+import net.minecraft.data.server.recipe.CookingRecipeJsonBuilder;
 import net.minecraft.data.server.recipe.RecipeExporter;
 import net.minecraft.data.server.recipe.RecipeProvider;
 import net.minecraft.data.server.recipe.ShapedRecipeJsonBuilder;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.item.ToolMaterials;
+import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.book.RecipeCategory;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
@@ -81,6 +82,25 @@ public class RecipeLoader extends FabricRecipeProvider {
                             .offerTo(exporter);
                 }
             }
+        }
+
+        for (MoldType moldType : CupellationAPI.getMoldTypes()) {
+            Identifier clayMoldId = CupellationMain.identifierOf("clay_"+moldType.suffix() + "_mold");
+            Identifier brickMoldId = CupellationMain.identifierOf("brick_"+moldType.suffix() + "_mold");
+
+            Item clayMoldItem = Registries.ITEM.get(clayMoldId);
+            Item brickMoldItem = Registries.ITEM.get(brickMoldId);
+
+            if (clayMoldItem == Items.AIR || brickMoldItem == Items.AIR) {
+                continue;
+            }
+            CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(clayMoldItem), RecipeCategory.MISC, brickMoldItem, 0.1f, 200)
+                    .criterion(hasItem(clayMoldItem), conditionsFromItem(clayMoldItem))
+                    .offerTo(exporter, CupellationMain.identifierOf("smelting/clay_" + moldType.suffix() + "_to_brick_mold"));
+
+            CookingRecipeJsonBuilder.createBlasting(Ingredient.ofItems(clayMoldItem), RecipeCategory.MISC, brickMoldItem, 0.1f, 100)
+                    .criterion(hasItem(clayMoldItem), conditionsFromItem(clayMoldItem))
+                    .offerTo(exporter, CupellationMain.identifierOf("blasting/clay_" + moldType.suffix() + "_to_brick_mold"));
         }
     }
 }

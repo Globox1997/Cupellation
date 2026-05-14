@@ -97,4 +97,8 @@ public class MoldItem extends Item {
         }
         return null;
     }
+
+    public boolean isSingleUse() {
+        return false;
+    }
 }

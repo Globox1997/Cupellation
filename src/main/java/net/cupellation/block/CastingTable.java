@@ -3,6 +3,7 @@ package net.cupellation.block;
 import com.mojang.serialization.MapCodec;
 import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.init.BlockInit;
+import net.cupellation.item.ClayMoldItem;
 import net.cupellation.item.MoldItem;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
@@ -78,6 +79,30 @@ public class CastingTable extends BlockWithEntity {
         ItemStack heldItem = player.getMainHandStack();
 
         if (!table.isFilling() && table.getMoltenAmount() <= 0) {
+            if (!heldItem.isEmpty() && heldItem.getItem() instanceof ClayMoldItem && table.tryInsertClayMold(heldItem)) {
+                world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
+                return ActionResult.SUCCESS;
+            }
+
+            if (!heldItem.isEmpty() && table.hasClayMold()) {
+                ItemStack imprinted = table.tryImprintClay(heldItem);
+                if (!imprinted.isEmpty()) {
+                    world.playSound(null, pos, SoundEvents.BLOCK_GRAVEL_PLACE, SoundCategory.BLOCKS, 1f, 1.2f);
+                }
+                return ActionResult.SUCCESS;
+            }
+
+            if (table.hasClayMold() && heldItem.isEmpty()) {
+                ItemStack clay = table.tryExtractClayMold();
+                if (!clay.isEmpty()) {
+                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
+                    if (!player.getInventory().insertStack(clay)) {
+                        player.dropItem(clay, false);
+                    }
+                    return ActionResult.SUCCESS;
+                }
+            }
+
             if (!heldItem.isEmpty()) {
                 if (heldItem.getItem() instanceof MoldItem && table.tryInsertMold(heldItem)) {
                     world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);

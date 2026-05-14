@@ -9,6 +9,7 @@ import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
+import net.cupellation.item.BrickMoldItem;
 import net.cupellation.item.MoldItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
@@ -54,6 +55,9 @@ public class CupellationEmiPlugin implements EmiPlugin {
             if (!(moldItem instanceof MoldItem mold)) {
                 continue;
             }
+            if (moldItem instanceof BrickMoldItem) {
+                continue;
+            }
             Identifier moldingType = mold.getMoldingMetalTypeId();
             if (moldingType == null) {
                 continue;
@@ -65,6 +69,18 @@ public class CupellationEmiPlugin implements EmiPlugin {
                 }
                 registry.addRecipe(new MoldCastingEmiRecipe(mold, moldingType, moldableId));
             }
+        }
+
+        for (Item clayMoldItem : ItemInit.CLAY_MOLDS) {
+            Identifier clayMoldId = Registries.ITEM.getId(clayMoldItem);
+            String path = clayMoldId.getPath();
+            String suffix = path.substring("clay_".length(), path.length() - "_mold".length());
+
+            Identifier brickMoldId = CupellationMain.identifierOf("brick_" + suffix + "_mold");
+            if (!Registries.ITEM.containsId(brickMoldId)) {
+                continue;
+            }
+            registry.addRecipe(new ClayImprintEmiRecipe(Registries.ITEM.get(clayMoldId), suffix, Registries.ITEM.get(brickMoldId)));
         }
 
         registry.addCategory(BASIN_CASTING_CATEGORY);

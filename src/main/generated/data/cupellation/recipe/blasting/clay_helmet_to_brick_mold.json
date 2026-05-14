@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 0.1,
+  "ingredient": {
+    "item": "cupellation:clay_helmet_mold"
+  },
+  "result": {
+    "id": "cupellation:brick_helmet_mold"
+  }
+}

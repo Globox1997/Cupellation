@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "cupellation:item/brick_shovel_head_mold"
+  }
+}

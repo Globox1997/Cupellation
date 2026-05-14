@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.1,
+  "ingredient": {
+    "item": "cupellation:clay_leggings_mold"
+  },
+  "result": {
+    "id": "cupellation:brick_leggings_mold"
+  }
+}

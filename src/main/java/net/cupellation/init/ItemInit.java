@@ -5,6 +5,8 @@ import net.cupellation.CupellationMain;
 import net.cupellation.api.CupellationAPI;
 import net.cupellation.api.CupellationEntrypoint;
 import net.cupellation.api.MoldType;
+import net.cupellation.item.BrickMoldItem;
+import net.cupellation.item.ClayMoldItem;
 import net.cupellation.item.MoldItem;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
@@ -29,6 +31,8 @@ import java.util.function.UnaryOperator;
 
 public class ItemInit {
 
+    public static final List<Item> CLAY_MOLDS = new ArrayList<>();
+    public static final List<Item> BRICK_MOLDS = new ArrayList<>();
     public static final List<Item> MOLDS = new ArrayList<>();
     public static final List<Item> MOLDABLES = new ArrayList<>();
 
@@ -41,7 +45,10 @@ public class ItemInit {
     // Items
     public static final Item CALCITE_POWDER = register("calcite_powder", new Item(new Item.Settings()));
     public static final Item QUARTZ_POWDER = register("quartz_powder", new Item(new Item.Settings()));
+    public static final Item CLAY_MOLD = register("clay_mold", new ClayMoldItem(new Item.Settings()));
     public static final Item INGOT_MOLD = register("ingot_mold", new MoldItem(CupellationMain.identifierOf("gold"), 144, "ingot", Set.of(), new Item.Settings()));
+    public static final Item CLAY_INGOT_MOLD = register("clay_ingot_mold", new Item(new Item.Settings()));
+    public static final Item BRICK_INGOT_MOLD = register("brick_ingot_mold", new BrickMoldItem(CupellationMain.identifierOf("gold"), 144, "ingot", Set.of(), new Item.Settings()));
 
     private static <T> ComponentType<T> registerComponent(String id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
         return Registry.register(Registries.DATA_COMPONENT_TYPE, id, builderOperator.apply(ComponentType.builder()).build());
@@ -67,6 +74,13 @@ public class ItemInit {
         for (MoldType moldType : CupellationAPI.getMoldTypes()) {
             Item item = register(moldType.suffix() + "_mold", new MoldItem(CupellationMain.identifierOf("gold"), moldType.mb(), moldType.suffix(), moldType.blacklist(), new Item.Settings()));
             MOLDS.add(item);
+
+            Item clayMold = register("clay_"+moldType.suffix() + "_mold", new Item(new Item.Settings()));
+            CLAY_MOLDS.add(clayMold);
+
+            Item brickMold = register("brick_"+moldType.suffix() + "_mold", new BrickMoldItem(CupellationMain.identifierOf("gold"), moldType.mb(), moldType.suffix(), moldType.blacklist(), new Item.Settings()));
+            BRICK_MOLDS.add(brickMold);
+            MOLDS.add(brickMold);
         }
         for (ToolMaterials toolMaterial : ToolMaterials.values()) {
             if (toolMaterial == ToolMaterials.WOOD) {
