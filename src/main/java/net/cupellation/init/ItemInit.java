@@ -2,9 +2,13 @@ package net.cupellation.init;
 
 import com.mojang.serialization.Codec;
 import net.cupellation.CupellationMain;
+import net.cupellation.api.CupellationAPI;
+import net.cupellation.api.CupellationEntrypoint;
+import net.cupellation.api.MoldType;
 import net.cupellation.item.MoldItem;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.component.ComponentType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
@@ -27,21 +31,6 @@ public class ItemInit {
 
     public static final List<Item> MOLDS = new ArrayList<>();
     public static final List<Item> MOLDABLES = new ArrayList<>();
-
-    public record MoldType(String suffix, int mb, boolean extraOutput, Set<Identifier> blacklist) {
-    }
-
-    public static final List<MoldType> MOLD_TYPES = List.of(
-            new MoldType("axe_head", 432, true, Set.of()),
-            new MoldType("hoe_head", 288, true, Set.of()),
-            new MoldType("pickaxe_head", 432, true, Set.of()),
-            new MoldType("shovel_head", 144, true, Set.of()),
-            new MoldType("sword_blade", 288, true, Set.of()),
-            new MoldType("helmet", 720, false, Set.of()),
-            new MoldType("chestplate", 1152, false, Set.of()),
-            new MoldType("leggings", 1008, false, Set.of()),
-            new MoldType("boots", 576, false, Set.of())
-    );
 
     // Item Group
     public static final RegistryKey<ItemGroup> CUPELLATION_ITEM_GROUP = RegistryKey.of(RegistryKeys.ITEM_GROUP, CupellationMain.identifierOf("item_group"));
@@ -71,7 +60,11 @@ public class ItemInit {
         Registry.register(Registries.ITEM_GROUP, CUPELLATION_ITEM_GROUP,
                 FabricItemGroup.builder().icon(() -> new ItemStack(BlockInit.DEEPSLATE_BRICK_SMELTER)).displayName(Text.translatable("item.cupellation.item_group")).build());
 
-        for (MoldType moldType : ItemInit.MOLD_TYPES) {
+        CupellationAPI.registerDefaultMoldTypes();
+
+        FabricLoader.getInstance().getEntrypoints("cupellation", CupellationEntrypoint.class).forEach(CupellationEntrypoint::registerMoldTypes);
+
+        for (MoldType moldType : CupellationAPI.getMoldTypes()) {
             Item item = register(moldType.suffix() + "_mold", new MoldItem(CupellationMain.identifierOf("gold"), moldType.mb(), moldType.suffix(), moldType.blacklist(), new Item.Settings()));
             MOLDS.add(item);
         }
@@ -79,7 +72,7 @@ public class ItemInit {
             if (toolMaterial == ToolMaterials.WOOD) {
                 continue;
             }
-            for (MoldType moldType : ItemInit.MOLD_TYPES) {
+            for (MoldType moldType : CupellationAPI.getMoldTypes()) {
                 if (!moldType.extraOutput()) {
                     continue;
                 }

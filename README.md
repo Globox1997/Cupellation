@@ -135,7 +135,7 @@ Example:
 ```
 
 ### Mod Integration API
-Since v1.0.3, Cupellation provides an API for other Fabric mods to register custom smelter blocks.
+Since v1.0.3, Cupellation provides an API for other mods to register custom smelter blocks and mold types.
 
 #### Dependency
 Your mod must depend on Cupellation.  
@@ -176,6 +176,37 @@ public class TestCupellationPlugin implements CupellationEntrypoint {
 
 ---
 
+#### Registering custom mold types
+
+```java
+package com.example.test;
+
+import net.cupellation.api.*;
+import net.minecraft.util.Identifier;
+
+import java.util.Set;
+
+public class TestCupellationPlugin implements CupellationEntrypoint {
+
+    @Override
+    public void registerMoldTypes() {
+
+        CupellationAPI.registerMoldType(
+                new MoldType(
+                        "hammer_head",
+                        576,
+                        true,
+                        Set.of(
+                                Identifier.of("minecraft", "netherite")
+                        )
+                )
+        );
+    }
+}
+```
+
+---
+
 #### fabric.mod.json
 Register your plugin entrypoint inside your `fabric.mod.json`:
 
@@ -207,5 +238,27 @@ new SmelterType(
     MY_FAUCET,
     MY_CASTING_BASIN,
     MY_CASTING_TABLE
+)
+```
+
+---
+
+#### MoldType
+
+A `MoldType` contains the following properties:
+
+- suffix: item suffix used for item registration
+- mb: required molten metal amount
+- extraOutput: generates extra casted tool part items for tool materials
+- blacklist: set of blacklisted metal identifiers
+
+Example:
+
+```java
+new MoldType(
+    "hammer_head",
+    576,
+    true,
+    Set.of()
 )
 ```

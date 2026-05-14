@@ -1,6 +1,8 @@
 package net.cupellation.data;
 
 import net.cupellation.CupellationMain;
+import net.cupellation.api.CupellationAPI;
+import net.cupellation.api.MoldType;
 import net.cupellation.init.ItemInit;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
@@ -33,7 +35,7 @@ public class RecipeLoader extends FabricRecipeProvider {
             String materialName = material.toString().toLowerCase();
             String recipeMaterial = materialName.equals("gold") ? "golden" : materialName;
 
-            for (ItemInit.MoldType moldType : ItemInit.MOLD_TYPES) {
+            for (MoldType moldType : CupellationAPI.getMoldTypes()) {
                 if (!moldType.extraOutput()) {
                     continue;
                 }

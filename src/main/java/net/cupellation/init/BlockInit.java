@@ -101,10 +101,9 @@ public class BlockInit {
     }
 
     public static void init() {
-        CupellationAPI.registerSmelterType(new SmelterType(DEEPSLATE_BRICK_SMELTER, DEEPSLATE_BRICK_FAUCET, DEEPSLATE_BRICK_CASTING_BASIN, DEEPSLATE_BRICK_CASTING_TABLE));
-        CupellationAPI.registerSmelterType(new SmelterType(RED_NETHER_BRICK_SMELTER, RED_NETHER_BRICK_FAUCET, RED_NETHER_BRICK_CASTING_BASIN, RED_NETHER_BRICK_CASTING_TABLE));
+        CupellationAPI.registerDefaultSmelterTypes();
 
-        FabricLoader.getInstance().getEntrypoints("cupellation", CupellationEntrypoint.class).forEach(CupellationEntrypoint::registerCupellation);
+        FabricLoader.getInstance().getEntrypoints("cupellation", CupellationEntrypoint.class).forEach(CupellationEntrypoint::registerSmelterTypes);
 
         List<Block> smelters = CupellationAPI.getSmelterTypes().stream().map(SmelterType::smelter).toList();
         List<Block> faucets = CupellationAPI.getSmelterTypes().stream().map(SmelterType::faucet).toList();
