@@ -12,12 +12,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.render.*;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerInventory;
@@ -57,6 +52,8 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     private static final int FLAME_U = 176, FLAME_V = 0;
 
     private static final int ARROW_X = 41, ARROW_Y = 34, ARROW_W = 24, ARROW_H = 16;
+
+    private static final int MAX_FUELS_TOOLTIP_COUNT = 8;
 
     public SmelterScreen(SmelterScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -246,11 +243,20 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             int typeMaxTemp = handler.getSmelterTypeMaxTemperature();
             if (typeMaxTemp >= 0) {
                 tooltip.add(Text.translatable("block.cupellation.smelter.type_max_temp", typeMaxTemp).formatted(Formatting.AQUA));
-                tooltip.add(Text.literal(""));
             }
-            for (FuelData fuelData : SmelterData.allFuels()) {
+            int shown = 0;
+            List<FuelData> validFuels = SmelterData.allFuels().stream().filter(fuel -> typeMaxTemp < 0 || fuel.maxTemperature() <= typeMaxTemp).sorted((a, b) -> Integer.compare(b.maxTemperature(), a.maxTemperature())).limit(MAX_FUELS_TOOLTIP_COUNT).toList();
+            for (FuelData fuelData : validFuels) {
                 tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly().append(Text.literal(": "))
                         .append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
+                if (shown >= MAX_FUELS_TOOLTIP_COUNT) {
+                    break;
+                }
+                shown++;
+            }
+            int totalCompatible = (int) SmelterData.allFuels().stream().filter(fuel -> typeMaxTemp < 0 || fuel.maxTemperature() <= typeMaxTemp).count();
+            if (totalCompatible > MAX_FUELS_TOOLTIP_COUNT) {
+                tooltip.add(Text.translatable("block.cupellation.smelter.fuel.info", totalCompatible - MAX_FUELS_TOOLTIP_COUNT).formatted(Formatting.GRAY));
             }
             if (!tooltip.isEmpty()) {
                 context.drawTooltip(textRenderer, tooltip, relX, relY);

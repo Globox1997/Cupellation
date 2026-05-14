@@ -4,6 +4,6 @@
 - mold registration api
 - clay and brick molds
 ### Fixed:
-- 
+- too long fuel tooltip
 ### Changed:
 - 

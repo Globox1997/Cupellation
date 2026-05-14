@@ -18,6 +18,7 @@
   "block.cupellation.smelter.degree": "°C",
   "block.cupellation.smelter.degree.info": "%s°C",
   "block.cupellation.smelter.density": "Density",
+  "block.cupellation.smelter.fuel.info": "...+%s more",
   "block.cupellation.smelter.grade.info": "%s°C - %s°C",
   "block.cupellation.smelter.grades": "Grades",
   "block.cupellation.smelter.incorrect": "Smelter is not built correctly!",
