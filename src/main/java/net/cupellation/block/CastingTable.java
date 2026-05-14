@@ -146,11 +146,17 @@ public class CastingTable extends BlockWithEntity {
 
     @Override
     protected VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+        if (world.getBlockEntity(pos) instanceof CastingTableEntity castingTableEntity && castingTableEntity.hasResult()) {
+            return VoxelShapes.fullCube();
+        }
         return SHAPE;
     }
 
     @Override
     protected VoxelShape getRaycastShape(BlockState state, BlockView world, BlockPos pos) {
+        if (world.getBlockEntity(pos) instanceof CastingTableEntity castingTableEntity && castingTableEntity.hasResult()) {
+            return VoxelShapes.fullCube();
+        }
         return SHAPE;
     }
 
