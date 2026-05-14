@@ -1,5 +1,7 @@
 package net.cupellation.init;
 
+import net.cupellation.api.CupellationAPI;
+import net.cupellation.api.SmelterType;
 import net.cupellation.block.render.CastingBasinRenderer;
 import net.cupellation.block.render.CastingTableRenderer;
 import net.cupellation.block.render.SmelterBlockRenderer;
@@ -24,19 +26,12 @@ public class RenderInit {
         BlockEntityRendererFactories.register(BlockInit.SMELTER_FAUCET_ENTITY, SmelterFaucetRenderer::new);
         BlockEntityRendererFactories.register(BlockInit.CASTING_TABLE_ENTITY, CastingTableRenderer::new);
 
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_SMELTER, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_GLASS, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_CASTING_BASIN, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_CASTING_TABLE, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_LEVER, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_FAUCET, RenderLayer.getCutoutMipped());
-
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_SMELTER, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_GLASS, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_CASTING_BASIN, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_CASTING_TABLE, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_LEVER, RenderLayer.getCutout());
-        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_FAUCET, RenderLayer.getCutoutMipped());
+        for (SmelterType type : CupellationAPI.getSmelterTypes()) {
+            BlockRenderLayerMap.INSTANCE.putBlock(type.smelter(), RenderLayer.getCutout());
+            BlockRenderLayerMap.INSTANCE.putBlock(type.faucet(), RenderLayer.getCutoutMipped());
+            BlockRenderLayerMap.INSTANCE.putBlock(type.castingBasin(), RenderLayer.getCutout());
+            BlockRenderLayerMap.INSTANCE.putBlock(type.castingTable(), RenderLayer.getCutout());
+        }
 
         HandledScreens.register(BlockInit.SMELTER_SCREEN_HANDLER, SmelterScreen::new);
 
