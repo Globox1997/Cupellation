@@ -7,6 +7,7 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public final class SmelterData {
 
@@ -153,10 +154,16 @@ public final class SmelterData {
         Set<Identifier> rawExisting = existing.stream().filter(id -> {
             MetalTypeData m = METALS.get(id);
             return m != null && !m.isAlloy();
-        }).collect(java.util.stream.Collectors.toSet());
+        }).collect(Collectors.toSet());
 
-        Set<Identifier> combined = new java.util.HashSet<>(rawExisting);
+        Set<Identifier> combined = new HashSet<>(rawExisting);
         combined.add(newMetal);
+
+        for (MetalTypeData metal : METALS.values()) {
+            if (metal.isAlloy() && metal.alloyComponents().containsAll(combined)) {
+                return true;
+            }
+        }
         return findAlloyFor(combined) != null;
     }
 

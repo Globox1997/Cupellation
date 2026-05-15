@@ -3,5 +3,6 @@
 ### Fixed:
 - smelter redstone signal when full
 - mold casting
+- multi metal combining
 ### Changed:
 - smelter type render api
