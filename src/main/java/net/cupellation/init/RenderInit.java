@@ -32,6 +32,11 @@ public class RenderInit {
             BlockRenderLayerMap.INSTANCE.putBlock(type.castingBasin(), RenderLayer.getCutout());
             BlockRenderLayerMap.INSTANCE.putBlock(type.castingTable(), RenderLayer.getCutout());
         }
+        
+        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_GLASS, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.DEEPSLATE_BRICK_LEVER, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_GLASS, RenderLayer.getCutout());
+        BlockRenderLayerMap.INSTANCE.putBlock(BlockInit.RED_NETHER_BRICK_LEVER, RenderLayer.getCutout());
 
         HandledScreens.register(BlockInit.SMELTER_SCREEN_HANDLER, SmelterScreen::new);
 
