@@ -48,7 +48,7 @@ public class ItemInit {
     public static final Item CLAY_MOLD = register("clay_mold", new ClayMoldItem(new Item.Settings()));
     public static final Item INGOT_MOLD = register("ingot_mold", new MoldItem(CupellationMain.identifierOf("gold"), 144, "ingot", Set.of(), new Item.Settings()));
     public static final Item CLAY_INGOT_MOLD = register("clay_ingot_mold", new Item(new Item.Settings()));
-    public static final Item BRICK_INGOT_MOLD = register("brick_ingot_mold", new BrickMoldItem(CupellationMain.identifierOf("gold"), 144, "ingot", Set.of(), new Item.Settings()));
+    public static final Item BRICK_INGOT_MOLD = register("brick_ingot_mold", new BrickMoldItem(null, 144, "ingot", Set.of(), new Item.Settings()));
 
     private static <T> ComponentType<T> registerComponent(String id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
         return Registry.register(Registries.DATA_COMPONENT_TYPE, id, builderOperator.apply(ComponentType.builder()).build());
@@ -75,10 +75,10 @@ public class ItemInit {
             Item item = register(moldType.suffix() + "_mold", new MoldItem(CupellationMain.identifierOf("gold"), moldType.mb(), moldType.suffix(), moldType.blacklist(), new Item.Settings()));
             MOLDS.add(item);
 
-            Item clayMold = register("clay_"+moldType.suffix() + "_mold", new Item(new Item.Settings()));
+            Item clayMold = register("clay_" + moldType.suffix() + "_mold", new Item(new Item.Settings()));
             CLAY_MOLDS.add(clayMold);
 
-            Item brickMold = register("brick_"+moldType.suffix() + "_mold", new BrickMoldItem(CupellationMain.identifierOf("gold"), moldType.mb(), moldType.suffix(), moldType.blacklist(), new Item.Settings()));
+            Item brickMold = register("brick_" + moldType.suffix() + "_mold", new BrickMoldItem(null, moldType.mb(), moldType.suffix(), moldType.blacklist(), new Item.Settings()));
             BRICK_MOLDS.add(brickMold);
             MOLDS.add(brickMold);
         }

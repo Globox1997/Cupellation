@@ -13,9 +13,7 @@ public class MoldItem extends Item {
 
     private static final Map<String, MoldItem> SUFFIX_TO_MOLD = new HashMap<>();
     private static final Map<Identifier, Map<String, Identifier>> RESOLVE_CACHE = new HashMap<>();
-    private static final Map<String, String> METAL_NAME_OVERRIDES = Map.of(
-            "gold", "golden"
-    );
+    private static final Map<String, String> METAL_NAME_OVERRIDES = Map.of("gold", "golden");
 
     @Nullable
     private final Identifier moldingMetalTypeId;
@@ -29,7 +27,9 @@ public class MoldItem extends Item {
         this.mb = mb;
         this.outputSuffix = outputSuffix;
         this.blacklist = blacklist;
-        SUFFIX_TO_MOLD.put(outputSuffix, this);
+        if (moldingMetalTypeId != null) {
+            SUFFIX_TO_MOLD.put(outputSuffix, this);
+        }
     }
 
     @Nullable
@@ -57,9 +57,7 @@ public class MoldItem extends Item {
 
     @Nullable
     public Identifier resolveResultId(Identifier castingMetalId) {
-        return RESOLVE_CACHE
-                .computeIfAbsent(castingMetalId, k -> new HashMap<>())
-                .computeIfAbsent(outputSuffix, k -> computeResultId(castingMetalId));
+        return RESOLVE_CACHE.computeIfAbsent(castingMetalId, k -> new HashMap<>()).computeIfAbsent(outputSuffix, k -> computeResultId(castingMetalId));
     }
 
     @Nullable

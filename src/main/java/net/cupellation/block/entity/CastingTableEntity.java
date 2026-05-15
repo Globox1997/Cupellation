@@ -178,7 +178,10 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                         markDirty();
                         return;
                     }
-                    result = ItemStack.EMPTY;
+                    if (result.getItem().toString().contains("stone_")) {
+                        result = ItemStack.EMPTY;
+                        ((ServerWorld) world).playSound(null, this.getPos().getX(), this.getPos().getY(), this.getPos().getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 1.0f, this.getWorld().getRandom().nextLong());
+                    }
                     mold = new ItemStack(targetMold);
                 } else if (!mold.isEmpty() && result.isEmpty()) {
                     if (mold.getItem() instanceof MoldItem moldItem) {
