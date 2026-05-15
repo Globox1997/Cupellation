@@ -89,6 +89,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private static final int MINIMUM_TEMPERATURE = 400;
     private static final int ITEM_COOLING_TEMPERATURE = 20;
+    private static final int RAIN_COOLING_TEMPERATURE = 20;
 
     private static final int FLUX_CONVERSION_RATE = 50;
 
@@ -245,16 +246,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (world == null || !world.isRaining()) {
             return;
         }
-        Direction facing = getCachedState().get(SmelterBlock.FACING);
-        Direction right = facing.rotateYCounterclockwise();
 
-        int innerW = structureWidth - 2;
-        int innerD = structureDepth - 2;
-
-        int rx = world.getRandom().nextInt(innerW);
-        int rz = world.getRandom().nextInt(innerD);
-
-        BlockPos innerPos = cornerMin.offset(right, 1 + rx).offset(facing.getOpposite(), 1 + rz).up(structureHeight);
+        BlockPos innerPos = getRandomInnerPos();
 
         if (!world.isSkyVisible(innerPos)) {
             return;
@@ -324,6 +317,33 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
                 serverWorld.getPlayers().forEach(player -> ServerPlayNetworking.send(player, packet));
             }
         }
+        if (world.getRandom().nextInt(10) == 0 && world.isRaining()) {
+            BlockPos innerPos = getRandomInnerPos();
+
+            if (!world.isSkyVisible(innerPos)) {
+                return;
+            }
+            int temperatureDecrease = RAIN_COOLING_TEMPERATURE;
+
+            if (this.temperature > MINIMUM_TEMPERATURE) {
+                this.temperature -= temperatureDecrease;
+                this.temperature = Math.max(this.temperature, MINIMUM_TEMPERATURE);
+                markDirty();
+            }
+        }
+    }
+
+    private BlockPos getRandomInnerPos() {
+        Direction facing = getCachedState().get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
+
+        int innerW = structureWidth - 2;
+        int innerD = structureDepth - 2;
+
+        int rx = world.getRandom().nextInt(innerW);
+        int rz = world.getRandom().nextInt(innerD);
+
+        return cornerMin.offset(right, 1 + rx).offset(facing.getOpposite(), 1 + rz).up(structureHeight);
     }
 
     private void tickTemperature() {
