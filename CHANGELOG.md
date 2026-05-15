@@ -6,3 +6,4 @@
 - multi metal combining
 ### Changed:
 - smelter type render api
+- density on shift info

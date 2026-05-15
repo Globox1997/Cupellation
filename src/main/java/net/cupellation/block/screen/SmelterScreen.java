@@ -15,8 +15,10 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.registry.Registries;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -320,32 +322,29 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         int totalFluid = 0;
 
         for (int i = 0; i < SmelterBlockEntity.MAX_METALS; i++) {
-            if (metalTypeIds[i] == null) continue;
+            if (metalTypeIds[i] == null) {
+                continue;
+            }
             if (metalAmounts[i] > 0) {
                 int density = SmelterData.getDensity(metalTypeIds[i]);
-                tooltip.add(Text.literal(SmelterData.getName(metalTypeIds[i]) + ": "
-                                + metalAmounts[i] + " mB")
-                        .append(Text.literal(" (")
-                                .append(Text.translatable("block.cupellation.smelter.density"))
-                                .append(Text.literal(": " + density + ")"))
-                                .formatted(Formatting.GRAY)));
+                MutableText text = Text.literal(SmelterData.getName(metalTypeIds[i]) + ": " + metalAmounts[i] + " mB");
+                if (InputUtil.isKeyPressed(client.getWindow().getHandle(), 340)) {
+                    text.append(Text.literal(" (").append(Text.translatable("block.cupellation.smelter.density"))
+                            .append(Text.literal(": " + density + ")")).formatted(Formatting.GRAY));
+                }
+                tooltip.add(text);
                 totalFluid += metalAmounts[i];
             }
             if (slagAmounts[i] > 0) {
                 tooltip.add(Text.translatable("block.cupellation.smelter.slag")
-                        .append(Text.literal(" (" + SmelterData.getName(metalTypeIds[i])
-                                + "): " + slagAmounts[i] + " mB"))
-                        .formatted(Formatting.GRAY));
+                        .append(Text.literal(" (" + SmelterData.getName(metalTypeIds[i]) + "): " + slagAmounts[i] + " mB")).formatted(Formatting.GRAY));
                 totalFluid += slagAmounts[i];
             }
         }
 
-        tooltip.add(Text.translatable("block.cupellation.smelter.capacity").copyContentOnly().append(Text.literal(": " + totalFluid + " / " + cap + " mB"))
-                .formatted(Formatting.DARK_GRAY));
+        tooltip.add(Text.translatable("block.cupellation.smelter.capacity").copyContentOnly().append(Text.literal(": " + totalFluid + " / " + cap + " mB")).formatted(Formatting.DARK_GRAY));
 
-        if (!tooltip.isEmpty()) {
-            context.drawTooltip(textRenderer, tooltip, relX, relY);
-        }
+        context.drawTooltip(textRenderer, tooltip, relX, relY);
     }
 
     private void drawTemperatureTooltip(DrawContext context, int relX, int relY) {
