@@ -286,7 +286,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (!isFormed) {
             return;
         }
-        if ((redstonePowered || hasAnyInput()) && getTotalFluid() < getMaxCapacity()) {
+        if ((redstonePowered || hasAnyInput())) {
             if (fuelTime <= 0) {
                 tryConsumeFuel();
             }
