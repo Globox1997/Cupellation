@@ -7,9 +7,9 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 import net.cupellation.CupellationMain;
+import net.cupellation.api.MoldType;
 import net.cupellation.init.ItemInit;
 import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -20,16 +20,14 @@ public class ClayImprintEmiRecipe implements EmiRecipe {
 
     private final Item blankClayMold;
     private final Item imprintedClayMold;
-    private final Item brickMold;
-    private final String suffix;
+    private final MoldType moldType;
     private final Identifier recipeId;
 
-    public ClayImprintEmiRecipe(Item imprintedClayMold, String suffix, Item brickMold) {
+    public ClayImprintEmiRecipe(Item imprintedClayMold, MoldType moldType) {
         this.blankClayMold = ItemInit.CLAY_MOLD;
         this.imprintedClayMold = imprintedClayMold;
-        this.brickMold = brickMold;
-        this.suffix = suffix;
-        this.recipeId = CupellationMain.identifierOf("/clay_imprint/" + suffix);
+        this.moldType = moldType;
+        this.recipeId = CupellationMain.identifierOf("/clay_imprint/" + moldType.suffix());
     }
 
     @Override
@@ -54,13 +52,7 @@ public class ClayImprintEmiRecipe implements EmiRecipe {
 
     @Override
     public List<EmiIngredient> getInputs() {
-        List<Item> stamps = new ArrayList<>();
-        for (Item moldable : ItemInit.MOLDABLES) {
-            Identifier moldableId = Registries.ITEM.getId(moldable);
-            if (moldableId.getPath().endsWith("_" + suffix)) {
-                stamps.add(moldable);
-            }
-        }
+        List<Item> stamps = getStamps();
 
         List<EmiIngredient> inputs = new ArrayList<>();
         inputs.add(EmiStack.of(blankClayMold));
@@ -80,13 +72,7 @@ public class ClayImprintEmiRecipe implements EmiRecipe {
         widgets.addSlot(EmiStack.of(blankClayMold), 0, 1);
         widgets.addText(Text.literal("+"), 20, 5, 0x888888, false);
 
-        List<Item> stamps = new ArrayList<>();
-        for (Item moldable : ItemInit.MOLDABLES) {
-            Identifier moldableId = Registries.ITEM.getId(moldable);
-            if (moldableId.getPath().endsWith("_" + suffix)) {
-                stamps.add(moldable);
-            }
-        }
+        List<Item> stamps = getStamps();
         if (!stamps.isEmpty()) {
             widgets.addSlot(EmiIngredient.of(stamps.stream().map(i -> (EmiIngredient) EmiStack.of(i)).toList()), 28, 1);
         }
@@ -94,4 +80,13 @@ public class ClayImprintEmiRecipe implements EmiRecipe {
         widgets.addTexture(EmiTexture.EMPTY_ARROW, 50, 3);
         widgets.addSlot(EmiStack.of(imprintedClayMold), 76, 1).recipeContext(this);
     }
+
+    private List<Item> getStamps() {
+        return MoldStampFinder.findStamps(moldType);
+    }
+
+    public boolean hasNoStamps() {
+        return getStamps().isEmpty();
+    }
+
 }

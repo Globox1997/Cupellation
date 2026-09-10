@@ -5,6 +5,8 @@ import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiStack;
 import net.cupellation.CupellationMain;
+import net.cupellation.api.CupellationAPI;
+import net.cupellation.api.MoldType;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
@@ -51,36 +53,31 @@ public class CupellationEmiPlugin implements EmiPlugin {
             }
         }
 
-        for (Item moldItem : ItemInit.MOLDS) {
-            if (!(moldItem instanceof MoldItem mold)) {
-                continue;
-            }
-            if (moldItem instanceof BrickMoldItem) {
+        for (MoldType moldType : CupellationAPI.getMoldTypes()) {
+            MoldItem mold = CupellationAPI.getMoldItem(moldType);
+            if (mold == null || mold instanceof BrickMoldItem) {
                 continue;
             }
             Identifier moldingType = mold.getMoldingMetalTypeId();
             if (moldingType == null) {
                 continue;
             }
-            for (Item moldable : ItemInit.MOLDABLES) {
-                Identifier moldableId = Registries.ITEM.getId(moldable);
-                if (!moldableId.getPath().endsWith("_" + mold.getOutputSuffix())) {
-                    continue;
-                }
-                registry.addRecipe(new MoldCastingEmiRecipe(mold, moldingType, moldableId));
+            for (Item stamp : MoldStampFinder.findStamps(moldType)) {
+                Identifier stampId = Registries.ITEM.getId(stamp);
+                registry.addRecipe(new MoldCastingEmiRecipe(mold, moldingType, stampId));
             }
         }
 
-        for (Item clayMoldItem : ItemInit.CLAY_MOLDS) {
-            Identifier clayMoldId = Registries.ITEM.getId(clayMoldItem);
-            String path = clayMoldId.getPath();
-            String suffix = path.substring("clay_".length(), path.length() - "_mold".length());
-
-            Identifier brickMoldId = CupellationMain.identifierOf("brick_" + suffix + "_mold");
-            if (!Registries.ITEM.containsId(brickMoldId)) {
+        for (MoldType moldType : CupellationAPI.getMoldTypes()) {
+            Identifier clayMoldId = CupellationMain.identifierOf("clay_" + moldType.suffix() + "_mold");
+            if (!Registries.ITEM.containsId(clayMoldId)) {
                 continue;
             }
-            registry.addRecipe(new ClayImprintEmiRecipe(Registries.ITEM.get(clayMoldId), suffix, Registries.ITEM.get(brickMoldId)));
+            ClayImprintEmiRecipe recipe = new ClayImprintEmiRecipe(Registries.ITEM.get(clayMoldId), moldType);
+            if (recipe.hasNoStamps()) {
+                continue;
+            }
+            registry.addRecipe(recipe);
         }
 
         registry.addCategory(BASIN_CASTING_CATEGORY);

@@ -1,35 +1,41 @@
 package net.cupellation.item;
 
+import net.cupellation.api.strategy.MoldResultStrategy;
+import net.cupellation.api.strategy.SuffixMoldResultStrategy;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class MoldItem extends Item {
 
-    private static final Map<String, MoldItem> SUFFIX_TO_MOLD = new HashMap<>();
-    private static final Map<Identifier, Map<String, Identifier>> RESOLVE_CACHE = new HashMap<>();
-    private static final Map<String, String> METAL_NAME_OVERRIDES = Map.of("gold", "golden");
+    private static final List<MoldItem> REGISTERED_MOLDS = new ArrayList<>();
 
     @Nullable
     private final Identifier moldingMetalTypeId;
     private final int mb;
     private final String outputSuffix;
     private final Set<Identifier> blacklist;
+    private final MoldResultStrategy strategy;
 
-    public MoldItem(@Nullable Identifier moldingMetalTypeId, int mb, String outputSuffix, Set<Identifier> blacklist, Settings settings) {
+    public MoldItem(@Nullable Identifier moldingMetalTypeId, int mb, String outputSuffix, Set<Identifier> blacklist, @Nullable MoldResultStrategy strategy, Settings settings) {
         super(settings);
         this.moldingMetalTypeId = moldingMetalTypeId;
         this.mb = mb;
         this.outputSuffix = outputSuffix;
         this.blacklist = blacklist;
+        this.strategy = strategy != null ? strategy : new SuffixMoldResultStrategy();
         if (moldingMetalTypeId != null) {
-            SUFFIX_TO_MOLD.put(outputSuffix, this);
+            REGISTERED_MOLDS.add(this);
         }
+    }
+
+    public MoldItem(@Nullable Identifier moldingMetalTypeId, int mb, String outputSuffix, Set<Identifier> blacklist, Settings settings) {
+        this(moldingMetalTypeId, mb, outputSuffix, blacklist, null, settings);
     }
 
     @Nullable
@@ -52,48 +58,28 @@ public class MoldItem extends Item {
         if (blacklist.contains(metalTypeId)) {
             return false;
         }
-        return Registries.ITEM.containsId(resolveResultId(metalTypeId));
+
+        Identifier resultId = resolveResultId(metalTypeId);
+        return resultId != null && Registries.ITEM.containsId(resultId);
     }
 
     @Nullable
     public Identifier resolveResultId(Identifier castingMetalId) {
-        return RESOLVE_CACHE.computeIfAbsent(castingMetalId, k -> new HashMap<>()).computeIfAbsent(outputSuffix, k -> computeResultId(castingMetalId));
+        return strategy.resolveResultId(castingMetalId, outputSuffix);
     }
 
     @Nullable
-    private Identifier computeResultId(Identifier castingMetalId) {
-        String metalName = METAL_NAME_OVERRIDES.getOrDefault(castingMetalId.getPath(), castingMetalId.getPath());
-        String itemPath = metalName + "_" + outputSuffix;
-
-        Identifier sameNamespace = Identifier.of(castingMetalId.getNamespace(), itemPath);
-        if (Registries.ITEM.containsId(sameNamespace)) {
-            return sameNamespace;
-        }
-        Identifier vanilla = Identifier.ofVanilla(itemPath);
-        if (Registries.ITEM.containsId(vanilla)) {
-            return vanilla;
-        }
-        for (Identifier id : Registries.ITEM.getIds()) {
-            if (id.getPath().equals(itemPath)) {
-                return id;
+    public static MoldItem findMoldForItem(Identifier itemId) {
+        for (MoldItem mold : REGISTERED_MOLDS) {
+            if (mold.strategy.matches(itemId, mold.outputSuffix)) {
+                return mold;
             }
         }
-
         return null;
     }
 
     public String getOutputSuffix() {
         return outputSuffix;
-    }
-
-    @Nullable
-    public static MoldItem findMoldForItem(Identifier itemId) {
-        for (Map.Entry<String, MoldItem> entry : SUFFIX_TO_MOLD.entrySet()) {
-            if (itemId.getPath().endsWith("_" + entry.getKey())) {
-                return entry.getValue();
-            }
-        }
-        return null;
     }
 
     public boolean isSingleUse() {

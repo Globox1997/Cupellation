@@ -1,12 +1,10 @@
 package net.cupellation.block;
 
 import net.cupellation.block.entity.CastingBasinEntity;
-import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
-import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.misc.CastingEntity;
@@ -152,10 +150,6 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             }
             if (castingEntityBelow instanceof CastingBasinEntity) {
                 if (metalTypeData.blockId() == null) {
-                    return ActionResult.FAIL;
-                }
-            } else if (castingEntityBelow instanceof CastingTableEntity) {
-                if (metalTypeData.ingotId() == null) {
                     return ActionResult.FAIL;
                 }
             }

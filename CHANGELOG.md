@@ -1,9 +1,6 @@
 ### Added:
-- rain will cooldown a smelter
+- Mold strategies API
 ### Fixed:
-- smelter redstone signal when full
-- mold casting
-- multi metal combining
+- 
 ### Changed:
-- smelter type render api
-- density on shift info
+- 

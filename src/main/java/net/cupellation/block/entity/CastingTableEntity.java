@@ -229,7 +229,6 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         if (metalTypeId != null && !metalTypeId.equals(metalType)) {
             return false;
         }
-
         if (mold.isEmpty()) {
             Identifier resultId = Registries.ITEM.getId(result.getItem());
             MoldItem targetMold = MoldItem.findMoldForItem(resultId);
@@ -370,10 +369,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         }
         Identifier headId = Registries.ITEM.getId(toolHead.getItem());
         for (MoldType moldType : CupellationAPI.getMoldTypes()) {
-            if (!headId.getNamespace().equals("cupellation")) {
-                continue;
-            }
-            if (!headId.getPath().endsWith("_" + moldType.suffix())) {
+            if (!matchesStamp(moldType, headId)) {
                 continue;
             }
             Identifier clayMoldId = CupellationMain.identifierOf("clay_" + moldType.suffix() + "_mold");
@@ -385,6 +381,16 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             return clayMold;
         }
         return ItemStack.EMPTY;
+    }
+
+    private static boolean matchesStamp(MoldType moldType, Identifier headId) {
+        if (headId.getPath().endsWith("_" + moldType.suffix())) {
+            return true;
+        }
+        if (moldType.craftableAsClayMold() && !moldType.stampItemIds().isEmpty()) {
+            return moldType.stampItemIds().contains(headId);
+        }
+        return false;
     }
 
     public ItemStack tryExtractClayMold() {

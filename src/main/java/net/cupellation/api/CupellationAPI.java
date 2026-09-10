@@ -1,15 +1,19 @@
 package net.cupellation.api;
 
+import net.cupellation.api.strategy.MappedResultMoldStrategy;
+import net.cupellation.api.strategy.SuffixMoldResultStrategy;
 import net.cupellation.init.BlockInit;
+import net.cupellation.item.MoldItem;
+import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public final class CupellationAPI {
 
     private static final List<SmelterType> SMELTER_TYPES = new ArrayList<>();
     private static final List<MoldType> MOLD_TYPES = new ArrayList<>();
+    private static final Map<MoldType, MoldItem> MOLD_ITEMS = new LinkedHashMap<>();
 
     private CupellationAPI() {
     }
@@ -23,11 +27,32 @@ public final class CupellationAPI {
     }
 
     public static void registerMoldType(MoldType moldType) {
+        if (moldType.extraOutput() && !(moldType.strategy() == null || moldType.strategy() instanceof SuffixMoldResultStrategy)) {
+            throw new IllegalArgumentException("extraOutput=true is only supported with the default suffix strategy: " + moldType.suffix());
+        }
         MOLD_TYPES.add(moldType);
     }
 
     public static List<MoldType> getMoldTypes() {
         return List.copyOf(MOLD_TYPES);
+    }
+
+    public static void registerMoldItem(MoldType moldType, MoldItem item) {
+        MOLD_ITEMS.put(moldType, item);
+    }
+
+    @Nullable
+    public static MoldItem getMoldItem(MoldType moldType) {
+        return MOLD_ITEMS.get(moldType);
+    }
+
+    public static Map<MoldType, MoldItem> getMoldItems() {
+        return Map.copyOf(MOLD_ITEMS);
+    }
+
+    @Nullable
+    public static MoldItem getMoldItemBySuffix(String suffix) {
+        return MOLD_TYPES.stream().filter(mt -> mt.suffix().equals(suffix)).findFirst().map(MOLD_ITEMS::get).orElse(null);
     }
 
     public static void registerDefaultSmelterTypes() {
@@ -36,6 +61,7 @@ public final class CupellationAPI {
     }
 
     public static void registerDefaultMoldTypes() {
+        registerMoldType(new MoldType("ingot", 144, false, Set.of()));
         registerMoldType(new MoldType("axe_head", 432, true, Set.of()));
         registerMoldType(new MoldType("hoe_head", 288, true, Set.of()));
         registerMoldType(new MoldType("pickaxe_head", 432, true, Set.of()));
@@ -45,5 +71,13 @@ public final class CupellationAPI {
         registerMoldType(new MoldType("chestplate", 1152, false, Set.of()));
         registerMoldType(new MoldType("leggings", 1008, false, Set.of()));
         registerMoldType(new MoldType("boots", 576, false, Set.of()));
+
+        // Example for new custom diamond mold
+        //        CupellationAPI.registerMoldType(
+        //                MoldType.builder("diamond", 144)
+        //                        .moldingMetalTypeId(Identifier.of("cupellation", "gold"))
+        //                        .strategy(new MappedResultMoldStrategy(Map.of(Identifier.of("cupellation", "diamond"), Identifier.of("minecraft", "diamond"))))
+        //                        .craftableAsClayMold(Set.of(Identifier.of("minecraft", "diamond")))
+        //                        .build());
     }
 }
