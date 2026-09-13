@@ -1,5 +1,5 @@
 ### Added:
-- 
+- Smelter type info tooltip
 ### Fixed:
 - 
 ### Changed:

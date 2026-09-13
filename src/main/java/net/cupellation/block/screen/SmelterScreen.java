@@ -6,6 +6,7 @@ import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.data.FuelData;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
+import net.cupellation.data.SmelterTypeData;
 import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -23,6 +24,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -39,6 +41,8 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
 
     private static final int GUI_WIDTH = 176;
     private static final int GUI_HEIGHT = 166;
+
+    private static final int TITLE_H = 7;
 
     private static final int FLUID_X = 81, FLUID_Y = 19, FLUID_W = 48, FLUID_H = 48;
 
@@ -239,11 +243,51 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         int relX = mouseX - (this.width - GUI_WIDTH) / 2;
         int relY = mouseY - (this.height - GUI_HEIGHT) / 2;
 
+        drawSmelterTooltip(context, relX, relY);
         drawFluidTooltip(context, relX, relY);
         drawGradeInfo(context, relX, relY);
         drawTemperatureTooltip(context, relX, relY);
         drawSmeltingTooltip(context, relX, relY);
         drawFuelTooltip(context, relX, relY);
+    }
+
+    private void drawSmelterTooltip(DrawContext context, int relX, int relY) {
+        if (relX < this.titleX || relX > this.titleX + this.textRenderer.getWidth(this.title) || relY < this.titleY || relY > this.titleY + TITLE_H) {
+            return;
+        }
+
+        List<Text> tooltip = new ArrayList<>();
+        SmelterTypeData smelterType = getCurrentSmelterType();
+
+        if (smelterType != null && smelterType.maxTemperature() != -1) {
+            tooltip.add(Text.translatable("block.cupellation.smelter.type_max_temp", smelterType.maxTemperature()).formatted(Formatting.AQUA));
+        }
+
+        tooltip.add(Text.translatable("block.cupellation.smelter.smeltable_metals").formatted(Formatting.GRAY));
+
+        List<Text> metalTooltip = new ArrayList<>();
+        int metalCount = SmelterData.allMetals().size();
+        for (MetalTypeData metal : SmelterData.allMetals()) {
+            if (smelterType == null || smelterType.allowsMetal(metal.id())) {
+                metalTooltip.add(Text.literal("- " + SmelterData.getName(metal.id())).formatted(Formatting.WHITE));
+                metalCount--;
+            }
+        }
+        if (metalCount == 0) {
+            tooltip.add(Text.translatable("block.cupellation.smelter.all_metals_smeltable"));
+        } else {
+            tooltip.addAll(metalTooltip);
+        }
+        context.drawTooltip(textRenderer, tooltip, relX, relY);
+    }
+
+    @Nullable
+    private SmelterTypeData getCurrentSmelterType() {
+        if (client == null || client.world == null) {
+            return null;
+        }
+        Identifier blockId = Registries.BLOCK.getId(client.world.getBlockState(handler.getPos()).getBlock());
+        return SmelterData.getAllTypes().stream().filter(type -> type.matchesBlock(blockId)).findFirst().orElse(null);
     }
 
     private void drawFuelTooltip(DrawContext context, int relX, int relY) {
@@ -286,27 +330,20 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             if (metalTypeData == null || !metalTypeData.hasGrades()) {
                 continue;
             }
-            tooltip.add(Text.literal(SmelterData.getName(metalTypeId))
-                    .formatted(Formatting.WHITE));
+            tooltip.add(Text.literal(SmelterData.getName(metalTypeId)).formatted(Formatting.WHITE));
             tooltip.add(Text.translatable("block.cupellation.smelter.grades"));
 
             if (metalTypeData.highGrade() != null) {
-                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED)
-                        .append(Text.literal(": "))
-                        .append(Text.translatable("block.cupellation.smelter.grade.info",
-                                metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
+                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED).append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.highGrade().min(), metalTypeData.highGrade().max())));
             }
             if (metalTypeData.midGrade() != null) {
-                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD)
-                        .append(Text.literal(": "))
-                        .append(Text.translatable("block.cupellation.smelter.grade.info",
-                                metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
+                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD).append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.midGrade().min(), metalTypeData.midGrade().max())));
             }
             if (metalTypeData.lowGrade() != null) {
-                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW)
-                        .append(Text.literal(": "))
-                        .append(Text.translatable("block.cupellation.smelter.grade.info",
-                                metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
+                tooltip.add(Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW).append(Text.literal(": "))
+                        .append(Text.translatable("block.cupellation.smelter.grade.info", metalTypeData.lowGrade().min(), metalTypeData.lowGrade().max())));
             }
         }
 

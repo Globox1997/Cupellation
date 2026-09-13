@@ -203,4 +203,8 @@ public final class SmelterData {
     public static Collection<FuelData> allFuels() {
         return Collections.unmodifiableCollection(FUELS.values());
     }
+
+    public static Collection<SmelterTypeData> allTypes() {
+        return Collections.unmodifiableCollection(TYPES.values());
+    }
 }

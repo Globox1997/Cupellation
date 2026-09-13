@@ -207,7 +207,9 @@ public class SmelterScreenHandler extends ScreenHandler {
     }
 
     public void syncMetalType(World world) {
-        if (world == null) return;
+        if (world == null){
+            return;
+        }
         if (world.getBlockEntity(this.pos) instanceof SmelterBlockEntity blockEntity) {
             for (int i = 0; i < SmelterBlockEntity.MAX_METALS; i++) {
                 metalTypeIds[i] = blockEntity.getMetalTypeId(i);
@@ -216,6 +218,10 @@ public class SmelterScreenHandler extends ScreenHandler {
             }
             cachedMaxCapacity = blockEntity.getMaxCapacity();
         }
+    }
+
+    public BlockPos getPos() {
+        return pos;
     }
 
     private void addPlayerInventory(PlayerInventory playerInventory) {

@@ -1,9 +1,6 @@
 package net.cupellation.network;
 
-import net.cupellation.data.FuelData;
-import net.cupellation.data.MetalTypeData;
-import net.cupellation.data.SmelterData;
-import net.cupellation.data.SmelterItemData;
+import net.cupellation.data.*;
 import net.cupellation.network.packet.SmelterFluidSyncPacket;
 import net.cupellation.network.packet.SmelterPacket;
 import net.cupellation.network.packet.SmelterScreenPacket;
@@ -26,7 +23,8 @@ public class CupellationServerPacket {
         List<SmelterItemData> items = new ArrayList<>(SmelterData.allItems());
         List<MetalTypeData> metals = new ArrayList<>(SmelterData.allMetals());
         List<FuelData> fuels = new ArrayList<>(SmelterData.allFuels());
-        ServerPlayNetworking.send(player, new SmelterPacket(items, metals, fuels));
+        List<SmelterTypeData> types = new ArrayList<>(SmelterData.allTypes());
+        ServerPlayNetworking.send(player, new SmelterPacket(items, metals, fuels, types));
     }
 
 }

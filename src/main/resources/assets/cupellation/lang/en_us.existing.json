@@ -7,13 +7,12 @@
 
   "item.cupellation.calcite_powder": "Calcite Powder",
   "item.cupellation.quartz_powder": "Quartz Powder",
-  "item.cupellation.ingot_mold": "Ingot Mold",
-  "item.cupellation.clay_ingot_mold": "Clay Ingot Mold",
-  "item.cupellation.brick_ingot_mold": "Brick Ingot Mold",
   "item.cupellation.clay_mold": "Clay Mold",
   "item.cupellation.clay_mold.tooltip.1": "Put inside casting table",
   "item.cupellation.clay_mold.tooltip.2": "Right click with an item to imprint shape",
   "item.cupellation.brick_mold.tooltip.single_use": "Single Use",
+  "item.cupellation.handbook": "Cupellation Handbook",
+  "item.cupellation.patchouli_book.tooltip": "Patchouli mod is required!",
 
   "block.cupellation.smelter": "Smelter",
   "block.cupellation.smelter.slag": "Slag",
@@ -58,6 +57,8 @@
   "block.cupellation.smelter.grade.info": "%s°C - %s°C",
   "block.cupellation.smelter.type_max_temp": "Smelter Max °C: %s",
   "block.cupellation.smelter.fuel.info": "...+%s more",
+  "block.cupellation.smelter.smeltable_metals": "Smeltable Metals",
+  "block.cupellation.smelter.all_metals_smeltable": "All Metals Smeltable",
 
   "tag.item.cupellation.cooling_items": "Cooling Items",
   "tag.block.cupellation.smelter_blocks": "Smelter Blocks",

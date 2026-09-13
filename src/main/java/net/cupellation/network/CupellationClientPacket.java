@@ -1,10 +1,7 @@
 package net.cupellation.network;
 
 import net.cupellation.block.entity.SmelterBlockEntity;
-import net.cupellation.data.FuelData;
-import net.cupellation.data.MetalTypeData;
-import net.cupellation.data.SmelterData;
-import net.cupellation.data.SmelterItemData;
+import net.cupellation.data.*;
 import net.cupellation.network.packet.SmelterFluidSyncPacket;
 import net.cupellation.network.packet.SmelterPacket;
 import net.fabricmc.api.EnvType;
@@ -28,17 +25,23 @@ public class CupellationClientPacket {
                     payload.metals().forEach(m -> metalMap.put(m.id(), m));
 
                     Map<Identifier, FuelData> fuelMap = new HashMap<>();
-                    payload.fuels().forEach(m -> fuelMap.put(m.itemId(), m));
+                    payload.fuels().forEach(f -> fuelMap.put(f.itemId(), f));
+
+                    Map<Identifier, SmelterTypeData> typeMap = new HashMap<>();
+                    payload.types().forEach(t -> typeMap.put(t.id(), t));
 
                     SmelterData.setItems(itemMap);
                     SmelterData.setMetals(metalMap);
                     SmelterData.setFuels(fuelMap);
+                    SmelterData.setTypes(typeMap);
                 })
         );
         ClientPlayNetworking.registerGlobalReceiver(SmelterFluidSyncPacket.PACKET_ID, (payload, context) -> {
             context.client().execute(() -> {
                 ClientWorld world = context.client().world;
-                if (world == null) return;
+                if (world == null){
+                    return;
+                }
                 if (world.getBlockEntity(payload.pos()) instanceof SmelterBlockEntity blockEntity) {
                     blockEntity.applyFluidSync(payload);
                 }
