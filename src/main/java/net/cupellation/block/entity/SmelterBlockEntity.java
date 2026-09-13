@@ -91,6 +91,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private static final int ITEM_COOLING_TEMPERATURE = 20;
     private static final int RAIN_COOLING_TEMPERATURE = 20;
 
+    private static final int SOLIDIFICATION_MB_PER_TICK = 2;
+
     private static final int FLUX_CONVERSION_RATE = 50;
 
     private final int[] smeltProgress = new int[3];
@@ -291,6 +293,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         if (burning) {
             fuelTime--;
         }
+
+        tickSolidification();
+
         if (getCachedState().get(SmelterBlock.LIT) != burning) {
             world.setBlockState(pos, getCachedState().with(SmelterBlock.LIT, burning));
         }
@@ -626,6 +631,33 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             this.temperature -= temperatureDecrease;
             this.temperature = Math.max(this.temperature, MINIMUM_TEMPERATURE);
             markDirty();
+        }
+    }
+
+    private void tickSolidification() {
+        if (temperature > 0) {
+            return;
+        }
+        if (getTotalMoltenMetal() <= 0) {
+            return;
+        }
+
+        int remaining = SOLIDIFICATION_MB_PER_TICK;
+        boolean changed = false;
+
+        for (int i = 0; i < MAX_METALS && remaining > 0; i++) {
+            if (metalAmounts[i] <= 0) {
+                continue;
+            }
+            int convert = Math.min(metalAmounts[i], remaining);
+            metalAmounts[i] -= convert;
+            slagAmounts[i] += convert;
+            remaining -= convert;
+            changed = true;
+        }
+
+        if (changed) {
+            markFluidDirty();
         }
     }
 
