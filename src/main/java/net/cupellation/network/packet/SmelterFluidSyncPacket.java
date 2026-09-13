@@ -17,8 +17,7 @@ public record SmelterFluidSyncPacket(BlockPos pos, List<FluidEntry> entries) imp
     public record FluidEntry(@Nullable Identifier metalTypeId, int metalAmount, int slagAmount) {
     }
 
-    public static final CustomPayload.Id<SmelterFluidSyncPacket> PACKET_ID =
-            new CustomPayload.Id<>(CupellationMain.identifierOf("smelter_fluid_sync"));
+    public static final CustomPayload.Id<SmelterFluidSyncPacket> PACKET_ID = new CustomPayload.Id<>(CupellationMain.identifierOf("smelter_fluid_sync"));
 
     public static final PacketCodec<RegistryByteBuf, SmelterFluidSyncPacket> CODEC = PacketCodec.of(
             (packet, buf) -> {

@@ -151,7 +151,9 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
         int[] metalAmounts = handler.getMetalAmounts();
         int[] slagAmounts = handler.getSlagAmounts();
         int cap = handler.getMaxCapacity();
-        if (cap <= 0) return;
+        if (cap <= 0) {
+            return;
+        }
 
         Integer[] slots = new Integer[SmelterBlockEntity.MAX_METALS];
         for (int i = 0; i < slots.length; i++) slots[i] = i;
@@ -209,24 +211,29 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
     }
 
     private void drawFuelFlame(DrawContext context, int x, int y) {
-        if (!handler.isBurning()) return;
+        if (!handler.isBurning()) {
+            return;
+        }
         int litH = MathHelper.ceil(FLAME_H * handler.getFuelPercent());
-        if (litH <= 0) return;
+        if (litH <= 0) {
+            return;
+        }
         int offsetY = FLAME_H - litH;
         context.drawTexture(TEXTURE, x + FLAME_X, y + FLAME_Y + offsetY, FLAME_U, FLAME_V + offsetY, FLAME_W, litH);
     }
 
     private void drawBurnArrow(DrawContext context, int x, int y) {
         int arrowW = MathHelper.ceil(ARROW_W * handler.getSmeltPercent(0));
-        if (arrowW <= 0) return;
+        if (arrowW <= 0) {
+            return;
+        }
         context.drawGuiTexture(BURN_PROGRESS_SPRITE, ARROW_W, ARROW_H, 0, 0, x + ARROW_X, y + ARROW_Y, arrowW, ARROW_H);
     }
 
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
         context.drawText(textRenderer, this.title, this.titleX, this.titleY, 0x404040, false);
-        context.drawText(textRenderer, this.playerInventoryTitle,
-                this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
+        context.drawText(textRenderer, this.playerInventoryTitle, this.playerInventoryTitleX, this.playerInventoryTitleY, 0x404040, false);
         context.drawText(this.textRenderer, Text.translatable("block.cupellation.smelter.degree"), 131, 18, 0xFFFFFF, true);
 
         int relX = mouseX - (this.width - GUI_WIDTH) / 2;
@@ -249,8 +256,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             int shown = 0;
             List<FuelData> validFuels = SmelterData.allFuels().stream().filter(fuel -> typeMaxTemp < 0 || fuel.maxTemperature() <= typeMaxTemp).sorted((a, b) -> Integer.compare(b.maxTemperature(), a.maxTemperature())).limit(MAX_FUELS_TOOLTIP_COUNT).toList();
             for (FuelData fuelData : validFuels) {
-                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly().append(Text.literal(": "))
-                        .append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
+                tooltip.add(Registries.ITEM.get(fuelData.itemId()).getName().copyContentOnly().append(Text.literal(": ")).append(Text.translatable("block.cupellation.smelter.degree.info", fuelData.maxTemperature())));
                 if (shown >= MAX_FUELS_TOOLTIP_COUNT) {
                     break;
                 }
