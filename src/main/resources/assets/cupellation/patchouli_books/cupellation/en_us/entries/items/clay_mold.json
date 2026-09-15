@@ -1,0 +1,17 @@
+{
+  "name": "Clay Mold",
+  "icon": "cupellation:clay_mold",
+  "category": "cupellation:item_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "item": "cupellation:clay_mold",
+      "link_recipe": true,
+      "text": "The clay mold is the base item to craft a brick mold. Put it on a casting table and press in a mold."
+    },
+    {
+      "type": "crafting",
+      "recipe": "cupellation:clay_mold"
+    }
+  ]
+}

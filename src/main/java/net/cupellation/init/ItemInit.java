@@ -7,6 +7,7 @@ import net.cupellation.api.CupellationEntrypoint;
 import net.cupellation.api.MoldType;
 import net.cupellation.item.BrickMoldItem;
 import net.cupellation.item.ClayMoldItem;
+import net.cupellation.item.Handbook;
 import net.cupellation.item.MoldItem;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
@@ -42,6 +43,7 @@ public class ItemInit {
     public static final ComponentType<Integer> QUALITY_GRADE = registerComponent("quality_grade", builder -> builder.codec(Codec.INT).packetCodec(PacketCodecs.INTEGER));
 
     // Items
+    public static final Item HANDBOOK = register("handbook", new Handbook(new Item.Settings().maxCount(1)));
     public static final Item CALCITE_POWDER = register("calcite_powder", new Item(new Item.Settings()));
     public static final Item QUARTZ_POWDER = register("quartz_powder", new Item(new Item.Settings()));
     public static final Item CLAY_MOLD = register("clay_mold", new ClayMoldItem(new Item.Settings()));

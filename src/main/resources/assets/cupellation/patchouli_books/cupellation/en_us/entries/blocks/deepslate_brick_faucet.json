@@ -1,0 +1,18 @@
+{
+  "name": "Deepslate Brick Faucet",
+  "icon": "cupellation:deepslate_brick_faucet",
+  "category": "cupellation:block_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "title": "Deepslate Brick Faucet",
+      "item": "cupellation:deepslate_brick_faucet",
+      "link_recipe": true,
+      "text": "The faucet is a mechanical block placed on the outer side of a drain. If the liquid metal level is high enough, the liquid can be poured in a casting basin or on a casting table."
+    },
+    {
+      "type": "crafting",
+      "recipe": "cupellation:deepslate_brick_faucet"
+    }
+  ]
+}

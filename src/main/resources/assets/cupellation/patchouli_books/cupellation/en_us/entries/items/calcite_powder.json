@@ -1,0 +1,18 @@
+{
+    "name": "Calcite Powder",
+    "icon": "cupellation:calcite_powder",
+    "category": "cupellation:item_category",
+    "pages": [
+        {
+            "type": "spotlight",
+            "item": "cupellation:calcite_powder",
+            "link_recipe": true,
+            "text": "Calcite powder is a flux item which can convert slag of various metals. Throw it in a smelter to reduce the slag."
+        },
+        {
+            "type": "stonecutting",
+            "title": "Stone Cutting",
+            "recipe": "cupellation:calcite_powder"
+        }
+    ]
+}

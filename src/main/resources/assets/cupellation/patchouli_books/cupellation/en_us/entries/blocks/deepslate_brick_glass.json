@@ -1,0 +1,13 @@
+{
+  "name": "Deepslate Brick Glass",
+  "icon": "cupellation:deepslate_brick_glass",
+  "category": "cupellation:block_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "title": "Deepslate Brick Glass",
+      "item": "cupellation:deepslate_brick_glass",
+      "text": "The deepslate brick glass can be used in a smelter furnace construction."
+    }
+  ]
+}

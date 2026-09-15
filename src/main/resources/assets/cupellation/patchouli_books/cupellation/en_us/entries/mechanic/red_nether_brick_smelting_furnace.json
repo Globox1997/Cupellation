@@ -1,0 +1,59 @@
+{
+  "name": "Red Nether Brick Furnace",
+  "icon": "cupellation:red_nether_brick_smelter",
+  "category": "cupellation:smelter_category",
+  "pages": [
+    {
+      "type": "text",
+      "title": "Red Nether Brick Furnace",
+      "text": "The red nether brick smelting furnace is the multi block to smelt ores and later cast them to tools. It can smelt higher valued ores."
+    },
+    {
+      "type": "multiblock",
+      "text": "Use blocks like the red nether bricks or red nether brick glass to build the walls of the furnace",
+      "multiblock": {
+        "pattern": [
+          [
+            " OOOOO ",
+            " O   O ",
+            " O   O ",
+            " O   O ",
+            " OOOOO "
+          ],
+          [
+            " OOOOO ",
+            " O   O ",
+            " O   O ",
+            " O   O ",
+            " OOOOO "
+          ],
+          [
+            " OOOOO ",
+            "DE   EK",
+            " O   O ",
+            "DE   EK",
+            " OOCOO "
+          ],
+          [
+            " OOOOO ",
+            "FOOOOOG",
+            " OO0OO ",
+            "FOOOOOG",
+            " OOOOO "
+          ]
+        ],
+        "mapping": {
+          "0": "minecraft:red_nether_bricks",
+          "O": "minecraft:red_nether_bricks",
+          "C": "cupellation:red_nether_brick_smelter[facing=east]",
+          "E": "cupellation:red_nether_brick_drain",
+          "K": "cupellation:red_nether_brick_faucet[facing=south]",
+          "D": "cupellation:red_nether_brick_faucet[facing=north]",
+          "F": "cupellation:red_nether_brick_casting_basin",
+          "G": "cupellation:red_nether_brick_casting_table"
+        },
+        "symmetrical": true
+      }
+    }
+  ]
+}

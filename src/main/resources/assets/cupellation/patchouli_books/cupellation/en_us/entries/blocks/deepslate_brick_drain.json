@@ -1,0 +1,19 @@
+{
+  "name": "Deepslate Brick Drain",
+  "icon": "cupellation:deepslate_brick_drain",
+  "category": "cupellation:block_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "title": "Deepslate Brick Drain",
+      "item": "cupellation:deepslate_brick_drain",
+      "link_recipe": true,
+      "text": "The drain is in a smelter furnace to let liquid metal flow out of the smelter. Put a faucet on the outer side of the drain."
+    },
+    {
+      "type": "stonecutting",
+      "title": "Stone Cutting",
+      "recipe": "cupellation:deepslate_brick_drain"
+    }
+  ]
+}

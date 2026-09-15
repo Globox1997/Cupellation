@@ -1,0 +1,12 @@
+{
+  "name": "Ingot Mold",
+  "icon": "cupellation:ingot_mold",
+  "category": "cupellation:item_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "item": "cupellation:ingot_mold",
+      "text": "The ingot mold is a reusable mold. Put it on a casting table and pour liquid metal over it to cast an ingot. Put an ingot on a casting table and pour liquid gold over it to get an ingot mold."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 ### Added:
-- Smelter type info tooltip
+- Patchouli guidebook
 ### Fixed:
 - 
 ### Changed:
-- Liquid metal converts to slag when smelter is getting cold
+- 

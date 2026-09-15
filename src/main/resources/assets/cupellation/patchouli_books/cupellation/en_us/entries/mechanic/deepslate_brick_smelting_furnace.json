@@ -1,0 +1,71 @@
+{
+  "name": "Deepslate Brick Furnace",
+  "icon": "cupellation:deepslate_brick_smelter",
+  "category": "cupellation:smelter_category",
+  "pages": [
+    {
+      "type": "text",
+      "title": "Deepslate Brick Furnace",
+      "text": "The deepslate brick smelting furnace is the multi block to smelt ores and later cast them to tools. During the smelting process, slag will produced as a byproduct. Revert the slag by throwing some flux items in the smelter."
+    },
+    {
+      "type": "multiblock",
+      "text": "Use blocks like the deepslate bricks or deepslate brick glass to build the walls of the furnace",
+      "multiblock": {
+        "pattern": [
+          [
+            " OOOOO ",
+            " O   O ",
+            " O   O ",
+            " O   O ",
+            " OOOOO "
+          ],
+          [
+            " OOOOO ",
+            " O   O ",
+            " O   O ",
+            " O   O ",
+            " OOOOO "
+          ],
+          [
+            " OOOOO ",
+            "DE   EK",
+            " O   O ",
+            "DE   EK",
+            " OOCOO "
+          ],
+          [
+            " OOOOO ",
+            "FOOOOOG",
+            " OO0OO ",
+            "FOOOOOG",
+            " OOOOO "
+          ]
+        ],
+        "mapping": {
+          "0": "minecraft:deepslate_bricks",
+          "O": "minecraft:deepslate_bricks",
+          "C": "cupellation:deepslate_brick_smelter[facing=east]",
+          "E": "cupellation:deepslate_brick_drain",
+          "K": "cupellation:deepslate_brick_faucet[facing=south]",
+          "D": "cupellation:deepslate_brick_faucet[facing=north]",
+          "F": "cupellation:deepslate_brick_casting_basin",
+          "G": "cupellation:deepslate_brick_casting_table"
+        },
+        "symmetrical": true
+      }
+    },
+    {
+      "type": "text",
+      "text": "Depending on the temperature during the cast process, different grades (low medium or high) of items will get casted. To maintain the temperature, put specific fuel inside the furnace or throw bottles of water or snowballs and other cooling items inside the furnace."
+    },
+    {
+      "type": "text",
+      "text": "A furnace requires a drain and a connected faucet on the side of the smelter. Below the faucet a casting table or casting basin can be placed, to pour liquid inside of it. A brick mold is a one time use mold and can be crafted by putting a clay mold on a casting table and pressing a molding part on it. After that put the clay mold inside a vanilla furnace."
+    },
+    {
+      "type": "text",
+      "text": "A stone molding part can be crafted at the stonecutting table. Put it on a casting table and cast gold over it to get a reusable mold. To start the casting process, get the right temperature and right click the faucet. A lever (redstone signal) can be used to keep the smelter furnace running and not cooling down by itself."
+    }
+  ]
+}

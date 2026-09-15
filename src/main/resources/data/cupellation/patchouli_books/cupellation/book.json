@@ -1,0 +1,10 @@
+{
+  "name": "item.cupellation.handbook",
+  "landing_text": "This is the Cupellation handbook and contains information about the smelter system",
+  "subtitle": "Smelt and cast gear",
+  "show_progress": false,
+  "model": "cupellation:handbook",
+  "dont_generate_book": true,
+  "custom_book_item": "cupellation:handbook",
+  "use_resource_pack": true
+}

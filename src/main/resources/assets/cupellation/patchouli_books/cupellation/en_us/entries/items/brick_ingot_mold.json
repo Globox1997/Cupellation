@@ -1,0 +1,17 @@
+{
+  "name": "Brick Ingot Mold",
+  "icon": "cupellation:brick_ingot_mold",
+  "category": "cupellation:item_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "item": "cupellation:brick_ingot_mold",
+      "link_recipe": true,
+      "text": "The brick ingot mold is a one time use mold. Put it on a casting table and pour liquid metal over it to cast an ingot."
+    },
+    {
+      "type": "smelting",
+      "recipe": "cupellation:smelting/clay_ingot_to_brick_mold"
+    }
+  ]
+}

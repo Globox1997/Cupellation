@@ -1,10 +1,8 @@
 package net.cupellation.api;
 
-import net.cupellation.api.strategy.MappedResultMoldStrategy;
 import net.cupellation.api.strategy.SuffixMoldResultStrategy;
 import net.cupellation.init.BlockInit;
 import net.cupellation.item.MoldItem;
-import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

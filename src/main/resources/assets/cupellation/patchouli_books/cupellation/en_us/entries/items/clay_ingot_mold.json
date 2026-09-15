@@ -1,0 +1,17 @@
+{
+  "name": "Clay Ingot Mold",
+  "icon": "cupellation:clay_ingot_mold",
+  "category": "cupellation:item_category",
+  "pages": [
+    {
+      "type": "spotlight",
+      "item": "cupellation:clay_ingot_mold",
+      "link_recipe": true,
+      "text": "The clay ingot mold can be crafted by putting a clay mold on a casting table and using an ingot on the clay mold. Burn the clay ingot mold in a furnace to get a one time use brick mold."
+    },
+    {
+      "type": "smelting",
+      "recipe": "cupellation:smelting/clay_ingot_to_brick_mold"
+    }
+  ]
+}
