@@ -309,14 +309,28 @@ A `MoldType` contains the following properties:
 - mb: required molten metal amount
 - extraOutput: generates extra casted tool part items for tool materials
 - blacklist: set of blacklisted metal identifiers
+- moldingMetalTypeId (optional): metal used to cast the mold itself from a stamp item
+- strategy (optional): `MoldResultStrategy` which decides the result item for a metal (default: suffix strategy)
+- craftableAsClayMold: if true, a clay mold of this type can be crafted with a stamp item
+- stampItemIds: fixed stamp items for the clay mold (mutually exclusive with `extraOutput`)
 
-Example:
+Simple example (the short constructor sets `craftableAsClayMold` to the value of `extraOutput`):
 
 ```java
-new MoldType(
-    "hammer_head",
-    576,
-    true,
-    Set.of()
-)
+new MoldType("hammer_head", 576, true, Set.of())
 ```
+
+Advanced example with the builder:
+
+```java
+MoldType.builder("diamond", 144)
+        .moldingMetalTypeId(Identifier.of("cupellation", "gold"))
+        .strategy(new MappedResultMoldStrategy(Map.of(
+                Identifier.of("cupellation", "diamond"), Identifier.of("minecraft", "diamond"))))
+        .craftableAsClayMold(Identifier.of("minecraft", "diamond"))
+        .build();
+```
+
+Restrictions:
+- `extraOutput = true` only works with the default suffix strategy.
+- `extraOutput` and fixed `stampItemIds` can't be combined.
