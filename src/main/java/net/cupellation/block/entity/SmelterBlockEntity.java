@@ -41,10 +41,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
@@ -93,7 +90,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private static final int SOLIDIFICATION_MB_PER_TICK = 2;
 
-    private static final int FLUX_CONVERSION_RATE = 50;
+    private static final int REACTION_INTERVAL = 10;
+    private static final int REACTION_ITEMS_PER_STEP = 2;
+    private int reactionCooldown = 0;
 
     private final int[] smeltProgress = new int[3];
     private final int[] smeltTotal = new int[3];
@@ -437,7 +436,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
 
         if (currentSmelterTypeId != null) {
-            SmelterTypeData smelterType = SmelterData.getAllTypes().stream().filter(type -> type.id().equals(currentSmelterTypeId)).findFirst().orElse(null);
+            SmelterTypeData smelterType = SmelterData.getTypeById(currentSmelterTypeId);
             if (smelterType != null && !smelterType.allowsMetal(itemMetalType)) {
                 smeltProgress[slotIndex] = 0;
                 return;
@@ -585,46 +584,48 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             entity.setOnFireFor(5);
         }
 
+        if (reactionCooldown > 0) {
+            reactionCooldown--;
+        }
+        int reactionBudget = reactionCooldown <= 0 ? REACTION_ITEMS_PER_STEP : 0;
+        boolean reacted = false;
         int temperatureDecrease = 0;
-        int[] fluxPerSlot = new int[MAX_METALS];
 
         for (ItemEntity item : world.getEntitiesByClass(ItemEntity.class, fluidBox.expand(0, 0.5, 0), e -> true)) {
-            boolean wasFlux = false;
+            ItemStack stack = item.getStack();
 
-            if (getTotalSlag() > 0) {
-                Identifier itemId = Registries.ITEM.getId(item.getStack().getItem());
-                for (int i = 0; i < MAX_METALS; i++) {
-                    if (metalTypeIds[i] == null || slagAmounts[i] <= 0) {
-                        continue;
+            List<SmelterReactionData> reactions = SmelterData.getReactionsFor(stack.getItem());
+            if (!reactions.isEmpty()) {
+                SmelterReactionData reaction = findApplicableReaction(reactions);
+                if (reaction != null) {
+                    if (reactionBudget > 0) {
+                        int used = applyReaction(reaction, Math.min(reactionBudget, stack.getCount()));
+                        if (used > 0) {
+                            reactionBudget -= used;
+                            reacted = true;
+                            if (used >= stack.getCount()) {
+                                item.discard();
+                            } else {
+                                item.setStack(stack.copyWithCount(stack.getCount() - used));
+                            }
+                            ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.BLOCKS, 1.0f, 0.8f + world.getRandom().nextFloat() * 0.4f, world.getRandom().nextLong());
+                        }
                     }
-                    Identifier fluxId = SmelterData.getFluxItemId(metalTypeIds[i]);
-                    if (fluxId != null && fluxId.equals(itemId)) {
-                        fluxPerSlot[i] += item.getStack().getCount();
-                        item.discard();
-                        wasFlux = true;
-                        break;
-                    }
+                    continue;
                 }
             }
-            if (!wasFlux && !item.isFireImmune()) {
-                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, this.getWorld().getRandom().nextLong());
-                if (item.getStack().isIn(TagInit.COOLING_ITEMS)) {
+
+            if (!item.isFireImmune()) {
+                ((ServerWorld) world).playSound(null, item.getX(), item.getY(), item.getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, world.getRandom().nextLong());
+                if (stack.isIn(TagInit.COOLING_ITEMS)) {
                     temperatureDecrease += ITEM_COOLING_TEMPERATURE;
                 }
                 item.discard();
             }
         }
 
-        for (int i = 0; i < MAX_METALS; i++) {
-            if (fluxPerSlot[i] > 0 && slagAmounts[i] > 0) {
-                int convert = Math.min(slagAmounts[i], fluxPerSlot[i] * FLUX_CONVERSION_RATE);
-                slagAmounts[i] -= convert;
-                metalAmounts[i] += convert;
-                markFluidDirty();
-                markFluidDirty();
-
-                ((ServerWorld) world).playSound(null, cornerMin.getX() + structureWidth / 2.0, cornerMin.getY() + 0.5, cornerMin.getZ() + structureDepth / 2.0, SoundEvents.ENTITY_GENERIC_EXTINGUISH_FIRE, SoundCategory.BLOCKS, 1.0f, 0.8f + world.getRandom().nextFloat() * 0.4f, world.getRandom().nextLong());
-            }
+        if (reacted) {
+            reactionCooldown = REACTION_INTERVAL;
         }
 
         if (this.temperature > MINIMUM_TEMPERATURE && temperatureDecrease > 0) {
@@ -745,7 +746,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     private void onStructureFormed() {
         if (currentSmelterTypeId != null) {
-            SmelterTypeData smelterType = SmelterData.getAllTypes().stream().filter(type -> type.id().equals(currentSmelterTypeId)).findFirst().orElse(null);
+            SmelterTypeData smelterType = SmelterData.getTypeById(currentSmelterTypeId);
             typeMaxTemperature = (smelterType != null) ? smelterType.maxTemperature() : -1;
         } else {
             typeMaxTemperature = -1;
@@ -1150,5 +1151,94 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     public record DrainResult(int amount, @Nullable Identifier metalTypeId) {
+    }
+
+    @Nullable
+    private SmelterTypeData getCurrentSmelterType() {
+        if (currentSmelterTypeId == null) {
+            return null;
+        }
+        return SmelterData.getTypeById(currentSmelterTypeId);
+    }
+
+    private int getFluidAmount(Identifier metalId, SmelterReactionData.State state) {
+        int slot = getSlotForMetal(metalId);
+        if (slot == -1) {
+            return 0;
+        }
+        return state == SmelterReactionData.State.METAL ? metalAmounts[slot] : slagAmounts[slot];
+    }
+
+    @Nullable
+    private SmelterReactionData findApplicableReaction(List<SmelterReactionData> reactions) {
+        for (SmelterReactionData reaction : reactions) {
+            if (isReactionApplicable(reaction)) {
+                return reaction;
+            }
+        }
+        return null;
+    }
+
+    private boolean isReactionApplicable(SmelterReactionData reaction) {
+        if (temperature < reaction.minTemperature()) {
+            return false;
+        }
+        if (reaction.smelterTypes() != null
+                && (currentSmelterTypeId == null || !reaction.smelterTypes().contains(currentSmelterTypeId))) {
+            return false;
+        }
+        if (getFluidAmount(reaction.fromMetal(), reaction.fromState()) <= 0) {
+            return false;
+        }
+        if (!reaction.toMetal().equals(reaction.fromMetal())) {
+            if (getSlotForMetal(reaction.toMetal()) == -1 && getFirstFreeSlot() == -1) {
+                return false;
+            }
+            SmelterTypeData type = getCurrentSmelterType();
+            if (type != null && !type.allowsMetal(reaction.toMetal())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int applyReaction(SmelterReactionData reaction, int maxItems) {
+        int available = getFluidAmount(reaction.fromMetal(), reaction.fromState());
+        if (available <= 0 || maxItems <= 0) {
+            return 0;
+        }
+        int itemsNeeded = (available + reaction.amountPerItem() - 1) / reaction.amountPerItem();
+        int items = Math.min(maxItems, itemsNeeded);
+        int convert = Math.min(available, items * reaction.amountPerItem());
+
+        int fromSlot = getSlotForMetal(reaction.fromMetal());
+        int toSlot = getSlotForMetal(reaction.toMetal());
+        if (toSlot == -1) {
+            toSlot = getFirstFreeSlot();
+            if (toSlot == -1) {
+                return 0;
+            }
+            metalTypeIds[toSlot] = reaction.toMetal();
+        }
+
+        if (reaction.fromState() == SmelterReactionData.State.METAL) {
+            metalAmounts[fromSlot] -= convert;
+        } else {
+            slagAmounts[fromSlot] -= convert;
+        }
+        if (reaction.toState() == SmelterReactionData.State.METAL) {
+            metalAmounts[toSlot] += convert;
+        } else {
+            slagAmounts[toSlot] += convert;
+        }
+
+        if (fromSlot != toSlot && metalAmounts[fromSlot] <= 0 && slagAmounts[fromSlot] <= 0) {
+            metalTypeIds[fromSlot] = null;
+            metalAmounts[fromSlot] = 0;
+            slagAmounts[fromSlot] = 0;
+        }
+        compactSlots();
+        markFluidDirty();
+        return items;
     }
 }

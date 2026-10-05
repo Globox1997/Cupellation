@@ -1,10 +1,7 @@
 package net.cupellation.network.packet;
 
 import net.cupellation.CupellationMain;
-import net.cupellation.data.FuelData;
-import net.cupellation.data.MetalTypeData;
-import net.cupellation.data.SmelterItemData;
-import net.cupellation.data.SmelterTypeData;
+import net.cupellation.data.*;
 import net.cupellation.misc.GradeRange;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
@@ -17,7 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> metals, List<FuelData> fuels, List<SmelterTypeData> types) implements CustomPayload {
+public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> metals, List<FuelData> fuels, List<SmelterTypeData> types, List<SmelterReactionData> reactions) implements CustomPayload {
 
     public static final CustomPayload.Id<SmelterPacket> PACKET_ID = new CustomPayload.Id<>(CupellationMain.identifierOf("smelter_packet"));
 
@@ -105,6 +102,25 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
 
             buf.writeInt(type.maxTemperature());
         }
+
+        // Reactions
+        buf.writeInt(reactions.size());
+        for (SmelterReactionData r : reactions) {
+            buf.writeIdentifier(r.itemId());
+            buf.writeIdentifier(r.fromMetal());
+            buf.writeEnumConstant(r.fromState());
+            buf.writeIdentifier(r.toMetal());
+            buf.writeEnumConstant(r.toState());
+            buf.writeInt(r.amountPerItem());
+            buf.writeInt(r.minTemperature());
+            buf.writeBoolean(r.smelterTypes() != null);
+            if (r.smelterTypes() != null) {
+                buf.writeInt(r.smelterTypes().size());
+                for (Identifier t : r.smelterTypes()) {
+                    buf.writeIdentifier(t);
+                }
+            }
+        }
     }
 
     private static SmelterPacket read(RegistryByteBuf buf) {
@@ -180,7 +196,28 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             types.add(new SmelterTypeData(typeId, blocks, allowedMetals, maxTemperature));
         }
 
-        return new SmelterPacket(items, metals, fuels, types);
+        int reactionCount = buf.readInt();
+        List<SmelterReactionData> reactions = new ArrayList<>(reactionCount);
+        for (int i = 0; i < reactionCount; i++) {
+            var itemId = buf.readIdentifier();
+            var fromMetal = buf.readIdentifier();
+            var fromState = buf.readEnumConstant(SmelterReactionData.State.class);
+            var toMetal = buf.readIdentifier();
+            var toState = buf.readEnumConstant(SmelterReactionData.State.class);
+            int amount = buf.readInt();
+            int minTemp = buf.readInt();
+            Set<Identifier> smelterTypes = null;
+            if (buf.readBoolean()) {
+                int n = buf.readInt();
+                smelterTypes = new HashSet<>(n);
+                for (int j = 0; j < n; j++) {
+                    smelterTypes.add(buf.readIdentifier());
+                }
+            }
+            reactions.add(new SmelterReactionData(itemId, fromMetal, fromState, toMetal, toState, amount, minTemp, smelterTypes));
+        }
+
+        return new SmelterPacket(items, metals, fuels, types, reactions);
     }
 
     private static void writeNullableGradeRange(RegistryByteBuf buf, GradeRange range) {

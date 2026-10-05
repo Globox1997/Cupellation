@@ -34,12 +34,13 @@ public class CupellationClientPacket {
                     SmelterData.setMetals(metalMap);
                     SmelterData.setFuels(fuelMap);
                     SmelterData.setTypes(typeMap);
+                    SmelterData.setReactions(payload.reactions());
                 })
         );
         ClientPlayNetworking.registerGlobalReceiver(SmelterFluidSyncPacket.PACKET_ID, (payload, context) -> {
             context.client().execute(() -> {
                 ClientWorld world = context.client().world;
-                if (world == null){
+                if (world == null) {
                     return;
                 }
                 if (world.getBlockEntity(payload.pos()) instanceof SmelterBlockEntity blockEntity) {

@@ -134,6 +134,64 @@ Example:
 }
 ```
 
+
+#### Reaction
+Folder: `data/modid/smelter/reactions`  
+Reactions let players throw items into the top of a smelter to convert the molten material inside.
+They can be used for fluxes (slag to metal), for creating alloy-like conversions (metal to another metal)
+or for adding impurities (metal to slag).
+
+A reaction requires the following
+- item: item id or tag (starting with #)
+- from: the fluid which gets consumed
+    - metal: metal id
+    - state: `metal` (molten metal) or `slag`
+- to: the fluid which is created
+    - metal: metal id
+    - state: `metal` or `slag`
+- amount_per_item: how many mB get converted per consumed item
+
+Extra fields for a reaction (not required)
+- min_temperature: minimum temperature the smelter needs to have (default 0)
+- smelter_types: array of smelter type ids in which this reaction works - if missing, it works in all smelter types
+- replace: overrides an existing reaction with the same item, from metal and from state
+
+Example (flux, converts slag back to metal):
+```json
+{
+  "item": "cupellation:quartz_powder",
+  "from": {
+    "metal": "cupellation:netherite",
+    "state": "slag"
+  },
+  "to": {
+    "metal": "cupellation:netherite",
+    "state": "metal"
+  },
+  "amount_per_item": 50
+}
+```
+
+Example (metal to another metal, only in hot smelters):
+```json
+{
+  "item": "minecraft:charcoal",
+  "from": {
+    "metal": "cupellation:iron",
+    "state": "metal"
+  },
+  "to": {
+    "metal": "cupellation:steel",
+    "state": "metal"
+  },
+  "amount_per_item": 36,
+  "min_temperature": 900,
+  "smelter_types": [
+    "cupellation:deepslate_smelter"
+  ]
+}
+```
+
 ### Mod Integration API
 Since v1.0.3, Cupellation provides an API for other mods to register custom smelter blocks and mold types.
 

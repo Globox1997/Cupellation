@@ -66,6 +66,8 @@
   "emi.category.cupellation.smelter": "Smelter",
   "emi.category.cupellation.table_casting": "Table Casting",
   "emi.category.cupellation.basin_casting": "Basin Casting",
+  "emi.category.cupellation.smelter_reaction": "Smelter Reaction",
   "emi.smelter.degree": "%s °C",
-  "emi.smelter.yield": "%s mB"
+  "emi.smelter.yield": "%s mB",
+  "emi.smelter.reaction.rate": "%s mB / Item"
 }

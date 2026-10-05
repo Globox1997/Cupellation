@@ -1,5 +1,5 @@
 ### Added:
-- Patchouli guidebook
+- Reactions mechanic
 ### Fixed:
 - 
 ### Changed:

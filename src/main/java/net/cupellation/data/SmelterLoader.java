@@ -33,6 +33,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         Map<Identifier, MetalTypeData> metals = new HashMap<>();
         Map<Identifier, FuelData> fuels = new HashMap<>();
         Map<Identifier, SmelterTypeData> types = new HashMap<>();
+        Map<String, SmelterReactionData> reactions = new HashMap<>();
 
         resourceManager.findResources("smelter/items", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
             try (InputStream stream = resource.getInputStream()) {
@@ -122,10 +123,38 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                 LOGGER.error("[Smelter] Failed to load type file {}: {}", id, e.toString());
             }
         });
+
+        resourceManager.findResources("smelter/reactions", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
+            try (InputStream stream = resource.getInputStream()) {
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                List<SmelterReactionData> resolved = parseReaction(json, resourceManager, metals);
+                boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
+                for (SmelterReactionData data : resolved) {
+                    String key = data.itemId() + "|" + data.fromMetal() + "|" + data.fromState();
+                    if (!reactions.containsKey(key) || replace) {
+                        reactions.put(key, data);
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.error("[Smelter] Failed to load reaction file {}: {}", id, e.toString());
+            }
+        });
+
+        // Maybe todo: Remove flux field of a metal cause a reaction can be set in the reactions data
+        for (MetalTypeData metal : metals.values()) {
+            if (metal.fluxItemId() == null) {
+                continue;
+            }
+            SmelterReactionData flux = new SmelterReactionData(metal.fluxItemId(), metal.id(), SmelterReactionData.State.SLAG, metal.id(), SmelterReactionData.State.METAL, 50, 0, null);
+            String key = flux.itemId() + "|" + flux.fromMetal() + "|" + flux.fromState();
+            reactions.putIfAbsent(key, flux);
+        }
+
         SmelterData.setFuels(fuels);
         SmelterData.setItems(items);
         SmelterData.setMetals(metals);
         SmelterData.setTypes(types);
+        SmelterData.setReactions(reactions.values());
 
         LOGGER.info("[Smelter] Loaded {} item(s), {} metal type(s).", items.size(), metals.size());
     }
@@ -290,6 +319,71 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         int maxTemperature = json.has("max_temperature") ? json.get("max_temperature").getAsInt() : -1;
 
         return new SmelterTypeData(id, List.copyOf(blocks), allowedMetals, maxTemperature);
+    }
+
+    private List<SmelterReactionData> parseReaction(JsonObject json, ResourceManager resourceManager, Map<Identifier, MetalTypeData> metals) {
+        if (!json.has("item") || !json.has("from") || !json.has("to") || !json.has("amount_per_item")) {
+            LOGGER.warn("[Smelter] Reaction JSON missing required fields, skipping.");
+            return List.of();
+        }
+        JsonObject from = json.getAsJsonObject("from");
+        JsonObject to = json.getAsJsonObject("to");
+        if (!from.has("metal") || !from.has("state") || !to.has("metal") || !to.has("state")) {
+            LOGGER.warn("[Smelter] Reaction 'from'/'to' needs 'metal' and 'state', skipping.");
+            return List.of();
+        }
+
+        Identifier fromMetal = Identifier.of(from.get("metal").getAsString());
+        Identifier toMetal = Identifier.of(to.get("metal").getAsString());
+        SmelterReactionData.State fromState = SmelterReactionData.State.parse(from.get("state").getAsString());
+        SmelterReactionData.State toState = SmelterReactionData.State.parse(to.get("state").getAsString());
+        if (fromState == null || toState == null) {
+            LOGGER.warn("[Smelter] Reaction has invalid state (use 'metal' or 'slag'), skipping.");
+            return List.of();
+        }
+        if (fromMetal.equals(toMetal) && fromState == toState) {
+            LOGGER.warn("[Smelter] Reaction converts {} to itself, skipping.", fromMetal);
+            return List.of();
+        }
+        if (!metals.containsKey(fromMetal) || !metals.containsKey(toMetal)) {
+            LOGGER.warn("[Smelter] Reaction references unknown metal ({} -> {}), skipping.", fromMetal, toMetal);
+            return List.of();
+        }
+
+        int amount = json.get("amount_per_item").getAsInt();
+        if (amount <= 0) {
+            LOGGER.warn("[Smelter] Reaction 'amount_per_item' must be > 0, skipping.");
+            return List.of();
+        }
+        int minTemp = json.has("min_temperature") ? json.get("min_temperature").getAsInt() : 0;
+
+        Set<Identifier> smelterTypes = null;
+        if (json.has("smelter_types")) {
+            smelterTypes = new HashSet<>();
+            for (JsonElement el : json.getAsJsonArray("smelter_types")) {
+                smelterTypes.add(Identifier.of(el.getAsString()));
+            }
+        }
+
+        String entry = json.get("item").getAsString();
+        List<Identifier> items;
+        if (entry.startsWith("#")) {
+            items = resolveItemTag(Identifier.of(entry.substring(1)), resourceManager);
+            if (items.isEmpty()) {
+                LOGGER.warn("[Smelter] Reaction tag {} could not be resolved or is empty.", entry);
+                return List.of();
+            }
+        } else {
+            Identifier itemId = Identifier.of(entry);
+            if (!Registries.ITEM.containsId(itemId)) {
+                LOGGER.warn("[Smelter] Reaction references unknown item: {}, skipping.", entry);
+                return List.of();
+            }
+            items = List.of(itemId);
+        }
+
+        Set<Identifier> types = smelterTypes;
+        return items.stream().map(itemId -> new SmelterReactionData(itemId, fromMetal, fromState, toMetal, toState, amount, minTemp, types)).toList();
     }
 
     private GradeRange parseGradeRange(JsonObject json) {

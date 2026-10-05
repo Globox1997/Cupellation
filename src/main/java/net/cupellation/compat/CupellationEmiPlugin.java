@@ -9,6 +9,7 @@ import net.cupellation.api.CupellationAPI;
 import net.cupellation.api.MoldType;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
+import net.cupellation.data.SmelterReactionData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
 import net.cupellation.item.BrickMoldItem;
@@ -22,6 +23,7 @@ public class CupellationEmiPlugin implements EmiPlugin {
     public static final EmiRecipeCategory SMELTER_CATEGORY = new EmiRecipeCategory(CupellationMain.identifierOf("smelter"), EmiStack.of(BlockInit.DEEPSLATE_BRICK_SMELTER));
     public static final EmiRecipeCategory TABLE_CASTING_CATEGORY = new EmiRecipeCategory(CupellationMain.identifierOf("table_casting"), EmiStack.of(BlockInit.DEEPSLATE_BRICK_CASTING_TABLE));
     public static final EmiRecipeCategory BASIN_CASTING_CATEGORY = new EmiRecipeCategory(CupellationMain.identifierOf("basin_casting"), EmiStack.of(BlockInit.DEEPSLATE_BRICK_CASTING_BASIN));
+    public static final EmiRecipeCategory REACTION_CATEGORY = new EmiRecipeCategory(CupellationMain.identifierOf("smelter_reaction"), EmiStack.of(BlockInit.DEEPSLATE_BRICK_SMELTER));
 
     @Override
     public void register(EmiRegistry registry) {
@@ -92,6 +94,12 @@ public class CupellationEmiPlugin implements EmiPlugin {
                 continue;
             }
             registry.addRecipe(new BasinCastingEmiRecipe(entry.getKey()));
+        }
+
+        registry.addCategory(REACTION_CATEGORY);
+        registry.addWorkstation(REACTION_CATEGORY, EmiStack.of(BlockInit.DEEPSLATE_BRICK_SMELTER));
+        for (SmelterReactionData reaction : SmelterData.allReactions()) {
+            registry.addRecipe(new SmelterReactionEmiRecipe(reaction));
         }
     }
 }

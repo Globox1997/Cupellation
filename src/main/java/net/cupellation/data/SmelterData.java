@@ -15,6 +15,7 @@ public final class SmelterData {
     private static final Map<Identifier, MetalTypeData> METALS = new HashMap<>();
     private static final Map<Identifier, FuelData> FUELS = new HashMap<>();
     private static final Map<Identifier, SmelterTypeData> TYPES = new HashMap<>();
+    private static final Map<Identifier, List<SmelterReactionData>> REACTIONS = new HashMap<>();
 
     private SmelterData() {
     }
@@ -37,6 +38,13 @@ public final class SmelterData {
     public static void setTypes(Map<Identifier, SmelterTypeData> types) {
         TYPES.clear();
         TYPES.putAll(types);
+    }
+
+    public static void setReactions(Collection<SmelterReactionData> reactions) {
+        REACTIONS.clear();
+        for (SmelterReactionData r : reactions) {
+            REACTIONS.computeIfAbsent(r.itemId(), k -> new ArrayList<>()).add(r);
+        }
     }
 
 
@@ -119,6 +127,10 @@ public final class SmelterData {
         return TYPES.values();
     }
 
+    public static List<SmelterReactionData> getReactionsFor(Item item) {
+        return REACTIONS.getOrDefault(Registries.ITEM.getId(item), List.of());
+    }
+
     @Nullable
     public static MetalTypeData findAlloyFor(Set<Identifier> metalIds) {
         if (metalIds.isEmpty()) {
@@ -188,6 +200,11 @@ public final class SmelterData {
         return data != null ? data.maxTemperature() : -1;
     }
 
+    @Nullable
+    public static SmelterTypeData getTypeById(Identifier typeId) {
+        return TYPES.get(typeId);
+    }
+
     public static boolean isSmelterFuel(Item item) {
         return FUELS.containsKey(Registries.ITEM.getId(item));
     }
@@ -206,5 +223,9 @@ public final class SmelterData {
 
     public static Collection<SmelterTypeData> allTypes() {
         return Collections.unmodifiableCollection(TYPES.values());
+    }
+
+    public static Collection<SmelterReactionData> allReactions() {
+        return REACTIONS.values().stream().flatMap(List::stream).toList();
     }
 }

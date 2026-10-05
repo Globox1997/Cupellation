@@ -24,7 +24,8 @@ public class CupellationServerPacket {
         List<MetalTypeData> metals = new ArrayList<>(SmelterData.allMetals());
         List<FuelData> fuels = new ArrayList<>(SmelterData.allFuels());
         List<SmelterTypeData> types = new ArrayList<>(SmelterData.allTypes());
-        ServerPlayNetworking.send(player, new SmelterPacket(items, metals, fuels, types));
+        List<SmelterReactionData> reactions = new ArrayList<>(SmelterData.allReactions());
+        ServerPlayNetworking.send(player, new SmelterPacket(items, metals, fuels, types, reactions));
     }
 
 }
