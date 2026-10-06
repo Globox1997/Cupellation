@@ -311,8 +311,7 @@ A `MoldType` contains the following properties:
 - blacklist: set of blacklisted metal identifiers
 - moldingMetalTypeId (optional): metal used to cast the mold itself from a stamp item
 - strategy (optional): `MoldResultStrategy` which decides the result item for a metal (default: suffix strategy)
-- craftableAsClayMold: if true, a clay mold of this type can be crafted with a stamp item
-- stampItemIds: fixed stamp items for the clay mold (mutually exclusive with `extraOutput`)
+- craftableAsClayMold (optional): a clay mold of this type can be crafted with a stamp item of the given identifier list
 
 Simple example (the short constructor sets `craftableAsClayMold` to the value of `extraOutput`):
 
