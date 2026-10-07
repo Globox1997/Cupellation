@@ -22,12 +22,14 @@ public class ClayImprintEmiRecipe implements EmiRecipe {
     private final Item imprintedClayMold;
     private final MoldType moldType;
     private final Identifier recipeId;
+    private final List<Item> stamps;
 
     public ClayImprintEmiRecipe(Item imprintedClayMold, MoldType moldType) {
         this.blankClayMold = ItemInit.CLAY_MOLD;
         this.imprintedClayMold = imprintedClayMold;
         this.moldType = moldType;
         this.recipeId = CupellationMain.identifierOf("/clay_imprint/" + moldType.suffix());
+        this.stamps = MoldStampFinder.findStamps(moldType);
     }
 
     @Override

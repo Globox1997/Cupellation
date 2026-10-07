@@ -1,6 +1,6 @@
 ### Added:
-- Reactions mechanic
-### Fixed:
 - 
+### Fixed:
+- EMI ingot mold recipe
 ### Changed:
 - 

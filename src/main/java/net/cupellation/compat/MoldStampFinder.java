@@ -1,6 +1,8 @@
 package net.cupellation.compat;
 
 import net.cupellation.api.MoldType;
+import net.cupellation.api.strategy.MoldResultStrategy;
+import net.cupellation.api.strategy.SuffixMoldResultStrategy;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.ItemInit;
 import net.minecraft.item.Item;
@@ -30,6 +32,13 @@ public final class MoldStampFinder {
             }
         }
 
+        MoldResultStrategy strategy = moldType.strategy() != null ? moldType.strategy() : new SuffixMoldResultStrategy();
+        for (Identifier itemId : Registries.ITEM.getIds()) {
+            if (strategy.matches(itemId, moldType.suffix())) {
+                stamps.add(Registries.ITEM.get(itemId));
+            }
+        }
+
         for (Identifier metalTypeId : SmelterData.getAllMetals().keySet()) {
             Identifier candidate = suffixedItemId(metalTypeId, moldType.suffix());
             if (candidate != null) {
@@ -47,16 +56,21 @@ public final class MoldStampFinder {
     }
 
     private static Identifier suffixedItemId(Identifier metalId, String suffix) {
-        String metalName = METAL_NAME_OVERRIDES.getOrDefault(metalId.getPath(), metalId.getPath());
-        String itemPath = metalName + "_" + suffix;
+        String raw = metalId.getPath();
+        String override = METAL_NAME_OVERRIDES.get(raw);
+        List<String> names = override != null ? List.of(override, raw) : List.of(raw);
 
-        Identifier sameNamespace = Identifier.of(metalId.getNamespace(), itemPath);
-        if (Registries.ITEM.containsId(sameNamespace)) {
-            return sameNamespace;
-        }
-        Identifier vanilla = Identifier.ofVanilla(itemPath);
-        if (Registries.ITEM.containsId(vanilla)) {
-            return vanilla;
+        for (String name : names) {
+            String itemPath = name + "_" + suffix;
+
+            Identifier sameNamespace = Identifier.of(metalId.getNamespace(), itemPath);
+            if (Registries.ITEM.containsId(sameNamespace)) {
+                return sameNamespace;
+            }
+            Identifier vanilla = Identifier.ofVanilla(itemPath);
+            if (Registries.ITEM.containsId(vanilla)) {
+                return vanilla;
+            }
         }
         return null;
     }
