@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class SmelterReactionEmiRecipe implements EmiRecipe {
 
@@ -33,8 +34,8 @@ public class SmelterReactionEmiRecipe implements EmiRecipe {
     public SmelterReactionEmiRecipe(SmelterReactionData reaction) {
         this.reaction = reaction;
         this.id = CupellationMain.identifierOf("/smelter_reaction/" + reaction.itemId().toUnderscoreSeparatedString()
-                + "/" + reaction.fromMetal().toUnderscoreSeparatedString() + "_" + reaction.fromState().name().toLowerCase()
-                + "_to_" + reaction.toMetal().toUnderscoreSeparatedString() + "_" + reaction.toState().name().toLowerCase());
+                + "/" + reaction.fromMetal().toUnderscoreSeparatedString() + "_" + reaction.fromState().name().toLowerCase(Locale.ROOT)
+                + "_to_" + reaction.toMetal().toUnderscoreSeparatedString() + "_" + reaction.toState().name().toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -51,7 +52,6 @@ public class SmelterReactionEmiRecipe implements EmiRecipe {
     public List<EmiIngredient> getInputs() {
         List<EmiIngredient> inputs = new ArrayList<>();
         inputs.add(EmiIngredient.of(Ingredient.ofItems(Registries.ITEM.get(reaction.itemId()))));
-        // Barren des Ausgangsmetalls -> Reaktion taucht bei "Verwendungen" des Barrens auf
         Identifier fromIngot = SmelterData.getIngotId(reaction.fromMetal());
         if (fromIngot != null) {
             inputs.add(EmiStack.of(Registries.ITEM.get(fromIngot)));
