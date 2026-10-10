@@ -35,7 +35,7 @@ public record MetalTypeData(Identifier id, String name, int requiredTemp, int co
         int minMultiplier = Integer.MAX_VALUE;
         for (AlloyIngredient ingredient : alloyFrom) {
             Integer available = amounts.get(ingredient.metalId());
-            if (available == null || available <= 0) {
+            if (available == null || available <= 0 || ingredient.parts() <= 0) {
                 return -1;
             }
             int multiplier = available / ingredient.parts();
