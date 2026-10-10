@@ -187,6 +187,9 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
             if (blockEntity instanceof CastingEntity castingEntity) {
                 return castingEntity;
             }
+            if (!world.getBlockState(checkPos).isAir()) {
+                return null;
+            }
         }
         return null;
     }
