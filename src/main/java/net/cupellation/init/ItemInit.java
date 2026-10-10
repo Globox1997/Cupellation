@@ -5,6 +5,7 @@ import net.cupellation.CupellationMain;
 import net.cupellation.api.CupellationAPI;
 import net.cupellation.api.CupellationEntrypoint;
 import net.cupellation.api.MoldType;
+import net.cupellation.data.SmelterData;
 import net.cupellation.item.BrickMoldItem;
 import net.cupellation.item.ClayMoldItem;
 import net.cupellation.item.Handbook;
@@ -27,6 +28,7 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.UnaryOperator;
 
 public class ItemInit {
@@ -35,6 +37,8 @@ public class ItemInit {
     public static final List<Item> BRICK_MOLDS = new ArrayList<>();
     public static final List<Item> MOLDS = new ArrayList<>();
     public static final List<Item> MOLDABLES = new ArrayList<>();
+
+    public static final List<Item> CONSUMED_MOLD_TEMPLATES = new ArrayList<>();
 
     // Item Group
     public static final RegistryKey<ItemGroup> CUPELLATION_ITEM_GROUP = RegistryKey.of(RegistryKeys.ITEM_GROUP, CupellationMain.identifierOf("item_group"));
@@ -47,6 +51,10 @@ public class ItemInit {
     public static final Item CALCITE_POWDER = register("calcite_powder", new Item(new Item.Settings()));
     public static final Item QUARTZ_POWDER = register("quartz_powder", new Item(new Item.Settings()));
     public static final Item CLAY_MOLD = register("clay_mold", new ClayMoldItem(new Item.Settings()));
+
+    public static boolean isGradeable(ItemStack stack) {
+        return stack.isDamageable() || SmelterData.hasItem(stack.getItem()) || stack.isIn(TagInit.GRADEABLE_ITEMS);
+    }
 
     private static <T> ComponentType<T> registerComponent(String id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
         return Registry.register(Registries.DATA_COMPONENT_TYPE, id, builderOperator.apply(ComponentType.builder()).build());
@@ -95,7 +103,7 @@ public class ItemInit {
                 if (!moldType.extraOutput()) {
                     continue;
                 }
-                String material = toolMaterial.toString().toLowerCase();
+                String material = toolMaterial.toString().toLowerCase(Locale.ROOT);
                 if (material.equals("gold")) {
                     material = "golden";
                 }
@@ -105,6 +113,9 @@ public class ItemInit {
                 }
                 Item item = register(material + "_" + moldType.suffix(), new Item(settings));
                 MOLDABLES.add(item);
+                if (toolMaterial == ToolMaterials.STONE) {
+                    CONSUMED_MOLD_TEMPLATES.add(item);
+                }
             }
         }
     }

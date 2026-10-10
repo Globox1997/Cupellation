@@ -26,21 +26,21 @@ public class LootTableMixin {
     // lambda injection
     @Inject(method = "method_331", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 0))
     private static void processStacksMixin(ServerWorld world, Consumer<ItemStack> lootConsumer, ItemStack itemStack, CallbackInfo info) {
-        if (!world.isClient() && ConfigInit.CONFIG.lootItemGrade) {
+        if (!world.isClient() && ConfigInit.CONFIG.lootItemGrade && ItemInit.isGradeable(itemStack)) {
             itemStack.set(ItemInit.QUALITY_GRADE, 1);
         }
     }
 
     @Inject(method = "method_331", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V", ordinal = 1), locals = LocalCapture.CAPTURE_FAILSOFT)
     private static void processStacksMixin(ServerWorld world, Consumer<ItemStack> lootConsumer, ItemStack itemStack, CallbackInfo info, int i, ItemStack itemStack2) {
-        if (!world.isClient() && ConfigInit.CONFIG.lootItemGrade) {
+        if (!world.isClient() && ConfigInit.CONFIG.lootItemGrade && ItemInit.isGradeable(itemStack2)) {
             itemStack2.set(ItemInit.QUALITY_GRADE, 1);
         }
     }
 
     @Inject(method = "supplyInventory", at = @At(value = "INVOKE", target = "Lnet/minecraft/inventory/Inventory;setStack(ILnet/minecraft/item/ItemStack;)V", ordinal = 1), locals = LocalCapture.CAPTURE_FAILSOFT)
     private void supplyInventoryMixin(Inventory inventory, LootContextParameterSet parameters, long seed, CallbackInfo info, LootContext lootContext, ObjectArrayList<ItemStack> objectArrayList, Random random, List<Integer> list, ObjectListIterator<ItemStack> var9, ItemStack itemStack) {
-        if (!lootContext.getWorld().isClient() && ConfigInit.CONFIG.lootItemGrade) {
+        if (!lootContext.getWorld().isClient() && ConfigInit.CONFIG.lootItemGrade && ItemInit.isGradeable(itemStack)) {
             itemStack.set(ItemInit.QUALITY_GRADE, 1);
         }
     }
