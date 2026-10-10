@@ -13,9 +13,11 @@ import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
@@ -37,7 +39,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
 
         resourceManager.findResources("smelter/items", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
                 List<SmelterItemData> resolved = parseItem(json, resourceManager);
                 if (resolved.isEmpty()) {
                     return;
@@ -57,7 +59,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
 
         resourceManager.findResources("smelter/metals", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
                 MetalTypeData data = parseMetal(json);
                 if (data == null) {
                     return;
@@ -82,7 +84,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
 
         resourceManager.findResources("smelter/fuels", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
                 List<FuelData> resolved = parseFuel(json, resourceManager);
                 if (resolved.isEmpty()) {
                     return;
@@ -108,7 +110,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
 
         resourceManager.findResources("smelter/types", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
                 SmelterTypeData data = parseSmelterType(json, resourceManager);
                 if (data == null) {
                     return;
@@ -126,7 +128,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
 
         resourceManager.findResources("smelter/reactions", id -> id.getPath().endsWith(".json")).forEach((id, resource) -> {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
                 List<SmelterReactionData> resolved = parseReaction(json, resourceManager, metals);
                 boolean replace = json.has("replace") && json.get("replace").getAsBoolean();
                 for (SmelterReactionData data : resolved) {
@@ -199,6 +201,10 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         Identifier metalType = Identifier.of(json.get("metal_type").getAsString());
         int smeltTime = json.get("smelt_time").getAsInt();
         int yield = json.get("yield").getAsInt();
+        if (smeltTime < 0 || yield <= 0) {
+            LOGGER.warn("[Smelter] Item JSON {} needs 'smelt_time' >= 0 and 'yield' > 0, skipping.", json.get("item").getAsString());
+            return List.of();
+        }
         String entry = json.get("item").getAsString();
 
         if (entry.startsWith("#")) {
@@ -231,7 +237,12 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         if (json.has("alloy_from")) {
             for (JsonElement jsonElement : json.getAsJsonArray("alloy_from")) {
                 JsonObject entry = jsonElement.getAsJsonObject();
-                alloyFrom.add(new MetalTypeData.AlloyIngredient(Identifier.of(entry.get("metal").getAsString()), entry.get("parts").getAsInt()));
+                int parts = entry.get("parts").getAsInt();
+                if (parts <= 0) {
+                    LOGGER.warn("[Smelter] Metal {} has alloy ingredient with 'parts' <= 0, skipping metal.", json.get("id").getAsString());
+                    return null;
+                }
+                alloyFrom.add(new MetalTypeData.AlloyIngredient(Identifier.of(entry.get("metal").getAsString()), parts));
             }
         }
         Identifier ingotId = null;
@@ -246,7 +257,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         Identifier blockId = null;
         if (json.has("block")) {
             blockId = Identifier.of(json.get("block").getAsString());
-            if (!Registries.ITEM.containsId(blockId)) {
+            if (!Registries.BLOCK.containsId(blockId)) {
                 LOGGER.warn("[Smelter] Metal JSON references unknown block: {}, skipping.", json.get("block").getAsString());
                 blockId = null;
             }
@@ -394,6 +405,15 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         return (int) Long.parseLong(hex.replace("#", ""), 16);
     }
 
+    @Nullable
+    private static String getTagEntryId(JsonElement element) {
+        if (element.isJsonObject()) {
+            JsonObject object = element.getAsJsonObject();
+            return object.has("id") ? object.get("id").getAsString() : null;
+        }
+        return element.getAsString();
+    }
+
     private List<Identifier> resolveItemTag(Identifier tagId, ResourceManager resourceManager) {
         return resolveItemTag(tagId, resourceManager, new HashSet<>());
     }
@@ -419,7 +439,7 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
 
         for (Resource resource : resources) {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
 
                 if (json.has("replace") && json.get("replace").getAsBoolean()) {
                     result.clear();
@@ -430,7 +450,10 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                 }
                 JsonArray values = json.getAsJsonArray("values");
                 for (JsonElement element : values) {
-                    String entry = element.getAsString();
+                    String entry = getTagEntryId(element);
+                    if (entry == null) {
+                        continue;
+                    }
 
                     if (entry.startsWith("#")) {
                         Identifier nestedTag = Identifier.of(entry.substring(1));
@@ -472,11 +495,14 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
         }
         for (Resource resource : resources) {
             try (InputStream stream = resource.getInputStream()) {
-                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonObject();
+                JsonObject json = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
                 if (json.has("replace") && json.get("replace").getAsBoolean()) result.clear();
                 if (!json.has("values")) continue;
                 for (JsonElement el : json.getAsJsonArray("values")) {
-                    String entry = el.getAsString();
+                    String entry = getTagEntryId(el);
+                    if (entry == null) {
+                        continue;
+                    }
                     if (entry.startsWith("#")) {
                         result.addAll(resolveBlockTag(Identifier.of(entry.substring(1)), resourceManager, visited));
                     } else {
