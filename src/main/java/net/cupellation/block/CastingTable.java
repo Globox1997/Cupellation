@@ -18,6 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.shape.VoxelShape;
@@ -77,6 +78,11 @@ public class CastingTable extends BlockWithEntity {
         }
 
         ItemStack heldItem = player.getMainHandStack();
+
+        if (player.isSneaking() && heldItem.isEmpty() && table.tryDiscardMolten()) {
+            world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5f, 1f);
+            return ActionResult.SUCCESS;
+        }
 
         if (!table.isFilling() && table.getMoltenAmount() <= 0) {
             if (!heldItem.isEmpty() && heldItem.getItem() instanceof ClayMoldItem && table.tryInsertClayMold(heldItem)) {
@@ -142,6 +148,14 @@ public class CastingTable extends BlockWithEntity {
         }
 
         return ActionResult.PASS;
+    }
+
+    @Override
+    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.isOf(newState.getBlock()) && !world.isClient() && world.getBlockEntity(pos) instanceof CastingTableEntity table) {
+            ItemScatterer.spawn(world, pos, table.getDroppedStacks());
+        }
+        super.onStateReplaced(state, world, pos, newState, moved);
     }
 
     @Override

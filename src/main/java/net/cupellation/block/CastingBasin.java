@@ -68,6 +68,10 @@ public class CastingBasin extends BlockWithEntity {
         if (!(world.getBlockEntity(pos) instanceof CastingBasinEntity basin)) {
             return ActionResult.PASS;
         }
+        if (player.isSneaking() && player.getMainHandStack().isEmpty() && basin.tryDiscardMolten()) {
+            world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 1.0F);
+            return ActionResult.SUCCESS;
+        }
         ItemStack result = basin.tryExtract();
         if (!result.isEmpty()) {
             world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0F, 1.0F);
