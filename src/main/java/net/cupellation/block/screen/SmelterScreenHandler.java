@@ -4,7 +4,6 @@ import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.network.packet.SmelterScreenPacket;
-import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -88,16 +87,21 @@ public class SmelterScreenHandler extends ScreenHandler {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (AbstractFurnaceBlockEntity.canUseAsFuel(originalStack)) {
-                    if (!this.insertItem(originalStack, 0, 1, false)) {
-                        return ItemStack.EMPTY;
+                boolean moved = false;
+                if (SmelterData.getFuelData(originalStack.getItem()) != null) {
+                    moved = this.insertItem(originalStack, 0, 1, false);
+                }
+                if (!moved && SmelterData.hasItem(originalStack.getItem())) {
+                    moved = this.insertItem(originalStack, 1, 4, false);
+                }
+                if (!moved) {
+                    if (slotIndex < 31) {
+                        moved = this.insertItem(originalStack, 31, 40, false);
+                    } else {
+                        moved = this.insertItem(originalStack, 4, 31, false);
                     }
-
-                } else if (SmelterData.hasItem(originalStack.getItem())) {
-                    if (!this.insertItem(originalStack, 1, 4, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else {
+                }
+                if (!moved) {
                     return ItemStack.EMPTY;
                 }
             }
