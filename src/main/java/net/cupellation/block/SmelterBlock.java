@@ -21,6 +21,7 @@ import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -100,8 +101,8 @@ public class SmelterBlock extends BlockWithEntity {
         Direction facing = state.get(SmelterBlock.FACING);
         Direction right = facing.rotateYCounterclockwise();
 
-        int innerW = smelter.getStructureWidth() - 2;
-        int innerD = smelter.getStructureDepth() - 2;
+        int innerW = Math.max(1, smelter.getStructureWidth() - 2);
+        int innerD = Math.max(1, smelter.getStructureDepth() - 2);
 
         int rx = random.nextInt(innerW);
         int rz = random.nextInt(innerD);
@@ -127,7 +128,7 @@ public class SmelterBlock extends BlockWithEntity {
     @Override
     public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
         if (!world.isClient()) {
-            boolean powered = world.isReceivingRedstonePower(pos) || isNeighborPowered(world, pos);
+            boolean powered = world.isReceivingRedstonePower(pos);
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity) {
                 smelterBlockEntity.setRedstonePowered(powered);
@@ -137,23 +138,16 @@ public class SmelterBlock extends BlockWithEntity {
 
     @Override
     protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        super.onStateReplaced(state, world, pos, newState, moved);
         if (!state.isOf(newState.getBlock())) {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof SmelterBlockEntity smelterBlockEntity) {
+                if (!world.isClient()) {
+                    ItemScatterer.spawn(world, pos, smelterBlockEntity);
+                }
                 smelterBlockEntity.onStructureDestroyed();
             }
         }
-    }
-
-    private boolean isNeighborPowered(World world, BlockPos pos) {
-        for (Direction direction : Direction.values()) {
-            BlockPos neighborPos = pos.offset(direction);
-            if (world.isReceivingRedstonePower(neighborPos)) {
-                return true;
-            }
-        }
-        return false;
+        super.onStateReplaced(state, world, pos, newState, moved);
     }
 
 }
