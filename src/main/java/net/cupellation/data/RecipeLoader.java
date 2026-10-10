@@ -19,6 +19,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 public class RecipeLoader extends FabricRecipeProvider {
@@ -33,7 +34,7 @@ public class RecipeLoader extends FabricRecipeProvider {
             if (material == ToolMaterials.WOOD) {
                 continue;
             }
-            String materialName = material.toString().toLowerCase();
+            String materialName = material.toString().toLowerCase(Locale.ROOT);
             String recipeMaterial = materialName.equals("gold") ? "golden" : materialName;
 
             for (MoldType moldType : CupellationAPI.getMoldTypes()) {
