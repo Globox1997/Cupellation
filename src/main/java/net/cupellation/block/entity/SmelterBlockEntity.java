@@ -8,6 +8,7 @@ import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.network.packet.SmelterFluidSyncPacket;
 import net.cupellation.network.packet.SmelterScreenPacket;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.Block;
@@ -21,6 +22,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
@@ -44,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.stream.IntStream;
 
-public class SmelterBlockEntity extends BlockEntity implements Inventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
+public class SmelterBlockEntity extends BlockEntity implements SidedInventory, ExtendedScreenHandlerFactory<SmelterScreenPacket> {
 
     private final DefaultedList<ItemStack> inventory;
 
@@ -81,6 +83,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private int temperature = 0;
     private int maxTemperature = 0;
     private int typeMaxTemperature = -1;
+    private float temperatureRemainder = 0f;
     private static final float TEMP_RISE_RATE = 1.5f;
     private static final float TEMP_DECAY_RATE = 0.5f;
 
@@ -93,6 +96,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     private static final int REACTION_INTERVAL = 10;
     private static final int REACTION_ITEMS_PER_STEP = 2;
     private int reactionCooldown = 0;
+
+    private static final int[] INPUT_SLOTS = new int[]{1, 2, 3};
+    private static final int[] FUEL_SLOTS = new int[]{0};
 
     private final int[] smeltProgress = new int[3];
     private final int[] smeltTotal = new int[3];
@@ -178,7 +184,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         maxFuelTime = nbt.getInt("maxFuelTime");
         temperature = nbt.getInt("temperature");
         maxTemperature = nbt.getInt("maxTemperature");
-        typeMaxTemperature = nbt.getInt("typeMaxTemperature");
+        typeMaxTemperature = nbt.contains("typeMaxTemperature") ? nbt.getInt("typeMaxTemperature") : -1;
         redstonePowered = nbt.getBoolean("redstonePowered");
 
         for (int i = 0; i < 3; i++) {
@@ -268,11 +274,24 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         } else {
             validateCooldown = VALIDATE_INTERVAL;
             boolean wasFormed = isFormed;
+            BlockPos oldCorner = cornerMin;
+            int oldWidth = structureWidth;
+            int oldDepth = structureDepth;
+            int oldHeight = structureHeight;
+            Identifier oldTypeId = currentSmelterTypeId;
+
             isFormed = validateStructure();
+            redstonePowered = world.isReceivingRedstonePower(pos);
             if (wasFormed && !isFormed) {
                 onStructureDestroyed();
             }
             if (!wasFormed && isFormed) {
+                onStructureFormed();
+            }
+            if (wasFormed && isFormed && (!oldCorner.equals(cornerMin) || oldWidth != structureWidth || oldDepth != structureDepth || oldHeight != structureHeight
+                    || !Objects.equals(oldTypeId, currentSmelterTypeId))) {
+                clearLightBlocks(oldCorner, oldWidth, oldDepth, oldHeight);
+                lastFilledLayers = -1;
                 onStructureFormed();
             }
         }
@@ -316,9 +335,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
         if (fluidDirty) {
             fluidDirty = false;
-            if (world instanceof ServerWorld serverWorld) {
+            if (world instanceof ServerWorld) {
                 SmelterFluidSyncPacket packet = SmelterFluidSyncPacket.from(this);
-                serverWorld.getPlayers().forEach(player -> ServerPlayNetworking.send(player, packet));
+                PlayerLookup.tracking(this).forEach(player -> ServerPlayNetworking.send(player, packet));
             }
         }
         if (world.getRandom().nextInt(10) == 0 && world.isRaining()) {
@@ -341,8 +360,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         Direction facing = getCachedState().get(SmelterBlock.FACING);
         Direction right = facing.rotateYCounterclockwise();
 
-        int innerW = structureWidth - 2;
-        int innerD = structureDepth - 2;
+        int innerW = Math.max(1, structureWidth - 2);
+        int innerD = Math.max(1, structureDepth - 2);
 
         int rx = world.getRandom().nextInt(innerW);
         int rz = world.getRandom().nextInt(innerD);
@@ -351,17 +370,25 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private void tickTemperature() {
-        if (fuelTime > 0) {
-            if (temperature < maxTemperature) {
-                temperature = Math.min(maxTemperature, (int) (temperature + TEMP_RISE_RATE));
-            } else if (temperature > maxTemperature) {
-                temperature = Math.max(maxTemperature, (int) (temperature - TEMP_DECAY_RATE));
-            }
+        int target;
+        float change;
+        if (fuelTime > 0 && temperature < maxTemperature) {
+            target = maxTemperature;
+            change = TEMP_RISE_RATE;
+        } else if (fuelTime > 0 && temperature > maxTemperature) {
+            target = maxTemperature;
+            change = -TEMP_DECAY_RATE;
+        } else if (fuelTime <= 0 && temperature > 0) {
+            target = 0;
+            change = -TEMP_DECAY_RATE;
         } else {
-            if (temperature > 0) {
-                temperature = Math.max(0, (int) (temperature - TEMP_DECAY_RATE));
-            }
+            temperatureRemainder = 0f;
+            return;
         }
+        temperatureRemainder += change;
+        int step = (int) temperatureRemainder;
+        temperatureRemainder -= step;
+        temperature = change > 0 ? Math.min(target, temperature + step) : Math.max(target, temperature + step);
     }
 
     private void tryConsumeFuel() {
@@ -421,7 +448,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
         Set<Identifier> present = getPresentMetals();
         if (!present.contains(itemMetalType)) {
-            if (!SmelterData.canAddMetal(present, itemMetalType)) {
+            if (!SmelterData.canAddMetal(present, itemMetalType) || getFirstFreeSlot() == -1) {
                 smeltProgress[slotIndex] = 0;
                 return;
             }
@@ -493,7 +520,14 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
         MetalTypeData alloy = SmelterData.findAlloyFor(present);
 
-        if (alloy == null) {
+        if (alloy == null || temperature < alloy.requiredTemp()) {
+            return;
+        }
+        SmelterTypeData smelterType = getCurrentSmelterType();
+        if (smelterType != null && !smelterType.allowsMetal(alloy.id())) {
+            return;
+        }
+        if (getSlotForMetal(alloy.id()) == -1 && getFirstFreeSlot() == -1) {
             return;
         }
         Map<Identifier, Integer> amounts = new HashMap<>();
@@ -510,6 +544,9 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         int totalPartsPerUnit = 0;
         for (MetalTypeData.AlloyIngredient ingredient : alloy.alloyFrom()) {
             totalPartsPerUnit += ingredient.parts();
+        }
+        if (totalPartsPerUnit <= 0) {
+            return;
         }
         int maxMultiplier = Math.max(1, ALLOY_MB_PER_TICK / totalPartsPerUnit);
         multiplier = Math.min(multiplier, maxMultiplier);
@@ -550,11 +587,8 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
         }
 
         int alloySlot = getSlotForMetal(alloy.id());
-        if (alloySlot == -1) alloySlot = getFirstFreeSlot();
         if (alloySlot == -1) {
-            compactSlots();
-            markFluidDirty();
-            return;
+            alloySlot = getFirstFreeSlot();
         }
 
         metalTypeIds[alloySlot] = alloy.id();
@@ -676,7 +710,11 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
             detectingType = SmelterData.getSmelterTypeForBlock(blockId);
         }
 
-        for (int w = ConfigInit.CONFIG.smelterMaxWidth; w >= 5; w -= 2) {
+        int maxWidth = ConfigInit.CONFIG.smelterMaxWidth;
+        if (maxWidth % 2 == 0) {
+            maxWidth--;
+        }
+        for (int w = maxWidth; w >= 5; w -= 2) {
             for (int d = ConfigInit.CONFIG.smelterMaxWidth; d >= 5; d--) {
                 for (int h = ConfigInit.CONFIG.smelterMaxHeight; h >= 1; h--) {
                     int halfWidth = (w - 1) / 2;
@@ -814,8 +852,34 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     @Override
+    public boolean isValid(int slot, ItemStack stack) {
+        if (slot == 0) {
+            return SmelterData.getFuelData(stack.getItem()) != null;
+        }
+        return SmelterData.hasItem(stack.getItem());
+    }
+
+    @Override
+    public int[] getAvailableSlots(Direction side) {
+        if (side == Direction.UP) {
+            return INPUT_SLOTS;
+        }
+        return FUEL_SLOTS;
+    }
+
+    @Override
+    public boolean canInsert(int slot, ItemStack stack, @Nullable Direction dir) {
+        return isValid(slot, stack);
+    }
+
+    @Override
+    public boolean canExtract(int slot, ItemStack stack, Direction dir) {
+        return dir == Direction.DOWN && slot == 0 && SmelterData.getFuelData(stack.getItem()) == null;
+    }
+
+    @Override
     public boolean canPlayerUse(PlayerEntity player) {
-        return true;
+        return Inventory.canPlayerUse(this, player);
     }
 
     @Override
@@ -1067,19 +1131,23 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
     }
 
     private void clearLightBlocks() {
+        clearLightBlocks(cornerMin, structureWidth, structureDepth, structureHeight);
+    }
+
+    private void clearLightBlocks(BlockPos corner, int width, int depth, int height) {
         if (world == null || world.isClient()) {
             return;
         }
         Direction facing = getCachedState().get(SmelterBlock.FACING);
         Direction right = facing.rotateYCounterclockwise();
 
-        int innerW = Math.max(1, structureWidth - 2);
-        int innerD = Math.max(1, structureDepth - 2);
+        int innerW = Math.max(1, width - 2);
+        int innerD = Math.max(1, depth - 2);
 
-        for (int y = 0; y < structureHeight; y++) {
+        for (int y = 0; y < height; y++) {
             for (int x = 0; x < innerW; x++) {
                 for (int z = 0; z < innerD; z++) {
-                    BlockPos lightPos = cornerMin.offset(right, 1 + x).offset(facing.getOpposite(), 1 + z).up(y);
+                    BlockPos lightPos = corner.offset(right, 1 + x).offset(facing.getOpposite(), 1 + z).up(y);
 
                     if (world.getBlockState(lightPos).isOf(Blocks.LIGHT)) {
                         world.setBlockState(lightPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_LISTENERS);
@@ -1091,7 +1159,7 @@ public class SmelterBlockEntity extends BlockEntity implements Inventory, Extend
 
     public void markFluidDirty() {
         fluidDirty = true;
-        markDirty();
+        super.markDirty();
     }
 
     public void applyFluidSync(SmelterFluidSyncPacket packet) {

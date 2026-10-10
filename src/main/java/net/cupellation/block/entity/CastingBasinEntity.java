@@ -5,16 +5,11 @@ import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
-import net.cupellation.init.SoundInit;
 import net.cupellation.misc.CastingEntity;
+import net.cupellation.misc.CastingSoundHelper;
 import net.cupellation.misc.MoltenHelper;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
@@ -27,7 +22,6 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
 public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
@@ -46,9 +40,6 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
-    @Nullable
-    private SoundInstance casting = null;
-
     public CastingBasinEntity(BlockPos pos, BlockState state) {
         super(BlockInit.CASTING_BASIN_ENTITY, pos, state);
     }
@@ -61,7 +52,6 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         blockEntity.serverTick(world);
     }
 
-    @Environment(EnvType.CLIENT)
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;
@@ -69,19 +59,21 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
                 this.cooled = true;
             }
         }
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (this.filling) {
-            if (this.casting == null) {
-                this.casting = new PositionedSoundInstance(SoundInit.CASTING_EVENT, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, world.getRandom(), pos.getX(), pos.getY(), pos.getZ());
-                client.getSoundManager().play(this.casting);
-            }
-        } else if (this.casting != null && client.getSoundManager().isPlaying(this.casting)) {
-            client.getSoundManager().stop(this.casting);
-            this.casting = null;
+        CastingSoundHelper.tick(this, this.filling);
+    }
+
+    @Override
+    public void markRemoved() {
+        super.markRemoved();
+        if (world != null && world.isClient()) {
+            CastingSoundHelper.stop(this);
         }
     }
 
     private void serverTick(World world) {
+        if (!filling && cooldownTicks <= 0 && moltenAmount > 0 && moltenAmount >= CAPACITY && !cooled) {
+            startCooling();
+        }
         if (filling && linkedSmelterPos != null && !cooled) {
             if (moltenAmount >= CAPACITY) {
                 startCooling();
@@ -92,17 +84,11 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             BlockEntity blockEntity = world.getBlockEntity(linkedSmelterPos);
             if (!(blockEntity instanceof SmelterBlockEntity smelter)) {
                 stopFilling(world);
-                if (moltenAmount > 0) {
-                    startCooling();
-                }
                 return;
             }
 
             if (smelter.getTotalMoltenMetal() <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) {
-                    startCooling();
-                }
                 return;
             }
 
@@ -124,7 +110,6 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
             if (actual <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) startCooling();
                 return;
             }
 
@@ -143,6 +128,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             }
 
             moltenAmount += actual;
+            cachedGrade = MoltenHelper.getGrade(world, linkedSmelterPos, metalTypeId);
             markDirty();
         }
 
@@ -228,6 +214,18 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         markDirty();
 
         return result;
+    }
+
+    public boolean tryDiscardMolten() {
+        if (filling || cooldownTicks > 0 || moltenAmount <= 0 || moltenAmount >= CAPACITY) {
+            return false;
+        }
+        moltenAmount = 0;
+        metalTypeId = null;
+        cooled = false;
+        cachedGrade = 1;
+        markDirty();
+        return true;
     }
 
     public int getMoltenAmount() {
