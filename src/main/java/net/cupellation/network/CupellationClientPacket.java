@@ -18,6 +18,9 @@ public class CupellationClientPacket {
 
     public static void init() {
         ClientPlayNetworking.registerGlobalReceiver(SmelterPacket.PACKET_ID, (payload, context) -> context.client().execute(() -> {
+                    if (context.client().isIntegratedServerRunning()) {
+                        return;
+                    }
                     Map<Identifier, SmelterItemData> itemMap = new HashMap<>();
                     payload.items().forEach(d -> itemMap.put(d.itemId(), d));
 
