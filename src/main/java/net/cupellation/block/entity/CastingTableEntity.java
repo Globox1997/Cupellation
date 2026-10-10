@@ -8,18 +8,14 @@ import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ItemInit;
-import net.cupellation.init.SoundInit;
+import net.cupellation.init.TagInit;
 import net.cupellation.item.ClayMoldItem;
 import net.cupellation.item.MoldItem;
 import net.cupellation.misc.CastingEntity;
+import net.cupellation.misc.CastingSoundHelper;
 import net.cupellation.misc.MoltenHelper;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
-import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -31,9 +27,9 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
 public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
@@ -55,9 +51,6 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
-    @Nullable
-    private SoundInstance casting = null;
-
     public CastingTableEntity(BlockPos pos, BlockState state) {
         super(BlockInit.CASTING_TABLE_ENTITY, pos, state);
     }
@@ -70,24 +63,25 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         blockEntity.serverTick(world);
     }
 
-    @Environment(EnvType.CLIENT)
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;
         }
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (this.filling) {
-            if (this.casting == null) {
-                this.casting = new PositionedSoundInstance(SoundInit.CASTING_EVENT, SoundCategory.BLOCKS, 1.0f, 0.9F + world.getRandom().nextFloat() * 0.15F, world.getRandom(), pos.getX(), pos.getY(), pos.getZ());
-                client.getSoundManager().play(this.casting);
-            }
-        } else if (this.casting != null && client.getSoundManager().isPlaying(this.casting)) {
-            client.getSoundManager().stop(this.casting);
-            this.casting = null;
+        CastingSoundHelper.tick(this, this.filling);
+    }
+
+    @Override
+    public void markRemoved() {
+        super.markRemoved();
+        if (world != null && world.isClient()) {
+            CastingSoundHelper.stop(this);
         }
     }
 
     private void serverTick(World world) {
+        if (!filling && cooldownTicks <= 0 && moltenAmount > 0 && moltenAmount >= getCapacity()) {
+            startCooling();
+        }
         if (filling) {
             if (result.isEmpty() && mold.isEmpty()) {
                 stopFilling(world);
@@ -109,17 +103,11 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             BlockEntity blockEntity = world.getBlockEntity(linkedSmelterPos);
             if (!(blockEntity instanceof SmelterBlockEntity smelter)) {
                 stopFilling(world);
-                if (moltenAmount > 0) {
-                    startCooling();
-                }
                 return;
             }
 
             if (smelter.getTotalMoltenMetal() <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) {
-                    startCooling();
-                }
                 return;
             }
 
@@ -141,9 +129,6 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
             if (actual <= 0) {
                 stopFilling(world);
-                if (moltenAmount > 0) {
-                    startCooling();
-                }
                 return;
             }
 
@@ -161,13 +146,15 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 }
             }
             moltenAmount += actual;
+            cachedGrade = MoltenHelper.getGrade(world, linkedSmelterPos, metalTypeId);
             markDirty();
         }
 
         if (cooldownTicks > 0) {
             cooldownTicks--;
             if (cooldownTicks == 0) {
-                if (mold.isEmpty() && !result.isEmpty()) {
+                boolean fullCast = moltenAmount >= getCapacity();
+                if (fullCast && mold.isEmpty() && !result.isEmpty()) {
                     Identifier resultId = Registries.ITEM.getId(result.getItem());
                     MoldItem targetMold = MoldItem.findMoldForItem(resultId);
                     if (targetMold == null) {
@@ -178,12 +165,12 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                         markDirty();
                         return;
                     }
-                    if (result.getItem().toString().contains("stone_")) {
+                    if (result.isIn(TagInit.CONSUMED_MOLD_TEMPLATES) || ItemInit.CONSUMED_MOLD_TEMPLATES.contains(result.getItem())) {
                         result = ItemStack.EMPTY;
                         ((ServerWorld) world).playSound(null, this.getPos().getX(), this.getPos().getY(), this.getPos().getZ(), SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.BLOCKS, 1.0f, 1.0f, this.getWorld().getRandom().nextLong());
                     }
                     mold = new ItemStack(targetMold);
-                } else if (!mold.isEmpty() && result.isEmpty()) {
+                } else if (fullCast && !mold.isEmpty() && result.isEmpty()) {
                     if (mold.getItem() instanceof MoldItem moldItem) {
                         Identifier resultItemId = moldItem.resolveResultId(metalTypeId);
                         if (resultItemId == null || !Registries.ITEM.containsId(resultItemId)) {
@@ -338,13 +325,24 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
 
     public ItemStack tryExtractResult() {
-        if (!result.isEmpty() && !filling || moltenAmount > 0) {
+        if (!result.isEmpty() && !filling && moltenAmount <= 0) {
             ItemStack out = result.copy();
             result = ItemStack.EMPTY;
             markDirty();
             return out;
         }
         return ItemStack.EMPTY;
+    }
+
+    public boolean tryDiscardMolten() {
+        if (filling || cooldownTicks > 0 || moltenAmount <= 0) {
+            return false;
+        }
+        moltenAmount = 0;
+        metalTypeId = null;
+        cachedGrade = 1;
+        markDirty();
+        return true;
     }
 
     public boolean tryInsertClayMold(ItemStack stack) {
@@ -401,6 +399,16 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
         clayMold = ItemStack.EMPTY;
         markDirty();
         return out;
+    }
+
+    public DefaultedList<ItemStack> getDroppedStacks() {
+        DefaultedList<ItemStack> stacks = DefaultedList.of();
+        for (ItemStack stack : new ItemStack[]{result, mold, clayMold}) {
+            if (!stack.isEmpty()) {
+                stacks.add(stack.copy());
+            }
+        }
+        return stacks;
     }
 
     public ItemStack getClayMold() {
