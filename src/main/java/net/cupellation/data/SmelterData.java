@@ -11,40 +11,38 @@ import java.util.stream.Collectors;
 
 public final class SmelterData {
 
-    private static final Map<Identifier, SmelterItemData> ITEMS = new HashMap<>();
-    private static final Map<Identifier, MetalTypeData> METALS = new HashMap<>();
-    private static final Map<Identifier, FuelData> FUELS = new HashMap<>();
-    private static final Map<Identifier, SmelterTypeData> TYPES = new HashMap<>();
-    private static final Map<Identifier, List<SmelterReactionData>> REACTIONS = new HashMap<>();
+    private static volatile Map<Identifier, SmelterItemData> ITEMS = Map.of();
+    private static volatile Map<Identifier, MetalTypeData> METALS = Map.of();
+    private static volatile Map<Identifier, FuelData> FUELS = Map.of();
+    private static volatile Map<Identifier, SmelterTypeData> TYPES = Map.of();
+    private static volatile Map<Identifier, List<SmelterReactionData>> REACTIONS = Map.of();
 
     private SmelterData() {
     }
 
     public static void setItems(Map<Identifier, SmelterItemData> items) {
-        ITEMS.clear();
-        ITEMS.putAll(items);
+        ITEMS = Map.copyOf(items);
     }
 
     public static void setMetals(Map<Identifier, MetalTypeData> metals) {
-        METALS.clear();
-        METALS.putAll(metals);
+        METALS = Map.copyOf(metals);
     }
 
     public static void setFuels(Map<Identifier, FuelData> fuels) {
-        FUELS.clear();
-        FUELS.putAll(fuels);
+        FUELS = Map.copyOf(fuels);
     }
 
     public static void setTypes(Map<Identifier, SmelterTypeData> types) {
-        TYPES.clear();
-        TYPES.putAll(types);
+        TYPES = Map.copyOf(types);
     }
 
     public static void setReactions(Collection<SmelterReactionData> reactions) {
-        REACTIONS.clear();
+        Map<Identifier, List<SmelterReactionData>> map = new HashMap<>();
         for (SmelterReactionData r : reactions) {
-            REACTIONS.computeIfAbsent(r.itemId(), k -> new ArrayList<>()).add(r);
+            map.computeIfAbsent(r.itemId(), k -> new ArrayList<>()).add(r);
         }
+        map.replaceAll((k, v) -> List.copyOf(v));
+        REACTIONS = Map.copyOf(map);
     }
 
 
