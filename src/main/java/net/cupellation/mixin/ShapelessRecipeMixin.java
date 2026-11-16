@@ -16,9 +16,10 @@ public class ShapelessRecipeMixin {
 
     @WrapOperation(method = "craft(Lnet/minecraft/recipe/input/CraftingRecipeInput;Lnet/minecraft/registry/RegistryWrapper$WrapperLookup;)Lnet/minecraft/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;copy()Lnet/minecraft/item/ItemStack;"))
     private ItemStack craftMixin(ItemStack instance, Operation<ItemStack> original, CraftingRecipeInput craftingRecipeInput, RegistryWrapper.WrapperLookup wrapperLookup) {
+        ItemStack result = original.call(instance);
+
         int totalQuality = 0;
         int count = 0;
-
         for (int i = 0; i < craftingRecipeInput.getSize(); i++) {
             ItemStack ingredient = craftingRecipeInput.getStackInSlot(i);
             if (!ingredient.isEmpty()) {
@@ -31,10 +32,9 @@ public class ShapelessRecipeMixin {
                 }
             }
         }
-        if (count > 0) {
-            int finalQuality = totalQuality / count;
-            instance.set(ItemInit.QUALITY_GRADE, finalQuality);
+        if (count > 0 && !result.isEmpty()) {
+            ItemInit.applyQualityGrade(result, totalQuality / count);
         }
-        return original.call(instance);
+        return result;
     }
 }

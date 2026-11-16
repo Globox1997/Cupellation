@@ -3,9 +3,7 @@ package net.cupellation.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.cupellation.data.SmelterData;
-import net.cupellation.init.ConfigInit;
 import net.cupellation.init.ItemInit;
-import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.ShapedRecipe;
 import net.minecraft.recipe.input.CraftingRecipeInput;
@@ -18,6 +16,7 @@ public class ShapedRecipeMixin {
 
     @WrapOperation(method = "craft(Lnet/minecraft/recipe/input/CraftingRecipeInput;Lnet/minecraft/registry/RegistryWrapper$WrapperLookup;)Lnet/minecraft/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/item/ItemStack;copy()Lnet/minecraft/item/ItemStack;"))
     private ItemStack craftMixin(ItemStack instance, Operation<ItemStack> original, CraftingRecipeInput craftingRecipeInput, RegistryWrapper.WrapperLookup wrapperLookup) {
+        ItemStack result = original.call(instance);
 
         int totalQuality = 0;
         int count = 0;
@@ -33,23 +32,9 @@ public class ShapedRecipeMixin {
                 }
             }
         }
-        if (count > 0) {
-            int finalQuality = totalQuality / count;
-            instance.set(ItemInit.QUALITY_GRADE, finalQuality);
-
-            if (instance.isDamageable()) {
-                int maxDamage = instance.getMaxDamage();
-                int newDurability = switch (finalQuality) {
-                    case 1 -> maxDamage * (100 - ConfigInit.CONFIG.lowGradeDurability) / 100;
-                    case 2 -> maxDamage * (100 + ConfigInit.CONFIG.midGradeDurability) / 100;
-                    case 3 -> maxDamage * (100 + ConfigInit.CONFIG.highGradeDurability) / 100;
-                    default -> maxDamage;
-                };
-
-                instance.set(DataComponentTypes.MAX_DAMAGE, newDurability);
-            }
-
+        if (count > 0 && !result.isEmpty()) {
+            ItemInit.applyQualityGrade(result, totalQuality / count);
         }
-        return original.call(instance);
+        return result;
     }
 }

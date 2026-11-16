@@ -40,6 +40,8 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
 
     public static final int COOL_TIME = 200;
 
+    private static final int SYNC_INTERVAL = 5;
+
     private int moltenAmount = 0;
     private Identifier metalTypeId = null;
     private int cooldownTicks = 0;
@@ -73,6 +75,9 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private void clientTick() {
         if (this.cooldownTicks > 0) {
             this.cooldownTicks--;
+        }
+        if (this.filling && this.moltenAmount < getCapacity()) {
+            this.moltenAmount = Math.min(getCapacity(), this.moltenAmount + FILL_RATE);
         }
         CastingSoundHelper.tick(this, this.filling);
     }
@@ -154,7 +159,11 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
             }
             moltenAmount += actual;
             cachedGrade = MoltenHelper.getGrade(world, linkedSmelterPos, metalTypeId);
-            markDirty();
+            if (world.getTime() % SYNC_INTERVAL == 0) {
+                markDirty();
+            } else {
+                super.markDirty();
+            }
         }
 
         if (cooldownTicks > 0) {
@@ -189,7 +198,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                             return;
                         }
                         ItemStack stack = new ItemStack(Registries.ITEM.get(resultItemId));
-                        stack.set(ItemInit.QUALITY_GRADE, cachedGrade);
+                        ItemInit.applyQualityGrade(stack, cachedGrade);
                         result = stack;
                         resultMetalTypeId = metalTypeId;
 

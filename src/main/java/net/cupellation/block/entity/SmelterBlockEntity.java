@@ -99,6 +99,14 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
     private static final int REACTION_ITEMS_PER_STEP = 2;
     private int reactionCooldown = 0;
 
+    private static final int FLUID_DAMAGE_INTERVAL = 5;
+    private int fluidDamageCooldown = 0;
+
+    @Nullable
+    private Set<Identifier> presentMetalsCache = null;
+    @Nullable
+    private int[] sortedSlotsCache = null;
+
     private static final int[] INPUT_SLOTS = new int[]{1, 2, 3};
     private static final int[] FUEL_SLOTS = new int[]{0};
 
@@ -181,6 +189,8 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             String idStr = nbt.getString("metalTypeId" + i);
             metalTypeIds[i] = idStr.isEmpty() ? null : Identifier.of(idStr);
         }
+        presentMetalsCache = null;
+        sortedSlotsCache = null;
 
         fuelTime = nbt.getInt("fuelTime");
         maxFuelTime = nbt.getInt("maxFuelTime");
@@ -320,6 +330,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             world.setBlockState(pos, getCachedState().with(SmelterBlock.LIT, burning));
         }
 
+        presentMetalsCache = null;
         for (int i = 0; i < 3; i++) {
             tickSmeltSlot(i);
         }
@@ -453,7 +464,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
 
         Identifier itemMetalType = data.metalTypeId();
 
-        Set<Identifier> present = getPresentMetals();
+        Set<Identifier> present = getCachedPresentMetals();
         if (!present.contains(itemMetalType)) {
             if (!SmelterData.canAddMetal(present, itemMetalType) || getFirstFreeSlot() == -1) {
                 smeltProgress[slotIndex] = 0;
@@ -560,7 +571,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         }
         alloyTickCooldown = ALLOY_TICK_INTERVAL;
 
-        Set<Identifier> present = getPresentMetals();
+        Set<Identifier> present = getCachedPresentMetals();
 
         if (present.size() < 2) {
             return;
@@ -653,6 +664,15 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         BlockPos p1 = cornerMin.offset(right, 1).offset(facing.getOpposite(), 1);
         BlockPos p2 = cornerMin.offset(right, structureWidth - 2).offset(facing.getOpposite(), structureDepth - 2);
 
+        if (reactionCooldown > 0) {
+            reactionCooldown--;
+        }
+        if (fluidDamageCooldown > 0) {
+            fluidDamageCooldown--;
+            return;
+        }
+        fluidDamageCooldown = FLUID_DAMAGE_INTERVAL - 1;
+
         float fluidHeight = getTotalFillPercent() * maxFillHeight();
 
         Box fluidBox = new Box(Math.min(p1.getX(), p2.getX()), p1.getY(), Math.min(p1.getZ(), p2.getZ()), Math.max(p1.getX(), p2.getX()) + 1, p1.getY() + fluidHeight, Math.max(p1.getZ(), p2.getZ()) + 1);
@@ -665,9 +685,6 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             entity.setOnFireFor(5);
         }
 
-        if (reactionCooldown > 0) {
-            reactionCooldown--;
-        }
         int reactionBudget = reactionCooldown <= 0 ? REACTION_ITEMS_PER_STEP : 0;
         boolean reacted = false;
         int temperatureDecrease = 0;
@@ -1023,6 +1040,13 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         return result;
     }
 
+    private Set<Identifier> getCachedPresentMetals() {
+        if (presentMetalsCache == null) {
+            presentMetalsCache = getPresentMetals();
+        }
+        return presentMetalsCache;
+    }
+
     private void compactSlots() {
         int write = 0;
         for (int read = 0; read < MAX_METALS; read++) {
@@ -1133,6 +1157,9 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
     }
 
     public void setRedstonePowered(boolean powered) {
+        if (this.redstonePowered == powered) {
+            return;
+        }
         this.redstonePowered = powered;
         markDirty();
     }
@@ -1206,6 +1233,8 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
 
     public void markFluidDirty() {
         fluidDirty = true;
+        presentMetalsCache = null;
+        sortedSlotsCache = null;
         super.markDirty();
     }
 
@@ -1224,6 +1253,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             metalAmounts[i] = entry.metalAmount();
             slagAmounts[i] = entry.slagAmount();
         }
+        sortedSlotsCache = null;
     }
 
     public int getDensestMetalSlot() {
@@ -1266,11 +1296,14 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
     }
 
     public int[] getSlotsSortedByDensity() {
-        return IntStream.range(0, MAX_METALS).filter(i -> metalTypeIds[i] != null && (metalAmounts[i] > 0 || slagAmounts[i] > 0)).boxed().sorted((a, b) -> {
-            int da = SmelterData.getDensity(metalTypeIds[a]);
-            int db = SmelterData.getDensity(metalTypeIds[b]);
-            return Integer.compare(db, da);
-        }).mapToInt(Integer::intValue).toArray();
+        if (sortedSlotsCache == null) {
+            sortedSlotsCache = IntStream.range(0, MAX_METALS).filter(i -> metalTypeIds[i] != null && (metalAmounts[i] > 0 || slagAmounts[i] > 0)).boxed().sorted((a, b) -> {
+                int da = SmelterData.getDensity(metalTypeIds[a]);
+                int db = SmelterData.getDensity(metalTypeIds[b]);
+                return Integer.compare(db, da);
+            }).mapToInt(Integer::intValue).toArray();
+        }
+        return sortedSlotsCache;
     }
 
     public record DrainResult(int amount, @Nullable Identifier metalTypeId) {

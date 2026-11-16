@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.component.ComponentType;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -54,6 +55,20 @@ public class ItemInit {
 
     public static boolean isGradeable(ItemStack stack) {
         return stack.isDamageable() || SmelterData.hasItem(stack.getItem()) || stack.isIn(TagInit.GRADEABLE_ITEMS);
+    }
+
+    public static void applyQualityGrade(ItemStack stack, int grade) {
+        stack.set(QUALITY_GRADE, grade);
+        if (stack.isDamageable()) {
+            int maxDamage = stack.getMaxDamage();
+            int newDurability = switch (grade) {
+                case 1 -> maxDamage * (100 - ConfigInit.CONFIG.lowGradeDurability) / 100;
+                case 2 -> maxDamage * (100 + ConfigInit.CONFIG.midGradeDurability) / 100;
+                case 3 -> maxDamage * (100 + ConfigInit.CONFIG.highGradeDurability) / 100;
+                default -> maxDamage;
+            };
+            stack.set(DataComponentTypes.MAX_DAMAGE, Math.max(1, newDurability));
+        }
     }
 
     private static <T> ComponentType<T> registerComponent(String id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {

@@ -31,6 +31,8 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
     public static final int COOL_TIME = 200;
 
+    private static final int SYNC_INTERVAL = 5;
+
     private int moltenAmount = 0;
     private Identifier metalTypeId = null;
     private int cooldownTicks = 0;
@@ -58,6 +60,9 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
             if (this.cooldownTicks == 0) {
                 this.cooled = true;
             }
+        }
+        if (this.filling && !this.cooled && this.moltenAmount < CAPACITY) {
+            this.moltenAmount = Math.min(CAPACITY, this.moltenAmount + FILL_RATE);
         }
         CastingSoundHelper.tick(this, this.filling);
     }
@@ -129,7 +134,11 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
 
             moltenAmount += actual;
             cachedGrade = MoltenHelper.getGrade(world, linkedSmelterPos, metalTypeId);
-            markDirty();
+            if (world.getTime() % SYNC_INTERVAL == 0) {
+                markDirty();
+            } else {
+                super.markDirty();
+            }
         }
 
         if (cooldownTicks > 0) {
