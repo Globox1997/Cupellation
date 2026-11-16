@@ -5,7 +5,6 @@ import net.cupellation.data.SmelterData;
 import net.cupellation.misc.MoltenHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.Block;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -19,8 +18,10 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Environment(EnvType.CLIENT)
 public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEntity> {
@@ -33,10 +34,7 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
     private static final float FILL_RANGE = CEILING_Y - FLOOR_Y;
 
     private final ItemRenderer itemRenderer;
-    @Nullable
-    private ItemStack stack = null;
-    @Nullable
-    private Identifier cachedMetalTypeId = null;
+    private final Map<Identifier, ItemStack> resultStacks = new HashMap<>();
 
 
     public CastingBasinRenderer(BlockEntityRendererFactory.Context ctx) {
@@ -46,7 +44,6 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
     @Override
     public void render(CastingBasinEntity basin, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (basin.getMoltenAmount() <= 0 && !basin.isCooled()) {
-            stack = null;
             return;
         }
         Identifier metalTypeId = basin.getMetalTypeId();
@@ -111,21 +108,10 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
         if (blockId == null) {
             return;
         }
-        if (!metalTypeId.equals(cachedMetalTypeId)) {
-            cachedMetalTypeId = metalTypeId;
-            Block block = Registries.BLOCK.get(blockId);
-            if (block.getDefaultState().isAir()) {
-                stack = null;
-                return;
-            }
-            stack = new ItemStack(block.asItem());
+        ItemStack stack = resultStacks.computeIfAbsent(blockId, id -> new ItemStack(Registries.BLOCK.get(id).asItem()));
+        if (stack.isEmpty()) {
+            return;
         }
-        if (stack != null) {
-            renderBlock(basin, matrices, vertexConsumers, light, overlay);
-        }
-    }
-
-    private void renderBlock(CastingBasinEntity basin, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         matrices.push();
         matrices.translate(0.5D, 0D, 0.5D);
         matrices.scale(3.0f, 2.8f, 3.0f);
