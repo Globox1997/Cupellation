@@ -92,7 +92,7 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            if (smelter.getTotalMoltenMetal() <= 0) {
+            if (smelter.getTotalMoltenMetal() <= 0 || !SmelterFaucet.canStillPour(world, pos, smelter)) {
                 stopFilling(world);
                 return;
             }

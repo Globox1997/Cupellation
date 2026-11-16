@@ -16,7 +16,7 @@ import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.MutableText;
@@ -370,22 +370,20 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             }
             if (metalAmounts[i] > 0) {
                 int density = SmelterData.getDensity(metalTypeIds[i]);
-                MutableText text = Text.literal(SmelterData.getName(metalTypeIds[i]) + ": " + metalAmounts[i] + " mB");
-                if (InputUtil.isKeyPressed(client.getWindow().getHandle(), 340)) {
-                    text.append(Text.literal(" (").append(Text.translatable("block.cupellation.smelter.density"))
-                            .append(Text.literal(": " + density + ")")).formatted(Formatting.GRAY));
+                MutableText text = Text.translatable("block.cupellation.smelter.fluid_amount", SmelterData.getName(metalTypeIds[i]), metalAmounts[i]);
+                if (Screen.hasShiftDown()) {
+                    text.append(Text.translatable("block.cupellation.smelter.density_amount", density).formatted(Formatting.GRAY));
                 }
                 tooltip.add(text);
                 totalFluid += metalAmounts[i];
             }
             if (slagAmounts[i] > 0) {
-                tooltip.add(Text.translatable("block.cupellation.smelter.slag")
-                        .append(Text.literal(" (" + SmelterData.getName(metalTypeIds[i]) + "): " + slagAmounts[i] + " mB")).formatted(Formatting.GRAY));
+                tooltip.add(Text.translatable("block.cupellation.smelter.slag_amount", SmelterData.getName(metalTypeIds[i]), slagAmounts[i]).formatted(Formatting.GRAY));
                 totalFluid += slagAmounts[i];
             }
         }
 
-        tooltip.add(Text.translatable("block.cupellation.smelter.capacity").copyContentOnly().append(Text.literal(": " + totalFluid + " / " + cap + " mB")).formatted(Formatting.DARK_GRAY));
+        tooltip.add(Text.translatable("block.cupellation.smelter.capacity_amount", totalFluid, cap).formatted(Formatting.DARK_GRAY));
 
         context.drawTooltip(textRenderer, tooltip, relX, relY);
     }

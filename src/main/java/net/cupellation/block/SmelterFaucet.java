@@ -262,19 +262,29 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
 
     private boolean isAirOrLight(World world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
-        return state.isAir() || state.isOf(Blocks.LIGHT);
+        return state.isAir() || state.isOf(Blocks.LIGHT) || state.isOf(Blocks.SNOW);
     }
 
-    // TODO: CHECK WHICH MOLTEN IS USEABLE FOR THE FAUCET AND USE THIS INSTEAD OF THE HEAVIEST
-    private boolean isMoltenHighEnough(SmelterBlockEntity smelter, BlockPos drainPos) {
+    private static boolean isMoltenHighEnough(SmelterBlockEntity smelter, BlockPos drainPos) {
         BlockPos corner = smelter.getCornerMin();
         if (corner == null) {
             return false;
         }
-        float fillHeight = smelter.getFillPercent() * smelter.getStructureHeight(); // 1.0f instead of 0.8 makes sense here
+        float fillHeight = smelter.getFillPercent() * smelter.getStructureHeight();
         float drainRelativeY = drainPos.getY() - corner.getY();
 
         return drainRelativeY <= fillHeight;
+    }
+
+    public static boolean canStillPour(World world, BlockPos castingPos, SmelterBlockEntity smelter) {
+        for (int dy = 1; dy <= 2; dy++) {
+            BlockPos faucetPos = castingPos.up(dy);
+            BlockState faucetState = world.getBlockState(faucetPos);
+            if (faucetState.getBlock() instanceof SmelterFaucet && faucetState.get(OPEN)) {
+                return isMoltenHighEnough(smelter, getDrainPos(faucetState, faucetPos));
+            }
+        }
+        return false;
     }
 
     private boolean canAttachTo(BlockState drainState, Direction faucetFacing) {
