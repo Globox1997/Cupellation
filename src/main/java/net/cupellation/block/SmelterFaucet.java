@@ -116,6 +116,17 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
     }
 
     @Override
+    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.isOf(newState.getBlock()) && !world.isClient() && state.get(OPEN)) {
+            CastingEntity castingEntityBelow = findCastingEntityBelow(world, pos);
+            if (castingEntityBelow != null) {
+                castingEntityBelow.stopFilling(world);
+            }
+        }
+        super.onStateReplaced(state, world, pos, newState, moved);
+    }
+
+    @Override
     protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
         if (world.isClient()) {
             return ActionResult.SUCCESS;

@@ -105,4 +105,12 @@ public class CastingBasin extends BlockWithEntity {
     protected boolean canPathfindThrough(BlockState state, NavigationType type) {
         return false;
     }
+
+    @Override
+    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        if (!state.isOf(newState.getBlock()) && !world.isClient() && world.getBlockEntity(pos) instanceof CastingBasinEntity basin && basin.isFilling()) {
+            basin.stopFilling(world);
+        }
+        super.onStateReplaced(state, world, pos, newState, moved);
+    }
 }

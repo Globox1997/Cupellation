@@ -143,6 +143,9 @@ public class CastingTable extends BlockWithEntity {
     @Override
     protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         if (!state.isOf(newState.getBlock()) && !world.isClient() && world.getBlockEntity(pos) instanceof CastingTableEntity table) {
+            if (table.isFilling()) {
+                table.stopFilling(world);
+            }
             ItemScatterer.spawn(world, pos, table.getDroppedStacks());
         }
         super.onStateReplaced(state, world, pos, newState, moved);

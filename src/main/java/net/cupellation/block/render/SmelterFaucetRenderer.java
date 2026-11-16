@@ -35,6 +35,11 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
     }
 
     @Override
+    public boolean rendersOutsideBoundingBox(SmelterFaucetEntity blockEntity) {
+        return true;
+    }
+
+    @Override
     public void render(SmelterFaucetEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         World world = blockEntity.getWorld();
         BlockPos faucetPos = blockEntity.getPos();
