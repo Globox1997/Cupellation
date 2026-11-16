@@ -50,7 +50,10 @@ public class MoltenHelper {
     }
 
     public static Sprite getFluidSprite(Identifier metalTypeId) {
-        Identifier textureId = SmelterData.getTexture(metalTypeId);
+        return getSprite(SmelterData.getTexture(metalTypeId));
+    }
+
+    public static Sprite getSprite(Identifier textureId) {
         return MinecraftClient.getInstance().getSpriteAtlas(PlayerScreenHandler.BLOCK_ATLAS_TEXTURE).apply(textureId);
     }
 
