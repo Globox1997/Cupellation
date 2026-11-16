@@ -29,6 +29,11 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
     }
 
     @Override
+    public boolean rendersOutsideBoundingBox(SmelterBlockEntity blockEntity) {
+        return true;
+    }
+
+    @Override
     public void render(SmelterBlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (!blockEntity.isFormed()) {
             return;
@@ -62,7 +67,6 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
         float currentY = 0f;
 
-// Erst alle Metalle rendern
         for (int slot : sortedSlots) {
             Identifier metalTypeId = blockEntity.getMetalTypeId(slot);
             int metalAmount = blockEntity.getMoltenMetal(slot);
@@ -106,7 +110,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
 
         int totalSlag = blockEntity.getTotalSlag();
         if (totalSlag > 0) {
-            Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
+            Sprite slagSprite = MoltenHelper.getSprite(MoltenHelper.SLAG_TEXTURE);
             float slagMinU = slagSprite.getMinU(), slagMaxU = slagSprite.getMaxU();
             float slagMinV = slagSprite.getMinV(), slagMaxV = slagSprite.getMaxV();
 

@@ -103,7 +103,7 @@ public class SmelterReactionEmiRecipe implements EmiRecipe {
         Identifier texture = slag ? MoltenHelper.SLAG_TEXTURE : SmelterData.getTexture(metalId);
 
         widgets.addDrawable(x, y, 16, 16, (context, mouseX, mouseY, delta) -> {
-            Sprite sprite = MoltenHelper.getFluidSprite(texture);
+            Sprite sprite = MoltenHelper.getSprite(texture);
             float r = ((color >> 16) & 0xFF) / 255f;
             float g = ((color >> 8) & 0xFF) / 255f;
             float b = (color & 0xFF) / 255f;

@@ -75,7 +75,7 @@ public class BasinCastingEmiRecipe implements EmiRecipe {
 
         widgets.addSlot(EmiStack.EMPTY, 0, 1).drawBack(false);
         widgets.addDrawable(1, 2, 16, 16, (context, mouseX, mouseY, delta) -> {
-            Sprite sprite = MoltenHelper.getFluidSprite(texture);
+            Sprite sprite = MoltenHelper.getSprite(texture);
             float r = ((color >> 16) & 0xFF) / 255f;
             float g = ((color >> 8) & 0xFF) / 255f;
             float b = (color & 0xFF) / 255f;

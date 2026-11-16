@@ -78,7 +78,7 @@ public class CastingEmiRecipe implements EmiRecipe {
         Identifier texture = SmelterData.getTexture(metalTypeId);
         widgets.addSlot(EmiStack.EMPTY, 19, 1).recipeContext(this).drawBack(false);
         widgets.addDrawable(20, 2, 16, 16, (context, mouseX, mouseY, delta) -> {
-            Sprite sprite = MoltenHelper.getFluidSprite(texture);
+            Sprite sprite = MoltenHelper.getSprite(texture);
             float r = ((color >> 16) & 0xFF) / 255f;
             float g = ((color >> 8) & 0xFF) / 255f;
             float b = (color & 0xFF) / 255f;

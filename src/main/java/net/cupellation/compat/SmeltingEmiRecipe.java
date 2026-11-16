@@ -92,7 +92,7 @@ public class SmeltingEmiRecipe implements EmiRecipe {
             Identifier texture = SmelterData.getTexture(item.metalTypeId());
 
             widgets.addDrawable(100, 3, 16, 16, (context, mouseX, mouseY, delta) -> {
-                Sprite sprite = MoltenHelper.getFluidSprite(texture);
+                Sprite sprite = MoltenHelper.getSprite(texture);
                 float r = ((color >> 16) & 0xFF) / 255f;
                 float g = ((color >> 8) & 0xFF) / 255f;
                 float b = (color & 0xFF) / 255f;
@@ -138,7 +138,7 @@ public class SmeltingEmiRecipe implements EmiRecipe {
                 int x = 100 - i * 18;
 
                 widgets.addDrawable(x, 23, 16, 16, (context, mouseX, mouseY, delta) -> {
-                    Sprite sprite = MoltenHelper.getFluidSprite(texture);
+                    Sprite sprite = MoltenHelper.getSprite(texture);
                     float r = ((color >> 16) & 0xFF) / 255f;
                     float g = ((color >> 8) & 0xFF) / 255f;
                     float b = (color & 0xFF) / 255f;

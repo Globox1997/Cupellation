@@ -180,7 +180,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             int filledH = MathHelper.ceil(FLUID_H * metalFill);
             int topY = y + FLUID_Y + FLUID_H - MathHelper.ceil(FLUID_H * (currentFill + metalFill));
 
-            Sprite sprite = MoltenHelper.getFluidSprite(SmelterData.getTexture(metalTypeIds[slot]));
+            Sprite sprite = MoltenHelper.getFluidSprite(metalTypeIds[slot]);
             int color = SmelterData.getColor(metalTypeIds[slot]);
             float r = ((color >> 16) & 0xFF) / 255f;
             float g = ((color >> 8) & 0xFF) / 255f;
@@ -196,7 +196,7 @@ public class SmelterScreen extends HandledScreen<SmelterScreenHandler> {
             int slagFilledH = Math.max(1, MathHelper.ceil(FLUID_H * slagFill));
             int slagTopY = y + FLUID_Y + FLUID_H - MathHelper.ceil(FLUID_H * (currentFill + slagFill));
 
-            Sprite slagSprite = MoltenHelper.getFluidSprite(MoltenHelper.SLAG_TEXTURE);
+            Sprite slagSprite = MoltenHelper.getSprite(MoltenHelper.SLAG_TEXTURE);
             float sr = ((SLAG_COLOR >> 16) & 0xFF) / 255f;
             float sg = ((SLAG_COLOR >> 8) & 0xFF) / 255f;
             float sb = (SLAG_COLOR & 0xFF) / 255f;
