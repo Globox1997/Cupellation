@@ -103,7 +103,7 @@ public final class SmelterData {
 
     public static String getName(Identifier metalTypeId) {
         MetalTypeData metal = METALS.get(metalTypeId);
-        return metal != null ? Text.translatable(metal.name()).getString() : "Unknown";
+        return Text.translatable(metal != null ? metal.name() : "metal.cupellation.unknown").getString();
     }
 
     public static MetalTypeData.Grade getGradeAt(Identifier metalTypeId, int temperature) {

@@ -832,7 +832,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
                     if (isWall && !state.isIn(TagInit.SMELTER_BLOCKS)) {
                         return false;
                     }
-                    if (!isWall && !state.isAir() && !state.isOf(Blocks.LIGHT)) {
+                    if (!isWall && !state.isAir() && !state.isOf(Blocks.LIGHT) && !state.isOf(Blocks.SNOW)) {
                         return false;
                     }
                     if (isWall && detectingType != null) {
@@ -1187,7 +1187,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
                     BlockState current = world.getBlockState(lightPos);
                     boolean shouldHaveLight = y < filledLayers;
 
-                    if (shouldHaveLight && (current.isAir() || current.isOf(Blocks.LIGHT))) {
+                    if (shouldHaveLight && (current.isAir() || current.isOf(Blocks.LIGHT) || current.isOf(Blocks.SNOW))) {
                         world.setBlockState(lightPos, Blocks.LIGHT.getDefaultState().with(LightBlock.LEVEL_15, 15), Block.NOTIFY_LISTENERS | Block.FORCE_STATE);
                     } else if (!shouldHaveLight && current.isOf(Blocks.LIGHT)) {
                         world.setBlockState(lightPos, Blocks.AIR.getDefaultState(), Block.NOTIFY_LISTENERS);

@@ -66,6 +66,7 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
         int cap = blockEntity.getMaxCapacity();
 
         float currentY = 0f;
+        boolean bottomRendered = false;
 
         for (int slot : sortedSlots) {
             Identifier metalTypeId = blockEntity.getMetalTypeId(slot);
@@ -90,9 +91,10 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
                 renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1,
                         FaceDirection.TOP_INNER, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
 
-                if (slot == sortedSlots[0]) {
+                if (!bottomRendered) {
                     renderTiledFace(consumer, matrix, x0, y0, z0, x1, y1, z1,
                             FaceDirection.BOTTOM, r, g, b, minU, maxU, minV, maxV, lightFull, overlay);
+                    bottomRendered = true;
                 }
 
                 renderTiledFace(consumer, matrix, x0, y0, z0 + e, x1, y1, z0 + e,
@@ -124,6 +126,11 @@ public class SmelterBlockRenderer implements BlockEntityRenderer<SmelterBlockEnt
             renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1,
                     FaceDirection.TOP_INNER, SLAG_R, SLAG_G, SLAG_B,
                     slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            if (!bottomRendered) {
+                renderTiledFace(consumer, matrix, x0, slagY0, z0, x1, slagY1, z1,
+                        FaceDirection.BOTTOM, SLAG_R, SLAG_G, SLAG_B,
+                        slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
+            }
             renderTiledFace(consumer, matrix, x0, slagY0, z0 + e, x1, slagY1, z0 + e,
                     FaceDirection.NORTH, SLAG_R, SLAG_G, SLAG_B,
                     slagMinU, slagMaxU, slagMinV, slagMaxV, lightFull, overlay);
