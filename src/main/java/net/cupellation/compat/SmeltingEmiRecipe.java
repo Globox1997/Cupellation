@@ -50,11 +50,19 @@ public class SmeltingEmiRecipe implements EmiRecipe {
 
     @Override
     public List<EmiStack> getOutputs() {
-        MetalTypeData metal = SmelterData.getMetalType(item.metalTypeId());
-        if (metal != null && metal.ingotId() != null) {
-            return List.of(EmiStack.of(Registries.ITEM.get(metal.ingotId())));
+        List<EmiStack> outputs = new ArrayList<>();
+        addIngotOutput(outputs, item.metalTypeId());
+        for (SmelterItemData.Byproduct byproduct : item.byproducts()) {
+            addIngotOutput(outputs, byproduct.metalTypeId());
         }
-        return List.of();
+        return outputs;
+    }
+
+    private static void addIngotOutput(List<EmiStack> outputs, Identifier metalTypeId) {
+        MetalTypeData metal = SmelterData.getMetalType(metalTypeId);
+        if (metal != null && metal.ingotId() != null) {
+            outputs.add(EmiStack.of(Registries.ITEM.get(metal.ingotId())));
+        }
     }
 
     @Override
@@ -64,7 +72,7 @@ public class SmeltingEmiRecipe implements EmiRecipe {
 
     @Override
     public int getDisplayHeight() {
-        return 20;
+        return item.byproducts().isEmpty() ? 20 : 40;
     }
 
     @Override
@@ -91,7 +99,10 @@ public class SmeltingEmiRecipe implements EmiRecipe {
                 SmelterScreen.drawTiledSprite(context, 0, 0, 16, 16, sprite, r, g, b);
             });
             widgets.addTooltipText(List.of(Text.translatable(metal.name())), 100, 3, 16, 16);
-            widgets.addText(Text.translatable("emi.smelter.yield", item.yield()), 60, 13, 0x888888, false);
+            widgets.addText(Text.translatable(item.scaleWithDurability() ? "emi.smelter.yield.durability" : "emi.smelter.yield", item.yield()), 60, 13, 0x888888, false);
+            if (item.scaleWithDurability()) {
+                widgets.addTooltipText(List.of(Text.translatable("emi.smelter.durability_info")), 60, 13, 38, 9);
+            }
 
             List<Text> tooltip = new ArrayList<>();
             tooltip.add(Text.translatable("block.cupellation.smelter.grades"));
@@ -116,6 +127,25 @@ public class SmeltingEmiRecipe implements EmiRecipe {
             }
 
             widgets.addTooltipText(tooltip, 21, 1, 32, 7);
+        }
+
+        if (!item.byproducts().isEmpty()) {
+            widgets.addText(Text.translatable("emi.smelter.byproducts"), 0, 27, 0x888888, false);
+            for (int i = 0; i < item.byproducts().size(); i++) {
+                SmelterItemData.Byproduct byproduct = item.byproducts().get(i);
+                int color = SmelterData.getColor(byproduct.metalTypeId());
+                Identifier texture = SmelterData.getTexture(byproduct.metalTypeId());
+                int x = 100 - i * 18;
+
+                widgets.addDrawable(x, 23, 16, 16, (context, mouseX, mouseY, delta) -> {
+                    Sprite sprite = MoltenHelper.getFluidSprite(texture);
+                    float r = ((color >> 16) & 0xFF) / 255f;
+                    float g = ((color >> 8) & 0xFF) / 255f;
+                    float b = (color & 0xFF) / 255f;
+                    SmelterScreen.drawTiledSprite(context, 0, 0, 16, 16, sprite, r, g, b);
+                });
+                widgets.addTooltipText(List.of(Text.translatable("emi.smelter.byproduct", SmelterData.getName(byproduct.metalTypeId()), byproduct.yield())), x, 23, 16, 16);
+            }
         }
 
         int requiredTemp = SmelterData.getRequiredTemp(item.metalTypeId());

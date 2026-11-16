@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:iron_shovel",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 200,
+  "yield": 144,
+  "scale_with_durability": true
+}

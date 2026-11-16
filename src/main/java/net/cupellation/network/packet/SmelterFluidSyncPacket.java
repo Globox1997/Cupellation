@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public record SmelterFluidSyncPacket(BlockPos pos, List<FluidEntry> entries) implements CustomPayload {
+public record SmelterFluidSyncPacket(BlockPos pos, int temperature, List<FluidEntry> entries) implements CustomPayload {
 
     public record FluidEntry(@Nullable Identifier metalTypeId, int metalAmount, int slagAmount) {
     }
@@ -22,6 +22,7 @@ public record SmelterFluidSyncPacket(BlockPos pos, List<FluidEntry> entries) imp
     public static final PacketCodec<RegistryByteBuf, SmelterFluidSyncPacket> CODEC = PacketCodec.of(
             (packet, buf) -> {
                 buf.writeBlockPos(packet.pos());
+                buf.writeInt(packet.temperature());
                 buf.writeInt(packet.entries().size());
                 for (FluidEntry entry : packet.entries()) {
                     buf.writeBoolean(entry.metalTypeId() != null);
@@ -34,6 +35,7 @@ public record SmelterFluidSyncPacket(BlockPos pos, List<FluidEntry> entries) imp
             },
             buf -> {
                 BlockPos pos = buf.readBlockPos();
+                int temperature = buf.readInt();
                 int size = buf.readInt();
                 List<FluidEntry> entries = new ArrayList<>();
                 for (int i = 0; i < size; i++) {
@@ -43,7 +45,7 @@ public record SmelterFluidSyncPacket(BlockPos pos, List<FluidEntry> entries) imp
                     int slag = buf.readInt();
                     entries.add(new FluidEntry(id, metal, slag));
                 }
-                return new SmelterFluidSyncPacket(pos, entries);
+                return new SmelterFluidSyncPacket(pos, temperature, entries);
             }
     );
 
@@ -52,7 +54,7 @@ public record SmelterFluidSyncPacket(BlockPos pos, List<FluidEntry> entries) imp
         for (int i = 0; i < SmelterBlockEntity.MAX_METALS; i++) {
             entries.add(new FluidEntry(blockEntity.getMetalTypeId(i), blockEntity.getMoltenMetal(i), blockEntity.getSlag(i)));
         }
-        return new SmelterFluidSyncPacket(blockEntity.getPos(), entries);
+        return new SmelterFluidSyncPacket(blockEntity.getPos(), blockEntity.getTemperature(), entries);
     }
 
     @Override

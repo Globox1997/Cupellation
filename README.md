@@ -79,6 +79,10 @@ A material requires the following
 - smelt_time: time in ticks to get smelted
 - yield: how much metal is the output of this item
 
+Optional
+- scale_with_durability: scales the yield of all outputs with the remaining durability of the item
+- byproducts: list of additional metals with metal id and yield, a byproduct which can't be mixed into the smelter content or isn't allowed by the smelter type turns into slag
+
 Example:
 ```json
 {
@@ -86,6 +90,22 @@ Example:
   "metal_type": "cupellation:gold",
   "smelt_time": 200,
   "yield": 144
+}
+```
+
+Example with byproduct:
+```json
+{
+  "item": "minecraft:raw_gold",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 200,
+  "yield": 144,
+  "byproducts": [
+    {
+      "metal": "cupellation:debris",
+      "yield": 9
+    }
+  ]
 }
 ```
 
@@ -333,3 +353,12 @@ MoldType.builder("diamond", 144)
 Restrictions:
 - `extraOutput = true` only works with the default suffix strategy.
 - `extraOutput` and fixed `stampItemIds` can't be combined.
+
+#### Events
+`CastingResultCallback.EVENT` is called on the server when a player takes a finished cast (ingot, tool part, mold or metal block) out of a casting table or casting basin. Items a player put onto the table themselves don't trigger it.
+
+```java
+CastingResultCallback.EVENT.register((player, stack, metalTypeId, castingEntity) -> {
+    // e.g. grant xp or trigger an advancement
+});
+```

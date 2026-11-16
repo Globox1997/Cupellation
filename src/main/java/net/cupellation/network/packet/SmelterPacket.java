@@ -33,6 +33,12 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             buf.writeIdentifier(data.metalTypeId());
             buf.writeInt(data.smeltTime());
             buf.writeInt(data.yield());
+            buf.writeBoolean(data.scaleWithDurability());
+            buf.writeInt(data.byproducts().size());
+            for (SmelterItemData.Byproduct byproduct : data.byproducts()) {
+                buf.writeIdentifier(byproduct.metalTypeId());
+                buf.writeInt(byproduct.yield());
+            }
         }
 
         // MetalTypeData
@@ -128,7 +134,17 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
         int itemCount = buf.readInt();
         List<SmelterItemData> items = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
-            items.add(new SmelterItemData(buf.readIdentifier(), buf.readIdentifier(), buf.readInt(), buf.readInt()));
+            Identifier itemId = buf.readIdentifier();
+            Identifier metalTypeId = buf.readIdentifier();
+            int smeltTime = buf.readInt();
+            int yield = buf.readInt();
+            boolean scaleWithDurability = buf.readBoolean();
+            int byproductCount = buf.readInt();
+            List<SmelterItemData.Byproduct> byproducts = new ArrayList<>(byproductCount);
+            for (int j = 0; j < byproductCount; j++) {
+                byproducts.add(new SmelterItemData.Byproduct(buf.readIdentifier(), buf.readInt()));
+            }
+            items.add(new SmelterItemData(itemId, metalTypeId, smeltTime, yield, scaleWithDurability, List.copyOf(byproducts)));
         }
 
         // MetalTypeData

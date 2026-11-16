@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:iron_boots",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 800,
+  "yield": 576,
+  "scale_with_durability": true
+}

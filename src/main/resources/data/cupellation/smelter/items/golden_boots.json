@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:golden_boots",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 800,
+  "yield": 576,
+  "scale_with_durability": true
+}

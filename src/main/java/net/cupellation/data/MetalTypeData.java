@@ -17,6 +17,8 @@ public record MetalTypeData(Identifier id, String name, int requiredTemp, int co
 
     public enum Grade {LOW, MID, HIGH}
 
+    public enum PourState {TOO_COLD, LOW, MID, HIGH, OVERHEATED}
+
     public boolean isAlloy() {
         return alloyFrom != null && !alloyFrom.isEmpty();
     }
@@ -55,6 +57,20 @@ public record MetalTypeData(Identifier id, String name, int requiredTemp, int co
             return Grade.MID;
         }
         return Grade.LOW;
+    }
+
+    public PourState getPourState(int temperature) {
+        if (temperature < getMinGradeTemperature()) {
+            return PourState.TOO_COLD;
+        }
+        if (temperature > getMaxGradeTemperature()) {
+            return PourState.OVERHEATED;
+        }
+        return switch (getGradeAt(temperature)) {
+            case LOW -> PourState.LOW;
+            case MID -> PourState.MID;
+            case HIGH -> PourState.HIGH;
+        };
     }
 
     public int getMaxGradeTemperature() {

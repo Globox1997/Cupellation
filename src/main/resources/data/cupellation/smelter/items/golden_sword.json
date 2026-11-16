@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:golden_sword",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 400,
+  "yield": 288,
+  "scale_with_durability": true
+}

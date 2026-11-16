@@ -205,6 +205,26 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             LOGGER.warn("[Smelter] Item JSON {} needs 'smelt_time' >= 0 and 'yield' > 0, skipping.", json.get("item").getAsString());
             return List.of();
         }
+        boolean scaleWithDurability = json.has("scale_with_durability") && json.get("scale_with_durability").getAsBoolean();
+
+        List<SmelterItemData.Byproduct> byproducts = new ArrayList<>();
+        if (json.has("byproducts")) {
+            for (JsonElement element : json.getAsJsonArray("byproducts")) {
+                JsonObject byproduct = element.getAsJsonObject();
+                if (!byproduct.has("metal") || !byproduct.has("yield")) {
+                    LOGGER.warn("[Smelter] Item JSON {} has a byproduct without 'metal' or 'yield', skipping byproduct.", json.get("item").getAsString());
+                    continue;
+                }
+                int byproductYield = byproduct.get("yield").getAsInt();
+                if (byproductYield <= 0) {
+                    LOGGER.warn("[Smelter] Item JSON {} has a byproduct with 'yield' <= 0, skipping byproduct.", json.get("item").getAsString());
+                    continue;
+                }
+                byproducts.add(new SmelterItemData.Byproduct(Identifier.of(byproduct.get("metal").getAsString()), byproductYield));
+            }
+        }
+        List<SmelterItemData.Byproduct> byproductList = List.copyOf(byproducts);
+
         String entry = json.get("item").getAsString();
 
         if (entry.startsWith("#")) {
@@ -213,14 +233,14 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                 LOGGER.warn("[Smelter] Item tag {} could not be resolved or is empty.", entry);
                 return List.of();
             }
-            return resolved.stream().map(itemId -> new SmelterItemData(itemId, metalType, smeltTime, yield)).toList();
+            return resolved.stream().map(itemId -> new SmelterItemData(itemId, metalType, smeltTime, yield, scaleWithDurability, byproductList)).toList();
         } else {
             Identifier itemId = Identifier.of(entry);
             if (!Registries.ITEM.containsId(itemId)) {
                 LOGGER.warn("[Smelter] Item JSON references unknown item: {}, skipping.", entry);
                 return List.of();
             }
-            return List.of(new SmelterItemData(itemId, metalType, smeltTime, yield));
+            return List.of(new SmelterItemData(itemId, metalType, smeltTime, yield, scaleWithDurability, byproductList));
         }
     }
 

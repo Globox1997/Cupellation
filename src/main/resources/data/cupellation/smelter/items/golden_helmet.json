@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:golden_helmet",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 1000,
+  "yield": 720,
+  "scale_with_durability": true
+}

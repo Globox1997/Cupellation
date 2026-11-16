@@ -1,10 +1,10 @@
-// 1.21.1	2026-10-05T20:55:47.6114991	Cupellation/Model Definitions
+// 1.21.1	2026-11-16T18:22:01.8615494	Cupellation/Model Definitions
 8bc593c17f1d686a0f56ae8fd079b09ddda35dda assets\cupellation\models\item\clay_sword_blade_mold.json
 10b57548fb9db0f6b710a919e8db5bc6a900ebfd assets\cupellation\models\item\axe_head_mold.json
 9c3c23b650f27032d5909a2b04e9541304736117 assets\cupellation\models\item\stone_shovel_head.json
 9aaadf2fd2e5742413bceb6d5cef17ee85e9d184 assets\cupellation\models\item\clay_ingot_mold.json
-ea32b884e0c4a7395a025c6181a516d9cb24f3bc assets\cupellation\models\item\iron_axe_head.json
 6473d445d59985ab83e2480f484a90f417c782b9 assets\cupellation\models\item\diamond_axe_head.json
+ea32b884e0c4a7395a025c6181a516d9cb24f3bc assets\cupellation\models\item\iron_axe_head.json
 732dbbc6926efe158cd223c960f9ee6384383b96 assets\cupellation\models\item\stone_pickaxe_head.json
 9bb87ef99831ceb1ebbf41aefd44d11158c9cb22 assets\cupellation\models\item\clay_boots_mold.json
 5b82e931610b6f184de6a402ad1deffca7a27d49 assets\cupellation\models\item\golden_pickaxe_head.json

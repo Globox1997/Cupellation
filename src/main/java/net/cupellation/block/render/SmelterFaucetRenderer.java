@@ -1,7 +1,9 @@
 package net.cupellation.block.render;
 
 import net.cupellation.block.SmelterFaucet;
+import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
+import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.misc.CastingEntity;
 import net.cupellation.misc.MoltenHelper;
@@ -51,6 +53,10 @@ public class SmelterFaucetRenderer implements BlockEntityRenderer<SmelterFaucetE
             return;
         }
         int color = SmelterData.getColor(metalTypeId);
+        MetalTypeData metal = SmelterData.getMetalType(metalTypeId);
+        if (metal != null && blockEntity.getLinkedSmelterPos() != null && world.getBlockEntity(blockEntity.getLinkedSmelterPos()) instanceof SmelterBlockEntity smelter) {
+            color = MoltenHelper.getPourColor(metal, metal.getPourState(smelter.getTemperature()));
+        }
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
         float b = (color & 0xFF) / 255f;

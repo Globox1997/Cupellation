@@ -1,6 +1,7 @@
 package net.cupellation.block;
 
 import com.mojang.serialization.MapCodec;
+import net.cupellation.api.CastingResultCallback;
 import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.init.BlockInit;
 import net.cupellation.item.ClayMoldItem;
@@ -15,9 +16,11 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.ai.pathing.NavigationType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -118,30 +121,17 @@ public class CastingTable extends BlockWithEntity {
                     world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);
                     return ActionResult.SUCCESS;
                 }
-                ItemStack result = table.tryExtractResult();
-                if (!result.isEmpty()) {
-                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
-                    if (!player.getInventory().insertStack(result)) {
-                        player.dropItem(result, false);
-                    }
+                Identifier castMetalTypeId = table.getResultMetalTypeId();
+                if (giveExtractedStack(world, pos, player, table.tryExtractResult(), castMetalTypeId, table)) {
                     return ActionResult.SUCCESS;
                 }
             } else {
-                ItemStack result = table.tryExtractResult();
-                if (!result.isEmpty()) {
-                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
-                    if (!player.getInventory().insertStack(result)) {
-                        player.dropItem(result, false);
-                    }
+                Identifier castMetalTypeId = table.getResultMetalTypeId();
+                if (giveExtractedStack(world, pos, player, table.tryExtractResult(), castMetalTypeId, table)) {
                     return ActionResult.SUCCESS;
                 }
-
-                ItemStack mold = table.tryExtractMold();
-                if (!mold.isEmpty()) {
-                    world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
-                    if (!player.getInventory().insertStack(mold)) {
-                        player.dropItem(mold, false);
-                    }
+                castMetalTypeId = table.getMoldMetalTypeId();
+                if (giveExtractedStack(world, pos, player, table.tryExtractMold(), castMetalTypeId, table)) {
                     return ActionResult.SUCCESS;
                 }
             }
@@ -156,6 +146,21 @@ public class CastingTable extends BlockWithEntity {
             ItemScatterer.spawn(world, pos, table.getDroppedStacks());
         }
         super.onStateReplaced(state, world, pos, newState, moved);
+    }
+
+    // Gives the extracted stack to the player, castMetalTypeId is set if the stack got cast on the table
+    private static boolean giveExtractedStack(World world, BlockPos pos, PlayerEntity player, ItemStack stack, @Nullable Identifier castMetalTypeId, CastingTableEntity table) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
+        if (castMetalTypeId != null && player instanceof ServerPlayerEntity serverPlayerEntity) {
+            CastingResultCallback.EVENT.invoker().onCastTaken(serverPlayerEntity, stack.copy(), castMetalTypeId, table);
+        }
+        if (!player.getInventory().insertStack(stack)) {
+            player.dropItem(stack, false);
+        }
+        return true;
     }
 
     @Override

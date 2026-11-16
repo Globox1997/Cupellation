@@ -75,6 +75,8 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
     private int alloyTickCooldown = 0;
 
     private boolean fluidDirty = false;
+    @Nullable
+    private MetalTypeData.PourState lastPourState = null;
 
     private boolean redstonePowered = false;
     private int fuelTime = 0;
@@ -333,6 +335,11 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             lastFilledLayers = newFilledLayers;
             updateLightBlocks();
         }
+        MetalTypeData.PourState pourState = getPourState();
+        if (pourState != lastPourState) {
+            lastPourState = pourState;
+            fluidDirty = true;
+        }
         if (fluidDirty) {
             fluidDirty = false;
             if (world instanceof ServerWorld) {
@@ -470,7 +477,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             }
         }
 
-        if (getTotalFluid() + data.yield() > getMaxCapacity()) {
+        if (getTotalFluid() + scaleYield(stack, data, data.getTotalYield()) > getMaxCapacity()) {
             smeltProgress[slotIndex] = 0;
             return;
         }
@@ -482,7 +489,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         smeltProgress[slotIndex]++;
 
         if (smeltProgress[slotIndex] >= smeltTotal[slotIndex]) {
-            int totalYield = data.yield();
+            int totalYield = scaleYield(stack, data, data.yield());
             int slagYield = Math.max(0, totalYield * ConfigInit.CONFIG.slagRatio / 100);
             int metalYield = totalYield - slagYield;
 
@@ -499,11 +506,51 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             metalAmounts[slot] += metalYield;
             slagAmounts[slot] += slagYield;
 
+            for (SmelterItemData.Byproduct byproduct : data.byproducts()) {
+                addByproduct(byproduct.metalTypeId(), scaleYield(stack, data, byproduct.yield()), slot);
+            }
+
             stack.decrement(1);
             smeltProgress[slotIndex] = 0;
             smeltTotal[slotIndex] = 0;
             markFluidDirty();
         }
+    }
+
+    private int scaleYield(ItemStack stack, SmelterItemData data, int yield) {
+        if (!data.scaleWithDurability() || !stack.isDamageable() || stack.getMaxDamage() <= 0) {
+            return yield;
+        }
+        int maxDamage = stack.getMaxDamage();
+        return yield * (maxDamage - stack.getDamage()) / maxDamage;
+    }
+
+    private void addByproduct(Identifier byproductMetalId, int amount, int mainSlot) {
+        if (amount <= 0) {
+            return;
+        }
+        int slot = getSlotForMetal(byproductMetalId);
+        if (slot == -1 && canAcceptByproduct(byproductMetalId)) {
+            slot = getFirstFreeSlot();
+            if (slot != -1) {
+                metalTypeIds[slot] = byproductMetalId;
+            }
+        }
+        if (slot == -1) {
+            slagAmounts[mainSlot] += amount;
+            return;
+        }
+        int slag = Math.max(0, amount * ConfigInit.CONFIG.slagRatio / 100);
+        metalAmounts[slot] += amount - slag;
+        slagAmounts[slot] += slag;
+    }
+
+    private boolean canAcceptByproduct(Identifier byproductMetalId) {
+        if (SmelterData.getMetalType(byproductMetalId) == null || !SmelterData.canAddMetal(getPresentMetals(), byproductMetalId)) {
+            return false;
+        }
+        SmelterTypeData smelterType = getCurrentSmelterType();
+        return smelterType == null || smelterType.allowsMetal(byproductMetalId);
     }
 
     private void tickAlloy() {
@@ -1162,7 +1209,15 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         super.markDirty();
     }
 
+    @Nullable
+    public MetalTypeData.PourState getPourState() {
+        Identifier metalTypeId = getPourableMetalType();
+        MetalTypeData metal = metalTypeId != null ? SmelterData.getMetalType(metalTypeId) : null;
+        return metal != null ? metal.getPourState(temperature) : null;
+    }
+
     public void applyFluidSync(SmelterFluidSyncPacket packet) {
+        temperature = packet.temperature();
         for (int i = 0; i < MAX_METALS; i++) {
             SmelterFluidSyncPacket.FluidEntry entry = packet.entries().get(i);
             metalTypeIds[i] = entry.metalTypeId();

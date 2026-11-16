@@ -69,5 +69,12 @@
   "emi.category.cupellation.smelter_reaction": "Smelter Reaction",
   "emi.smelter.degree": "%s °C",
   "emi.smelter.yield": "%s mB",
-  "emi.smelter.reaction.rate": "%s mB / Item"
+  "emi.smelter.reaction.rate": "%s mB / Item",
+  "emi.smelter.yield.durability": "%s mB*",
+  "emi.smelter.durability_info": "Yield scales with remaining durability",
+  "emi.smelter.byproducts": "Byproducts:",
+  "emi.smelter.byproduct": "%s: %s mB",
+  "block.cupellation.faucet.pour_state": "%s: %s",
+  "block.cupellation.faucet.too_cold": "Too cold",
+  "block.cupellation.faucet.overheating": "Overheating"
 }

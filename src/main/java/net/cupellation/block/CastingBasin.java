@@ -1,6 +1,7 @@
 package net.cupellation.block;
 
 import com.mojang.serialization.MapCodec;
+import net.cupellation.api.CastingResultCallback;
 import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.init.BlockInit;
 import net.minecraft.block.BlockRenderType;
@@ -13,9 +14,11 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.ai.pathing.NavigationType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -72,9 +75,13 @@ public class CastingBasin extends BlockWithEntity {
             world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 1.0F);
             return ActionResult.SUCCESS;
         }
+        Identifier metalTypeId = basin.getMetalTypeId();
         ItemStack result = basin.tryExtract();
         if (!result.isEmpty()) {
             world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0F, 1.0F);
+            if (metalTypeId != null && player instanceof ServerPlayerEntity serverPlayerEntity) {
+                CastingResultCallback.EVENT.invoker().onCastTaken(serverPlayerEntity, result.copy(), metalTypeId, basin);
+            }
             if (!player.getInventory().insertStack(result)) {
                 player.dropItem(result, false);
             }

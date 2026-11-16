@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:iron_leggings",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 1400,
+  "yield": 1008,
+  "scale_with_durability": true
+}

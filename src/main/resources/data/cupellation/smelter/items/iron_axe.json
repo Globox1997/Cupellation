@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:iron_axe",
+  "metal_type": "cupellation:iron",
+  "smelt_time": 600,
+  "yield": 432,
+  "scale_with_durability": true
+}

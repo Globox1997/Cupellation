@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:golden_chestplate",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 1600,
+  "yield": 1152,
+  "scale_with_durability": true
+}

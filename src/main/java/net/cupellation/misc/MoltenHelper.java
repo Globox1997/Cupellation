@@ -7,6 +7,8 @@ import net.cupellation.data.SmelterData;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.screen.PlayerScreenHandler;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -25,6 +27,26 @@ public class MoltenHelper {
         int rg = (int) (ag + (bg - ag) * t);
         int rb = (int) (ab + (bb - ab) * t);
         return (rr << 16) | (rg << 8) | rb;
+    }
+
+    public static int getPourColor(MetalTypeData metal, MetalTypeData.PourState pourState) {
+        return switch (pourState) {
+            case TOO_COLD -> metal.cooledColor();
+            case LOW -> lerpColor(metal.color(), metal.cooledColor(), 0.35f);
+            case MID -> metal.color();
+            case HIGH -> lerpColor(metal.color(), 0xFFFFFF, 0.25f);
+            case OVERHEATED -> lerpColor(metal.color(), 0xFFFFFF, 0.55f);
+        };
+    }
+
+    public static Text getPourStateText(MetalTypeData.PourState pourState) {
+        return switch (pourState) {
+            case TOO_COLD -> Text.translatable("block.cupellation.faucet.too_cold").formatted(Formatting.AQUA);
+            case LOW -> Text.translatable("item.cupellation.tooltip.quality.1").formatted(Formatting.YELLOW);
+            case MID -> Text.translatable("item.cupellation.tooltip.quality.2").formatted(Formatting.GOLD);
+            case HIGH -> Text.translatable("item.cupellation.tooltip.quality.3").formatted(Formatting.RED);
+            case OVERHEATED -> Text.translatable("block.cupellation.faucet.overheating").formatted(Formatting.DARK_RED);
+        };
     }
 
     public static Sprite getFluidSprite(Identifier metalTypeId) {

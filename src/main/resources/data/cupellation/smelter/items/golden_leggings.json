@@ -1,0 +1,7 @@
+{
+  "item": "minecraft:golden_leggings",
+  "metal_type": "cupellation:gold",
+  "smelt_time": 1400,
+  "yield": 1008,
+  "scale_with_durability": true
+}

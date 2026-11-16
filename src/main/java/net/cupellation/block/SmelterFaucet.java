@@ -8,6 +8,7 @@ import net.cupellation.data.SmelterData;
 import net.cupellation.init.ConfigInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.misc.CastingEntity;
+import net.cupellation.misc.MoltenHelper;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ai.pathing.NavigationType;
@@ -17,6 +18,7 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
@@ -153,7 +155,9 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
                     return ActionResult.FAIL;
                 }
             }
-            if (metalTypeData.getMinGradeTemperature() > smelter.getTemperature()) {
+            MetalTypeData.PourState pourState = metalTypeData.getPourState(smelter.getTemperature());
+            if (pourState == MetalTypeData.PourState.TOO_COLD) {
+                player.sendMessage(Text.translatable("block.cupellation.faucet.pour_state", Text.translatable(metalTypeData.name()), MoltenHelper.getPourStateText(pourState)), true);
                 return ActionResult.FAIL;
             }
             boolean started = castingEntityBelow.startFilling(smelter.getPos(), metalType);
@@ -164,6 +168,7 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
                 faucetEntity.link(smelter.getPos(), metalType);
             }
             world.setBlockState(pos, state.with(OPEN, true));
+            player.sendMessage(Text.translatable("block.cupellation.faucet.pour_state", Text.translatable(metalTypeData.name()), MoltenHelper.getPourStateText(pourState)), true);
             return ActionResult.SUCCESS;
         } else {
             if (world.getBlockEntity(pos) instanceof SmelterFaucetEntity faucetEntity) {
@@ -207,6 +212,9 @@ public class SmelterFaucet extends Block implements BlockEntityProvider {
         int minZ = startAir.getZ(), maxZ = startAir.getZ();
 
         for (Direction dir : Direction.values()) {
+            if (dir == Direction.UP) {
+                continue;
+            }
             for (int i = 1; i <= ConfigInit.CONFIG.smelterMaxWidth + 1; i++) {
                 BlockPos check = startAir.offset(dir, i);
                 if (!isAirOrLight(world, check)) {
