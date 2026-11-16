@@ -69,13 +69,5 @@ public final class CupellationAPI {
         registerMoldType(new MoldType("chestplate", 1152, false, Set.of()));
         registerMoldType(new MoldType("leggings", 1008, false, Set.of()));
         registerMoldType(new MoldType("boots", 576, false, Set.of()));
-
-        // Example for new custom diamond mold
-        //        CupellationAPI.registerMoldType(
-        //                MoldType.builder("diamond", 144)
-        //                        .moldingMetalTypeId(Identifier.of("cupellation", "gold"))
-        //                        .strategy(new MappedResultMoldStrategy(Map.of(Identifier.of("cupellation", "diamond"), Identifier.of("minecraft", "diamond"))))
-        //                        .craftableAsClayMold(Set.of(Identifier.of("minecraft", "diamond")))
-        //                        .build());
     }
 }

@@ -54,7 +54,6 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
 
-    // metal of the result or mold if it got cast here, null if a player put it onto the table
     @Nullable
     private Identifier resultMetalTypeId = null;
     @Nullable
@@ -118,7 +117,7 @@ public class CastingTableEntity extends BlockEntity implements CastingEntity {
                 return;
             }
 
-            if (smelter.getTotalMoltenMetal() <= 0) {
+            if (smelter.getTotalMoltenMetal() <= 0 || !SmelterFaucet.canStillPour(world, pos, smelter)) {
                 stopFilling(world);
                 return;
             }

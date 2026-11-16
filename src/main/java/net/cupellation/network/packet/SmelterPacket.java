@@ -26,7 +26,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
     }
 
     private void write(RegistryByteBuf buf) {
-        // SmelterItemData
         buf.writeInt(items.size());
         for (SmelterItemData data : items) {
             buf.writeIdentifier(data.itemId());
@@ -41,7 +40,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             }
         }
 
-        // MetalTypeData
         buf.writeInt(metals.size());
         for (MetalTypeData metal : metals) {
             buf.writeIdentifier(metal.id());
@@ -79,7 +77,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             writeNullableGradeRange(buf, metal.highGrade());
         }
 
-        // FuelData
         buf.writeInt(fuels.size());
         for (FuelData fuel : fuels) {
             buf.writeIdentifier(fuel.itemId());
@@ -87,7 +84,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             buf.writeInt(fuel.burnTime());
         }
 
-        // SmelterTypeData
         buf.writeInt(types.size());
         for (SmelterTypeData type : types) {
             buf.writeIdentifier(type.id());
@@ -109,7 +105,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             buf.writeInt(type.maxTemperature());
         }
 
-        // Reactions
         buf.writeInt(reactions.size());
         for (SmelterReactionData r : reactions) {
             buf.writeIdentifier(r.itemId());
@@ -130,7 +125,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
     }
 
     private static SmelterPacket read(RegistryByteBuf buf) {
-        // SmelterItemData
         int itemCount = buf.readInt();
         List<SmelterItemData> items = new ArrayList<>(itemCount);
         for (int i = 0; i < itemCount; i++) {
@@ -147,7 +141,6 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             items.add(new SmelterItemData(itemId, metalTypeId, smeltTime, yield, scaleWithDurability, List.copyOf(byproducts)));
         }
 
-        // MetalTypeData
         int metalCount = buf.readInt();
         List<MetalTypeData> metals = new ArrayList<>(metalCount);
         for (int i = 0; i < metalCount; i++) {
@@ -179,14 +172,12 @@ public record SmelterPacket(List<SmelterItemData> items, List<MetalTypeData> met
             metals.add(new MetalTypeData(id, name, requiredTemp, color, cooledColor, texture, ingotId, blockId, density, alloyFrom, fluxItemId, lowGrade, midGrade, highGrade));
         }
 
-        // FuelData
         int fuelCount = buf.readInt();
         List<FuelData> fuels = new ArrayList<>(fuelCount);
         for (int i = 0; i < fuelCount; i++) {
             fuels.add(new FuelData(buf.readIdentifier(), buf.readInt(), buf.readInt()));
         }
 
-        // SmelterTypeData
         int typeCount = buf.readInt();
         List<SmelterTypeData> types = new ArrayList<>(typeCount);
         for (int i = 0; i < typeCount; i++) {

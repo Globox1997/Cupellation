@@ -16,10 +16,12 @@
 
   "block.cupellation.smelter": "Smelter",
   "block.cupellation.smelter.slag": "Slag",
-  "block.cupellation.smelter.capacity": "Capacity",
+  "block.cupellation.smelter.capacity_amount": "Capacity: %s / %s mB",
+  "block.cupellation.smelter.fluid_amount": "%s: %s mB",
+  "block.cupellation.smelter.slag_amount": "Slag (%s): %s mB",
   "block.cupellation.smelter.temperature": "Temperature",
   "block.cupellation.smelter.smelting": "Smelting",
-  "block.cupellation.smelter.density": "Density",
+  "block.cupellation.smelter.density_amount": " (Density: %s)",
   "block.cupellation.deepslate_brick_smelter": "Deepslate Brick Smelter",
   "block.cupellation.deepslate_brick_glass": "Deepslate Brick Glass",
   "block.cupellation.deepslate_brick_drain": "Deepslate Brick Drain",
@@ -35,6 +37,7 @@
   "block.cupellation.red_nether_brick_casting_table": "Red Nether Brick Casting Table",
   "block.cupellation.red_nether_brick_lever": "Red Nether Brick Lever",
 
+  "metal.cupellation.unknown": "Unknown",
   "metal.cupellation.copper": "Molten Copper",
   "metal.cupellation.gold": "Molten Gold",
   "metal.cupellation.iron": "Molten Iron",
@@ -76,5 +79,6 @@
   "emi.smelter.byproduct": "%s: %s mB",
   "block.cupellation.faucet.pour_state": "%s: %s",
   "block.cupellation.faucet.too_cold": "Too cold",
-  "block.cupellation.faucet.overheating": "Overheating"
+  "block.cupellation.faucet.overheating": "Overheating",
+  "block.cupellation.slag": "Slag"
 }

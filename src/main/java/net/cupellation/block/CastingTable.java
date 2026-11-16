@@ -44,7 +44,6 @@ public class CastingTable extends BlockWithEntity {
                     createCuboidShape(12, 0, 12, 16, 11, 16)
             );
 
-
     public CastingTable(Settings settings) {
         super(settings);
     }
@@ -151,7 +150,6 @@ public class CastingTable extends BlockWithEntity {
         super.onStateReplaced(state, world, pos, newState, moved);
     }
 
-    // Gives the extracted stack to the player, castMetalTypeId is set if the stack got cast on the table
     private static boolean giveExtractedStack(World world, BlockPos pos, PlayerEntity player, ItemStack stack, @Nullable Identifier castMetalTypeId, CastingTableEntity table) {
         if (stack.isEmpty()) {
             return false;

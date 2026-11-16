@@ -10,8 +10,5 @@ public interface CastingEntity {
 
     void stopFilling(World world);
 
-    // pixel distance from faucet stream start (including the 2 stream pixels)
-    // this means from faucet bottom calculate 4 pixels to where the stream should end
-    // example: casting table = 10
     int castingDistance();
 }

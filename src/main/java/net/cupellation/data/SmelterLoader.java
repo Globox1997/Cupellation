@@ -69,13 +69,9 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                 if (metals.containsKey(data.id())) {
                     if (replace) {
                         metals.put(data.id(), data);
-                        // LOGGER.info("[Smelter] Replaced metal type: {} (from {})", data.id(), id);
-                    } else {
-                        // LOGGER.info("[Smelter] Skipped duplicate metal type: {} (from {}), use replace=true to override", data.id(), id);
                     }
                 } else {
                     metals.put(data.id(), data);
-                    // LOGGER.info("[Smelter] Loaded metal type: {} (from {})", data.id(), id);
                 }
             } catch (Exception e) {
                 LOGGER.error("[Smelter] Failed to load metal file {}: {}", id, e.toString());
@@ -94,13 +90,9 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
                     if (fuels.containsKey(data.itemId())) {
                         if (replace) {
                             fuels.put(data.itemId(), data);
-                            // LOGGER.info("[Smelter] Replaced fuel: {} (from {})", data.itemId(), id);
-                        } else {
-                            // LOGGER.info("[Smelter] Skipped duplicate fuel: {} (from {})", data.itemId(), id);
                         }
                     } else {
                         fuels.put(data.itemId(), data);
-                        // LOGGER.info("[Smelter] Loaded fuel: {} (from {})", data.itemId(), id);
                     }
                 }
             } catch (Exception e) {
@@ -142,7 +134,6 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
             }
         });
 
-        // Maybe todo: Remove flux field of a metal cause a reaction can be set in the reactions data
         for (MetalTypeData metal : metals.values()) {
             if (metal.fluxItemId() == null) {
                 continue;
@@ -437,7 +428,6 @@ public class SmelterLoader implements SimpleSynchronousResourceReloadListener {
     private List<Identifier> resolveItemTag(Identifier tagId, ResourceManager resourceManager) {
         return resolveItemTag(tagId, resourceManager, new HashSet<>());
     }
-
 
     private List<Identifier> resolveItemTag(Identifier tagId, ResourceManager resourceManager, Set<Identifier> visited) {
         if (!visited.add(tagId)) {
