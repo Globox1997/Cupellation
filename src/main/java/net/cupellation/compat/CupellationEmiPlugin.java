@@ -3,6 +3,7 @@ package net.cupellation.compat;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
+import dev.emi.emi.api.stack.Comparison;
 import dev.emi.emi.api.stack.EmiStack;
 import net.cupellation.CupellationMain;
 import net.cupellation.api.CupellationAPI;
@@ -32,6 +33,11 @@ public class CupellationEmiPlugin implements EmiPlugin {
 
         for (var entry : SmelterData.getAllItems().entrySet()) {
             registry.addRecipe(new SmeltingEmiRecipe(entry.getValue()));
+        }
+        registry.setDefaultComparison(BlockInit.SLAG.asItem(), Comparison.compareComponents());
+        registry.setDefaultComparison(BlockInit.SLAG_BLOCK.asItem(), Comparison.compareComponents());
+        for (Identifier metalTypeId : SmelterData.getAllMetals().keySet()) {
+            registry.addRecipe(new SlagSmeltingEmiRecipe(metalTypeId));
         }
 
         registry.addCategory(TABLE_CASTING_CATEGORY);

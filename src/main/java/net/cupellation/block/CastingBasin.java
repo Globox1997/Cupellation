@@ -19,6 +19,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -75,6 +76,16 @@ public class CastingBasin extends BlockWithEntity {
             world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5F, 1.0F);
             return ActionResult.SUCCESS;
         }
+        if (basin.isSlagged()) {
+            ItemStack slag = basin.tryExtractSlag();
+            if (!slag.isEmpty()) {
+                world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0F, 1.0F);
+                if (!player.getInventory().insertStack(slag)) {
+                    player.dropItem(slag, false);
+                }
+                return ActionResult.SUCCESS;
+            }
+        }
         Identifier metalTypeId = basin.getMetalTypeId();
         ItemStack result = basin.tryExtract();
         if (!result.isEmpty()) {
@@ -108,8 +119,14 @@ public class CastingBasin extends BlockWithEntity {
 
     @Override
     protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (!state.isOf(newState.getBlock()) && !world.isClient() && world.getBlockEntity(pos) instanceof CastingBasinEntity basin && basin.isFilling()) {
-            basin.stopFilling(world);
+        if (!state.isOf(newState.getBlock()) && !world.isClient() && world.getBlockEntity(pos) instanceof CastingBasinEntity basin) {
+            if (basin.isFilling()) {
+                basin.stopFilling(world);
+            }
+            ItemStack slag = basin.getSlagDrop();
+            if (!slag.isEmpty()) {
+                ItemScatterer.spawn(world, pos.getX(), pos.getY(), pos.getZ(), slag);
+            }
         }
         super.onStateReplaced(state, world, pos, newState, moved);
     }

@@ -46,6 +46,8 @@ public class ItemInit {
 
     // Item Component
     public static final ComponentType<Integer> QUALITY_GRADE = registerComponent("quality_grade", builder -> builder.codec(Codec.INT).packetCodec(PacketCodecs.INTEGER));
+    public static final ComponentType<List<Identifier>> SLAG_METALS = Registry.register(Registries.DATA_COMPONENT_TYPE, CupellationMain.identifierOf("slag_metals"),
+            ComponentType.<List<Identifier>>builder().codec(Identifier.CODEC.listOf()).packetCodec(Identifier.PACKET_CODEC.collect(PacketCodecs.toList())).build());
 
     // Items
     public static final Item HANDBOOK = register("handbook", new Handbook(new Item.Settings().maxCount(1)));

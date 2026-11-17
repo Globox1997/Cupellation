@@ -3,6 +3,7 @@ package net.cupellation.block.render;
 import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.data.SmelterData;
 import net.cupellation.misc.MoltenHelper;
+import net.cupellation.misc.SlagHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.RenderLayer;
@@ -53,6 +54,11 @@ public class CastingBasinRenderer implements BlockEntityRenderer<CastingBasinEnt
 
         if (basin.isCooled()) {
             renderResultBlock(basin, matrices, vertexConsumers, light, overlay);
+            return;
+        }
+        if (basin.isSlagged()) {
+            SlagModelRenderer.render(metalTypeId, SlagHelper.layersFor(basin.getMoltenAmount()), INNER_MIN, INNER_MAX, FLOOR_Y, (INNER_MAX - INNER_MIN) / SlagHelper.MAX_LAYERS,
+                    matrices, vertexConsumers, WorldRenderer.getLightmapCoordinates(basin.getWorld(), basin.getPos().up()), overlay);
             return;
         }
         int moltenColor = SmelterData.getColor(metalTypeId);

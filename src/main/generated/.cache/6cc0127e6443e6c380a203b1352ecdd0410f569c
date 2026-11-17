@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-16T21:48:08.4684106	Cupellation/Model Definitions
+// 1.21.1	2026-11-16T22:12:45.8803289	Cupellation/Model Definitions
 10b57548fb9db0f6b710a919e8db5bc6a900ebfd assets\cupellation\models\item\axe_head_mold.json
 8bc593c17f1d686a0f56ae8fd079b09ddda35dda assets\cupellation\models\item\clay_sword_blade_mold.json
 9c3c23b650f27032d5909a2b04e9541304736117 assets\cupellation\models\item\stone_shovel_head.json
@@ -7,8 +7,8 @@ ea32b884e0c4a7395a025c6181a516d9cb24f3bc assets\cupellation\models\item\iron_axe
 6473d445d59985ab83e2480f484a90f417c782b9 assets\cupellation\models\item\diamond_axe_head.json
 732dbbc6926efe158cd223c960f9ee6384383b96 assets\cupellation\models\item\stone_pickaxe_head.json
 9bb87ef99831ceb1ebbf41aefd44d11158c9cb22 assets\cupellation\models\item\clay_boots_mold.json
-1c50fb4988329508094b8ad2415f79bdbbbe7df8 assets\cupellation\models\item\netherite_axe_head.json
 5b82e931610b6f184de6a402ad1deffca7a27d49 assets\cupellation\models\item\golden_pickaxe_head.json
+1c50fb4988329508094b8ad2415f79bdbbbe7df8 assets\cupellation\models\item\netherite_axe_head.json
 81891433791aeca44d9c526e5360d23b48616fd7 assets\cupellation\models\item\stone_sword_blade.json
 056bf316076de6aa35dc81ee7c103bc35025ae27 assets\cupellation\models\item\stone_hoe_head.json
 dc16e45d8f737ac0e1c176e62e4fc5ff676798f9 assets\cupellation\models\item\brick_shovel_head_mold.json
@@ -24,8 +24,8 @@ fe721a4b66bebd08af617465c940a96025899e63 assets\cupellation\models\item\clay_sho
 c729998e123e13e6f1be02d8866a9abf67623db0 assets\cupellation\models\item\brick_helmet_mold.json
 366490dff198db3ec3c0da1eed7b764ea50a5f83 assets\cupellation\models\item\sword_blade_mold.json
 6c02bf07944bf812cf32754394aa9f2178cb9942 assets\cupellation\models\item\iron_pickaxe_head.json
-890fa84b704c4fd1c209a490edd05179a81bdae5 assets\cupellation\models\item\ingot_mold.json
 ea169e6341859a332051beda60668f9c58f98d2e assets\cupellation\models\item\clay_helmet_mold.json
+890fa84b704c4fd1c209a490edd05179a81bdae5 assets\cupellation\models\item\ingot_mold.json
 1a5080b5d64d0bc573039b60cfc572d487a1266f assets\cupellation\models\item\hoe_head_mold.json
 0f235c58b48ae041da1c7623b8b3397b55063244 assets\cupellation\models\item\shovel_head_mold.json
 9604f568b778fc5f8953bef4024807e8152a0c10 assets\cupellation\models\item\clay_axe_head_mold.json
@@ -36,9 +36,9 @@ e8758d28e056d6b4158436a86913d0d118339cf1 assets\cupellation\models\item\netherit
 ba00ff89d2d91686b604513a77e2931621297560 assets\cupellation\models\item\clay_pickaxe_head_mold.json
 7bd1a059d6a73d37d9e0d5e7bfc232034a9c8c14 assets\cupellation\models\item\iron_sword_blade.json
 4b517a4dbc2e03dd5107e89ea63670ff201d201d assets\cupellation\models\item\golden_sword_blade.json
-d5f9948de94cd2f9d77f145e709fdb213868f6cc assets\cupellation\models\item\stone_axe_head.json
 496de82274f49076524edbfcaa141031325cd3a7 assets\cupellation\models\item\chestplate_mold.json
 928e9e235fb03dacba9dc70c8ed6a71e93aa46e1 assets\cupellation\models\item\brick_ingot_mold.json
+d5f9948de94cd2f9d77f145e709fdb213868f6cc assets\cupellation\models\item\stone_axe_head.json
 bbe1e7410d7daa80d7c3314e04741da30770467c assets\cupellation\models\item\netherite_hoe_head.json
 bd2a64ef5b62e47e31a7ccaf7031f16f31ce55cd assets\cupellation\models\item\brick_sword_blade_mold.json
 58f151862e2a7d27339ec7f325420f61f2eff2e1 assets\cupellation\models\item\golden_shovel_head.json

@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "layers=1": {
+      "model": "cupellation:block/slag_height2"
+    },
+    "layers=2": {
+      "model": "cupellation:block/slag_height4"
+    },
+    "layers=3": {
+      "model": "cupellation:block/slag_height6"
+    },
+    "layers=4": {
+      "model": "cupellation:block/slag_height8"
+    },
+    "layers=5": {
+      "model": "cupellation:block/slag_height10"
+    },
+    "layers=6": {
+      "model": "cupellation:block/slag_height12"
+    },
+    "layers=7": {
+      "model": "cupellation:block/slag_height14"
+    },
+    "layers=8": {
+      "model": "cupellation:block/slag_block"
+    }
+  }
+}

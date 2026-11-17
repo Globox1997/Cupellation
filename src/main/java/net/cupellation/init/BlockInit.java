@@ -9,12 +9,14 @@ import net.cupellation.block.entity.CastingBasinEntity;
 import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.block.entity.SmelterBlockEntity;
 import net.cupellation.block.entity.SmelterFaucetEntity;
+import net.cupellation.block.entity.SlagBlockEntity;
 import net.cupellation.block.screen.SmelterScreenHandler;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.*;
+import net.minecraft.block.SlagBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.enums.NoteBlockInstrument;
 import net.minecraft.block.piston.PistonBehavior;
@@ -80,10 +82,14 @@ public class BlockInit {
             "red_nether_brick_lever", new LeverBlock(AbstractBlock.Settings.create().noCollision().strength(1.0F).sounds(BlockSoundGroup.NETHER_BRICKS).pistonBehavior(PistonBehavior.DESTROY))
     );
 
+    public static final Block SLAG = register("slag", new SlagBlock(AbstractBlock.Settings.create().mapColor(MapColor.GRAY).strength(6F).requiresTool().sounds(BlockSoundGroup.STONE).blockVision((state, world, pos) -> state.get(SlagBlock.LAYERS) >= 8)));
+    public static final Block SLAG_BLOCK = register("slag_block", new FullSlagBlock(AbstractBlock.Settings.create().mapColor(MapColor.GRAY).requiresTool().strength(6F).sounds(BlockSoundGroup.STONE)));
+
     public static BlockEntityType<SmelterBlockEntity> SMELTER_ENTITY;
     public static BlockEntityType<SmelterFaucetEntity> SMELTER_FAUCET_ENTITY;
     public static BlockEntityType<CastingBasinEntity> CASTING_BASIN_ENTITY;
     public static BlockEntityType<CastingTableEntity> CASTING_TABLE_ENTITY;
+    public static BlockEntityType<SlagBlockEntity> SLAG_ENTITY;
 
     public static final ScreenHandlerType<SmelterScreenHandler> SMELTER_SCREEN_HANDLER =
             Registry.register(Registries.SCREEN_HANDLER, CupellationMain.identifierOf("smelter"),
@@ -114,5 +120,6 @@ public class BlockInit {
         SMELTER_FAUCET_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("smelter_faucet"), BlockEntityType.Builder.create(SmelterFaucetEntity::new, faucets.toArray(Block[]::new)).build(null));
         CASTING_BASIN_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_basin"), BlockEntityType.Builder.create(CastingBasinEntity::new, castingBasins.toArray(Block[]::new)).build(null));
         CASTING_TABLE_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("casting_table"), BlockEntityType.Builder.create(CastingTableEntity::new, castingTables.toArray(Block[]::new)).build(null));
+        SLAG_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CupellationMain.identifierOf("slag"), BlockEntityType.Builder.create(SlagBlockEntity::new, SLAG, SLAG_BLOCK).build(null));
     }
 }

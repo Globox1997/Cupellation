@@ -4,10 +4,12 @@ import net.cupellation.block.SmelterFaucet;
 import net.cupellation.data.MetalTypeData;
 import net.cupellation.data.SmelterData;
 import net.cupellation.init.BlockInit;
+import net.cupellation.init.ConfigInit;
 import net.cupellation.init.ItemInit;
 import net.cupellation.misc.CastingEntity;
 import net.cupellation.misc.CastingSoundHelper;
 import net.cupellation.misc.MoltenHelper;
+import net.cupellation.misc.SlagHelper;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
@@ -41,6 +43,8 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
     private int cachedGrade = 1;
     private BlockPos linkedSmelterPos = null;
     private boolean filling = false;
+    private boolean slagged = false;
+    private int idleTicks = 0;
 
     public CastingBasinEntity(BlockPos pos, BlockState state) {
         super(BlockInit.CASTING_BASIN_ENTITY, pos, state);
@@ -76,8 +80,16 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
     }
 
     private void serverTick(World world) {
-        if (!filling && cooldownTicks <= 0 && moltenAmount > 0 && moltenAmount >= CAPACITY && !cooled) {
+        if (!filling && !slagged && cooldownTicks <= 0 && moltenAmount > 0 && moltenAmount >= CAPACITY && !cooled) {
             startCooling();
+        }
+        if (!filling && !slagged && !cooled && cooldownTicks <= 0 && moltenAmount > 0 && moltenAmount < CAPACITY) {
+            idleTicks++;
+            if (idleTicks >= ConfigInit.CONFIG.slagSolidifyTime) {
+                solidifyIntoSlag(world);
+            }
+        } else {
+            idleTicks = 0;
         }
         if (filling && linkedSmelterPos != null && !cooled) {
             if (moltenAmount >= CAPACITY) {
@@ -150,9 +162,21 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         }
     }
 
+    private void solidifyIntoSlag(World world) {
+        idleTicks = 0;
+        if (metalTypeId == null) {
+            moltenAmount = 0;
+            markDirty();
+            return;
+        }
+        slagged = true;
+        world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 0.5f, 0.8f);
+        markDirty();
+    }
+
     @Override
     public boolean startFilling(BlockPos smelterPos, Identifier metalType) {
-        if (cooled) {
+        if (cooled || slagged) {
             return false;
         }
         if (cooldownTicks > 0) {
@@ -225,8 +249,32 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         return result;
     }
 
+    public ItemStack tryExtractSlag() {
+        if (!slagged || metalTypeId == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack slag = SlagHelper.createSlagStack(metalTypeId, SlagHelper.layersFor(moltenAmount));
+        slagged = false;
+        moltenAmount = 0;
+        metalTypeId = null;
+        cachedGrade = 1;
+        markDirty();
+        return slag;
+    }
+
+    public ItemStack getSlagDrop() {
+        if (!slagged || metalTypeId == null) {
+            return ItemStack.EMPTY;
+        }
+        return SlagHelper.createSlagStack(metalTypeId, SlagHelper.layersFor(moltenAmount));
+    }
+
+    public boolean isSlagged() {
+        return slagged;
+    }
+
     public boolean tryDiscardMolten() {
-        if (filling || cooldownTicks > 0 || moltenAmount <= 0 || moltenAmount >= CAPACITY) {
+        if (filling || slagged || cooldownTicks > 0 || moltenAmount <= 0 || moltenAmount >= CAPACITY) {
             return false;
         }
         moltenAmount = 0;
@@ -268,6 +316,8 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         cooldownTicks = nbt.getInt("cooldownTicks");
         cooled = nbt.getBoolean("cooled");
         filling = nbt.getBoolean("filling");
+        slagged = nbt.getBoolean("slagged");
+        idleTicks = nbt.getInt("idleTicks");
         cachedGrade = nbt.getInt("cachedGrade");
 
         if (nbt.contains("metalTypeId") && !nbt.getString("metalTypeId").isEmpty()) {
@@ -290,6 +340,8 @@ public class CastingBasinEntity extends BlockEntity implements CastingEntity {
         nbt.putInt("cooldownTicks", cooldownTicks);
         nbt.putBoolean("cooled", cooled);
         nbt.putBoolean("filling", filling);
+        nbt.putBoolean("slagged", slagged);
+        nbt.putInt("idleTicks", idleTicks);
         nbt.putInt("cachedGrade", cachedGrade);
         nbt.putString("metalTypeId", metalTypeId != null ? metalTypeId.toString() : "");
 

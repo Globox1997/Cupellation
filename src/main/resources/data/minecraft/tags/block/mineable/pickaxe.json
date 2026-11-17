@@ -11,6 +11,8 @@
     "cupellation:red_nether_brick_drain",
     "cupellation:red_nether_brick_faucet",
     "cupellation:red_nether_brick_casting_basin",
-    "cupellation:red_nether_brick_casting_table"
+    "cupellation:red_nether_brick_casting_table",
+    "cupellation:slag_block",
+    "cupellation:slag"
   ]
 }

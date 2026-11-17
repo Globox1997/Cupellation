@@ -1,6 +1,7 @@
 {
   "item.cupellation.item_group": "Cupellation",
   "item.cupellation.tooltip.quality": "Quality:",
+  "item.cupellation.tooltip.slag": "%s: %s mB",
   "item.cupellation.tooltip.quality.1": "Low",
   "item.cupellation.tooltip.quality.2": "Medium",
   "item.cupellation.tooltip.quality.3": "High",
@@ -51,6 +52,7 @@
   "text.autoconfig.cupellation.option.midGradeDurability": "Mid Grade Durability",
   "text.autoconfig.cupellation.option.highGradeDurability": "High Grade Durability",
   "text.autoconfig.cupellation.option.slagRatio": "Slag Ratio",
+  "text.autoconfig.cupellation.option.slagSolidifyTime": "Slag Solidify Time",
   "text.autoconfig.cupellation.option.lootItemGrade": "Loot Item Grade",
 
   "block.cupellation.smelter.incorrect": "Smelter is not built correctly!",
@@ -80,5 +82,7 @@
   "block.cupellation.faucet.pour_state": "%s: %s",
   "block.cupellation.faucet.too_cold": "Too cold",
   "block.cupellation.faucet.overheating": "Overheating",
-  "block.cupellation.slag": "Slag"
+  "block.cupellation.slag": "Slag",
+  "block.cupellation.slag_block": "Slag Block",
+  "emi.smelter.slag_info": "Remelts into molten slag, a flux is needed to recover the metal"
 }

@@ -4,6 +4,7 @@ import net.cupellation.block.SmelterFaucet;
 import net.cupellation.block.entity.CastingTableEntity;
 import net.cupellation.data.SmelterData;
 import net.cupellation.misc.MoltenHelper;
+import net.cupellation.misc.SlagHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.render.RenderLayer;
@@ -32,6 +33,8 @@ public class CastingTableRenderer implements BlockEntityRenderer<CastingTableEnt
 
     private static final float INNER_MIN = 2f / 16f;
     private static final float INNER_MAX = 14f / 16f;
+    private static final float SLAG_OVERLAP = 0.001f;
+    private static final float SLAG_HEIGHT = 0.8f / 16f;
 
     private final ItemRenderer itemRenderer;
 
@@ -52,6 +55,11 @@ public class CastingTableRenderer implements BlockEntityRenderer<CastingTableEnt
         }
         Identifier metalTypeId = blockEntity.getMetalTypeId();
         if (metalTypeId == null) {
+            return;
+        }
+        if (blockEntity.isSlagged()) {
+            SlagModelRenderer.render(metalTypeId, 1, INNER_MIN - SLAG_OVERLAP, INNER_MAX + SLAG_OVERLAP, SURFACE_Y, SLAG_HEIGHT,
+                    matrices, vertexConsumers, WorldRenderer.getLightmapCoordinates(blockEntity.getWorld(), blockEntity.getPos().up()), overlay);
             return;
         }
 

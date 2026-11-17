@@ -1,0 +1,22 @@
+{
+    "name": "Slag",
+    "icon": "cupellation:slag",
+    "category": "cupellation:item_category",
+    "pages": [
+        {
+            "type": "spotlight",
+            "item": "cupellation:slag",
+            "text": "Slag is solidified waste of a metal. It remembers which metal it once was and is tinted in its color. Every slag layer contains 162 mB."
+        },
+        {
+            "type": "text",
+            "title": "Formation",
+            "text": "Slag forms when a pour onto a casting table or into a casting basin gets interrupted for too long. Right click the table or basin to take it out.$(br2)If the structure of a smelter breaks, everything inside instantly solidifies into slag layers which keep the order of the molten metals."
+        },
+        {
+            "type": "text",
+            "title": "Remelting",
+            "text": "Slag can be put into a smelter again. It melts into molten slag of its metal, so a flux like $(l:items/quartz_powder)quartz powder$() or $(l:items/calcite_powder)calcite powder$() is needed to recover the metal.$(br2)Slag layers of different metals can be stacked, eight layers turn into a slag block."
+        }
+    ]
+}

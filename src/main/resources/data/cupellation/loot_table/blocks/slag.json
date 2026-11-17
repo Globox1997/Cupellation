@@ -1,0 +1,182 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:alternatives",
+          "children": [
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "1"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 1.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "2"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 2.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "3"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 3.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "4"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 4.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "5"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 5.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "6"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 6.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "7"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 7.0,
+                  "add": false
+                }
+              ]
+            },
+            {
+              "type": "minecraft:item",
+              "name": "cupellation:slag",
+              "conditions": [
+                {
+                  "condition": "minecraft:block_state_property",
+                  "block": "cupellation:slag",
+                  "properties": {
+                    "layers": "8"
+                  }
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:set_count",
+                  "count": 8.0,
+                  "add": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "cupellation:blocks/slag"
+}

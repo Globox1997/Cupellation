@@ -19,6 +19,10 @@ public class CupellationConfig implements ConfigData {
     @ConfigEntry.BoundedDiscrete(min = 0, max = 100)
     public int slagRatio = 15;
 
+    @Comment("Ticks until an interrupted pour on a casting table or basin turns into slag")
+    @ConfigEntry.BoundedDiscrete(min = 20, max = 12000)
+    public int slagSolidifyTime = 600;
+
     @Comment("Reduces durability by X%")
     @ConfigEntry.BoundedDiscrete(min = 0, max = 100)
     public int lowGradeDurability = 50;
@@ -42,5 +46,6 @@ public class CupellationConfig implements ConfigData {
         }
         smelterMaxHeight = Math.clamp(smelterMaxHeight, 1, 16);
         slagRatio = Math.clamp(slagRatio, 0, 100);
+        slagSolidifyTime = Math.clamp(slagSolidifyTime, 20, 12000);
     }
 }

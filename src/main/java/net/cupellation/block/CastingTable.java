@@ -86,6 +86,17 @@ public class CastingTable extends BlockWithEntity {
             return ActionResult.SUCCESS;
         }
 
+        if (table.isSlagged()) {
+            ItemStack slag = table.tryExtractSlag();
+            if (!slag.isEmpty()) {
+                world.playSound(null, pos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1f, 1.2f);
+                if (!player.getInventory().insertStack(slag)) {
+                    player.dropItem(slag, false);
+                }
+                return ActionResult.SUCCESS;
+            }
+        }
+
         if (!table.isFilling() && table.getMoltenAmount() <= 0) {
             if (!heldItem.isEmpty() && heldItem.getItem() instanceof ClayMoldItem && table.tryInsertClayMold(heldItem)) {
                 world.playSound(null, pos, SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.BLOCKS, 1f, 1f);

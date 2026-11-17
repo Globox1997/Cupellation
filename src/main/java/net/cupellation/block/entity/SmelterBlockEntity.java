@@ -5,8 +5,10 @@ import net.cupellation.block.screen.SmelterScreenHandler;
 import net.cupellation.data.*;
 import net.cupellation.init.BlockInit;
 import net.cupellation.init.ConfigInit;
+import net.cupellation.init.ItemInit;
 import net.cupellation.init.TagInit;
 import net.cupellation.network.packet.SmelterFluidSyncPacket;
+import net.cupellation.misc.SlagHelper;
 import net.cupellation.network.packet.SmelterScreenPacket;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -15,6 +17,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.LightBlock;
+import net.minecraft.block.SlagBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
@@ -455,6 +458,12 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
             return;
         }
 
+        List<Identifier> slagLayers = stack.get(ItemInit.SLAG_METALS);
+        if (slagLayers != null && !slagLayers.isEmpty()) {
+            tickSmeltSlag(slotIndex, stack, slagLayers);
+            return;
+        }
+
         SmelterItemData data = SmelterData.getItemData(stack.getItem());
         if (data == null) {
             smeltProgress[slotIndex] = 0;
@@ -521,6 +530,75 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
                 addByproduct(byproduct.metalTypeId(), scaleYield(stack, data, byproduct.yield()), slot);
             }
 
+            stack.decrement(1);
+            smeltProgress[slotIndex] = 0;
+            smeltTotal[slotIndex] = 0;
+            markFluidDirty();
+        }
+    }
+
+    private void tickSmeltSlag(int slotIndex, ItemStack stack, List<Identifier> slagLayers) {
+        Map<Identifier, Integer> counts = new LinkedHashMap<>();
+        for (Map.Entry<Identifier, Integer> entry : SlagHelper.countLayers(slagLayers).entrySet()) {
+            if (SmelterData.getMetalType(entry.getKey()) != null) {
+                counts.put(entry.getKey(), entry.getValue());
+            }
+        }
+        Set<Identifier> present = new HashSet<>(getCachedPresentMetals());
+        int freeSlots = 0;
+        for (Identifier id : metalTypeIds) {
+            if (id == null) {
+                freeSlots++;
+            }
+        }
+        SmelterTypeData smelterType = getCurrentSmelterType();
+        int requiredTemp = 0;
+        for (Identifier metalId : counts.keySet()) {
+            if (!present.contains(metalId)) {
+                if (!SmelterData.canAddMetal(present, metalId) || freeSlots <= 0) {
+                    smeltProgress[slotIndex] = 0;
+                    return;
+                }
+                present.add(metalId);
+                freeSlots--;
+            }
+            if (smelterType != null && !smelterType.allowsMetal(metalId)) {
+                smeltProgress[slotIndex] = 0;
+                return;
+            }
+            requiredTemp = Math.max(requiredTemp, SmelterData.getRequiredTemp(metalId));
+        }
+
+        if (temperature < requiredTemp) {
+            if (smeltProgress[slotIndex] > 0) {
+                smeltProgress[slotIndex]--;
+            }
+            return;
+        }
+
+        if (getTotalFluid() + slagLayers.size() * SlagHelper.MB_PER_LAYER > getMaxCapacity()) {
+            smeltProgress[slotIndex] = 0;
+            return;
+        }
+
+        if (smeltTotal[slotIndex] == 0) {
+            smeltTotal[slotIndex] = slagLayers.size() * SlagHelper.SMELT_TIME_PER_LAYER;
+        }
+
+        smeltProgress[slotIndex]++;
+
+        if (smeltProgress[slotIndex] >= smeltTotal[slotIndex]) {
+            for (Map.Entry<Identifier, Integer> entry : counts.entrySet()) {
+                int slot = getSlotForMetal(entry.getKey());
+                if (slot == -1) {
+                    slot = getFirstFreeSlot();
+                    if (slot == -1) {
+                        continue;
+                    }
+                    metalTypeIds[slot] = entry.getKey();
+                }
+                slagAmounts[slot] += entry.getValue() * SlagHelper.MB_PER_LAYER;
+            }
             stack.decrement(1);
             smeltProgress[slotIndex] = 0;
             smeltTotal[slotIndex] = 0;
@@ -856,8 +934,67 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         markDirty();
     }
 
+    public static boolean isSmeltable(ItemStack stack) {
+        if (SmelterData.hasItem(stack.getItem())) {
+            return true;
+        }
+        List<Identifier> slagLayers = stack.get(ItemInit.SLAG_METALS);
+        return slagLayers != null && !slagLayers.isEmpty();
+    }
+
+    private void solidifyIntoSlag() {
+        if (world == null || world.isClient() || cornerMin == null || getTotalFluid() <= 0) {
+            return;
+        }
+        int innerW = structureWidth - 2;
+        int innerD = structureDepth - 2;
+        int cells = innerW * innerD;
+        if (cells <= 0 || structureHeight <= 0) {
+            return;
+        }
+        List<Identifier> queue = new ArrayList<>();
+        for (int slot : getSlotsSortedByDensity()) {
+            int layerCount = SlagHelper.layersFor(metalAmounts[slot] + slagAmounts[slot]);
+            for (int i = 0; i < layerCount; i++) {
+                queue.add(metalTypeIds[slot]);
+            }
+        }
+        int maxLayers = cells * structureHeight * SlagHelper.MAX_LAYERS;
+        if (queue.size() > maxLayers) {
+            queue = queue.subList(0, maxLayers);
+        }
+
+        Direction facing = getCachedState().get(SmelterBlock.FACING);
+        Direction right = facing.rotateYCounterclockwise();
+
+        for (int x = 0; x < innerW; x++) {
+            for (int z = 0; z < innerD; z++) {
+                int cell = x * innerD + z;
+                List<Identifier> column = new ArrayList<>();
+                for (int index = cell; index < queue.size(); index += cells) {
+                    column.add(queue.get(index));
+                }
+                for (int y = 0; y * SlagHelper.MAX_LAYERS < column.size(); y++) {
+                    List<Identifier> layers = column.subList(y * SlagHelper.MAX_LAYERS, Math.min(column.size(), (y + 1) * SlagHelper.MAX_LAYERS));
+                    BlockPos slagPos = cornerMin.offset(right, 1 + x).offset(facing.getOpposite(), 1 + z).up(y);
+                    BlockState current = world.getBlockState(slagPos);
+                    if (!current.isAir() && !current.isOf(Blocks.LIGHT) && !current.isOf(Blocks.SNOW)) {
+                        continue;
+                    }
+                    BlockState slagState = layers.size() >= SlagHelper.MAX_LAYERS ? BlockInit.SLAG_BLOCK.getDefaultState()
+                            : BlockInit.SLAG.getDefaultState().with(SlagBlock.LAYERS, layers.size());
+                    world.setBlockState(slagPos, slagState, Block.NOTIFY_ALL);
+                    if (world.getBlockEntity(slagPos) instanceof SlagBlockEntity slag) {
+                        slag.setLayers(new ArrayList<>(layers));
+                    }
+                }
+            }
+        }
+    }
+
     public void onStructureDestroyed() {
         clearLightBlocks();
+        solidifyIntoSlag();
         for (int i = 0; i < MAX_METALS; i++) {
             metalAmounts[i] = 0;
             slagAmounts[i] = 0;
@@ -920,7 +1057,7 @@ public class SmelterBlockEntity extends BlockEntity implements SidedInventory, E
         if (slot == 0) {
             return SmelterData.getFuelData(stack.getItem()) != null;
         }
-        return SmelterData.hasItem(stack.getItem());
+        return isSmeltable(stack);
     }
 
     @Override
